@@ -25,7 +25,7 @@ class NumList(StatefulComponent):
         return Column(*(Text(i+1).fixed_height(30) for i in range(self.num())), scrollable=True)
 
 
-DOME_TENT_IMG = "https://3.bp.blogspot.com/-NZBf8tr3fcM/WZP3V2hKZBI/AAAAAAABF9g/Yyr1CVNNnCE9HhL10-hYfMSHUF7c9VbsQCLcBGAs/s800/camp_tent_maru.png"
+DOME_TENT_IMG = "https://github.com/i2y/cattt/blob/main/examples/camp_tent.png?raw=true"
 
 c: State[int] = State(0)
 
