@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+    <title>Misc</title>
+    <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+    <script type="text/javascript" src="https://unpkg.com/canvaskit-wasm@0.33.0/bin/canvaskit.js"></script>
+    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
+</head>
+<py-env>
+    - numpy
+    - paths:
+        - ../cattt/color.py
+        - ../cattt/core.py
+        - ../cattt/web_frame.py
+        - ../cattt/frame.py
+        - ../cattt/canvaskit_painter.py
+</py-env>
+<py-script>
+import numpy as np
+
+from core import (App, Row, Column, Button, Text, Spacer, State, Component, Kind,
+                  StatefulComponent, Input, Box, Image, AsyncNetImage, NumpyImage, SizePolicy)
+from frame import Frame
+
+array = np.zeros((200, 400, 4), dtype=np.uint8)
+array[:,:,3] = 255
+
+
+class Counter(Component):
+    def __init__(self, count: State[int]):
+        super().__init__()
+        self.count = count
+
+    def view(self):
+        c = self.count
+        return Row(Button("Up").on_click(lambda _: c.set(c() + 1)),
+                   Text(self.count),
+                   Button("Down").on_click(lambda _: c.set(c() - 1))).spacing(4)
+
+
+class NumList(StatefulComponent):
+    def __init__(self, n: State[int]):
+        super().__init__(n)
+        self.num = n
+
+    def view(self):
+        return Column(*(Text(i+1).fixed_height(30) for i in range(self.num())), scrollable=True)
+
+
+TENT_IMG = "./camp_tent.png"
+
+c: State[int] = State(0)
+
+App(Frame(title="Misc"),
+    Column(Counter(c),
+           Box(AsyncNetImage(url=TENT_IMG).fixed_size(500, 300)),
+           Row(NumList(c), Box(NumpyImage(array).fixed_size(400, 200))),
+           Input("fafa")).spacing(4)).run()
+</py-script>
+</html>

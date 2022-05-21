@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "cattt"
+version = "0.1.0"
+description = "Cattt is a pure Python cross-platform UI framework"
+authors = ["Yasushi Itoh <i2y@icloud.com>"]
+license = "MIT"
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "License :: OSI Approved :: MIT License",
+    'Programming Language :: Python :: 3',
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+homepage = "https://github.com/i2y/cattt"
+repository = "https://github.com/i2y/cattt"
+readme = "README.md"
+documentation = "https://i2y.github.io/cattt"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+skia-python = "^87.4"
+darkdetect = "^0.5.1"
+PyOpenGL = { version = "^3.1.5", optional = true }
+PySDL2 = { version = "^0.9.11", optional = true }
+zengl = { version = "^1.2.2", optional = true }
+glfw = "^2.5.3"
+glcontext = "^2.3.6"
+
+[tool.poetry.extras]
+glfw = ["glfw", "PyOpenGL", "skia-python", "darkdetect"]
+sdl = ["PySDL2", "glcontext", "zengl", "skia-python", "darkdetect"]
+
+[tool.poetry.dev-dependencies]
+mkdocs-material = "^8.2.15"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
