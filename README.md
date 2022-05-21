@@ -1,5 +1,5 @@
 # :cat: Cattt
-Cattt is a pure Python cross-platform UI framework.
+Cattt (kˈæt) is a pure Python cross-platform UI framework.
 
 [Documentation Site](https://i2y.github.io/cattt)
 
@@ -15,6 +15,9 @@ The primary final goal of Cattt is to provide features for Python programmers ea
 ## Dependencies
 - For desktop platforms, Cattt is standing on existing excellent python bindings for window management library (GLFW or SDL2) and 2D graphics library (Skia).
 - For web browsers, Cattt is standing on awesome Pyodide/PyScript and CanvasKit (Wasm version of Skia).
+
+## Installation
+https://i2y.github.io/cattt/getting-started/
 
 ## An example of code using Cattt
 ```python
