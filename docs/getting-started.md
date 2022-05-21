@@ -127,7 +127,7 @@ App(Frame("Counter"), Counter()).run()
 $ python -m http.server 3030
 ```
 
-Please open [http://localhost:3030/counter.html](http://localhost:3030/counter.html) with any browser.
+Please open [http://127.0.0.1:3030/counter.html](http://127.0.0.1:3030/counter.html) with any browser.
 You will see the following screen.
 
 ```
