@@ -46,8 +46,7 @@ class Counter(Component):
 App(Frame("Counter", 800, 600), Counter()).run()
 ```
 
-<video controls>fafa
-  <source src="docs/videos/counter_glfw.mp4" type="video/mp4">
+<video src="docs/videos/counter_glfw.mp4" controls="controls">
 </video>
 
 You can see some other examples in [examples](examples) directory.
