@@ -46,8 +46,7 @@ class Counter(Component):
 App(Frame("Counter", 800, 600), Counter()).run()
 ```
 
-<video src="docs/videos/counter_glfw.mp4" controls="controls">
-</video>
+https://user-images.githubusercontent.com/6240399/169688790-f020be7e-5b6b-456e-8620-f09ad3ba0a27.mp4
 
 You can see some other examples in [examples](examples) directory.
 
