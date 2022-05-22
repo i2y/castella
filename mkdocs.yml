@@ -31,3 +31,5 @@ nav:
     - Hot reloading: hot-reloading.md
   - Packaging: packaging.md
   - License: license.md
+plugins:
+    - mkdocs-video

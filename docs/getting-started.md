@@ -131,6 +131,4 @@ Please open [http://127.0.0.1:3000/counter.html](http://127.0.0.1:3000/counter.h
 
 Or, you can use live preview your app with Visual Studio Code or something like that.
 
-<video width="800" height="600" controls>
-    <source src="/counter.mp4" type="video/mp4">
-</video>
+![type:video](./videos/counter.mp4)

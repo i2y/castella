@@ -163,6 +163,17 @@ optional = false
 python-versions = ">=3.6"
 
 [[package]]
+name = "mkdocs-video"
+version = "1.3.0"
+description = ""
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+mkdocs = ">=1.1.0,<2"
+
+[[package]]
 name = "numpy"
 version = "1.22.2"
 description = "NumPy is the fundamental package for array computing with Python."
@@ -323,13 +334,13 @@ docs = ["sphinx", "jaraco.packaging (>=9)", "rst.linker (>=1.9)"]
 testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-cov", "pytest-enabler (>=1.0.1)", "jaraco.itertools", "func-timeout", "pytest-black (>=0.3.7)", "pytest-mypy (>=0.9.1)"]
 
 [extras]
-glfw = ["glfw", "PyOpenGL"]
-sdl = ["PySDL2", "glcontext", "zengl"]
+glfw = ["glfw", "PyOpenGL", "skia-python", "darkdetect"]
+sdl = ["PySDL2", "glcontext", "zengl", "skia-python", "darkdetect"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "9cb4d4eae09759719f16d7d64cbd2636bcf2418e0820b6664b1e1e8045b0a7a7"
+content-hash = "cea153c8d4686d3cba2950399e1ee798cd82e46a32e83341a06eb65dd8a2c48a"
 
 [metadata.files]
 click = [
@@ -468,6 +479,10 @@ mkdocs-material = [
 mkdocs-material-extensions = [
     {file = "mkdocs-material-extensions-1.0.3.tar.gz", hash = "sha256:bfd24dfdef7b41c312ede42648f9eb83476ea168ec163b613f9abd12bbfddba2"},
     {file = "mkdocs_material_extensions-1.0.3-py3-none-any.whl", hash = "sha256:a82b70e533ce060b2a5d9eb2bc2e1be201cf61f901f93704b4acf6e3d5983a44"},
+]
+mkdocs-video = [
+    {file = "mkdocs-video-1.3.0.tar.gz", hash = "sha256:900a7da60aff6d313d3aec47348bb7c87ec2ad39bad27a1146fa153fafd61e44"},
+    {file = "mkdocs_video-1.3.0-py3-none-any.whl", hash = "sha256:6512887d65e65f4fb643b64e3f4cc7e365ce27d0ff4c4b48de8d91b04ea89731"},
 ]
 numpy = [
     {file = "numpy-1.22.2-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:515a8b6edbb904594685da6e176ac9fbea8f73a5ebae947281de6613e27f1956"},
