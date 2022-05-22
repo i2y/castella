@@ -1316,10 +1316,6 @@ class Switch(Widget):
     def mouse_out(self) -> None:
         ...
 
-    def on_click(self, callback: Callable[[MouseEvent], Any]): # -> Self:
-        self._on_click = callback
-        return self
-
     def redraw(self, p: Painter, _: bool) -> None:
         size = self.get_size()
         radius = size.height / 2
