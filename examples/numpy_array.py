@@ -1,10 +1,10 @@
-from cattt.core import App, Button, Column, Row, NumpyImage
-from cattt.frame import Frame
+from cat.core import App, Button, Column, Row, NumpyImage
+from cat.frame import Frame
 
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from matplotlib.ticker import LinearLocatttor
+from matplotlib.ticker import LinearLocator
 
 
 # I copied and pasted matplotlib part from https://note.com/tukkidney/n/nf6f8af2ec281
@@ -23,7 +23,7 @@ surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
                        linewidth=0, antialiased=False)
 
 ax.set_zlim(-1.01, 1.01)
-ax.zaxis.set_major_locatttor(LinearLocatttor(10))
+ax.zaxis.set_major_locator(LinearLocator(10))
 ax.zaxis.set_major_formatter('{x:.02f}')
 ax.patch.set_alpha(0)
 
