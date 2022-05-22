@@ -22,7 +22,7 @@
 <py-script>
 import numpy as np
 
-from core import (App, Row, Column, Button, Text, Spacer, State, Component, Kind,
+from core import (App, Row, Column, Button, Text, Spacer, State, Component, Kind, Switch,
                   StatefulComponent, Input, Box, Image, AsyncNetImage, NumpyImage, SizePolicy)
 from frame import Frame
 
@@ -57,6 +57,7 @@ c: State[int] = State(0)
 
 App(Frame(title="Misc"),
     Column(Counter(c),
+           Switch(True).fixed_height(30),
            Box(AsyncNetImage(url=TENT_IMG).fixed_size(500, 300)),
            Row(NumList(c), Box(NumpyImage(array).fixed_size(400, 200))),
            Input("fafa")).spacing(4)).run()

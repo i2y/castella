@@ -1287,6 +1287,56 @@ class Button(Widget):
         return s
 
 
+# TODO: WIP: Currently only the background is implemented.
+class Switch(Widget):
+    def __init__(self, selected: bool | SimpleValue[bool]):
+        super().__init__(
+            state=selected if isinstance(selected, SimpleValue) else State(selected),
+            size=Size(0, 0),
+            pos=Point(0, 0),
+            pos_policy=None,
+            size_policy=SizePolicy.EXPANDING,
+        )
+        self._on_click = lambda ev: ...
+        kind = Kind.NORMAL
+        theme = get_theme()
+        self._style, self._text_style = theme.get_styles("button", kind, AppearanceState.NORMAL)
+        self._kind = kind
+        self._pushed_style, self._pushed_text_style = theme.get_styles("button", kind, AppearanceState.PUSHED)
+
+    def mouse_down(self, ev: MouseEvent) -> None:
+        ...
+
+    def mouse_up(self, ev: MouseEvent) -> None:
+        ...
+
+    def mouse_over(self) -> None:
+        ...
+
+    def mouse_out(self) -> None:
+        ...
+
+    def on_click(self, callback: Callable[[MouseEvent], Any]): # -> Self:
+        self._on_click = callback
+        return self
+
+    def redraw(self, p: Painter, _: bool) -> None:
+        size = self.get_size()
+        radius = size.height / 2
+        left_circle = Circle(center=Point(radius, radius), radius=radius)
+        center_rect = Rect(origin=Point(radius, 0), size=size - Size(radius*2, 0))
+        right_circle = Circle(center=Point(size.width - radius, radius), radius=radius)
+        p.style(self._style)
+        p.fill_circle(left_circle)
+        p.fill_rect(center_rect)
+        p.fill_circle(right_circle)
+
+    def size_policy(self, sp: SizePolicy): # -> Self:
+        if sp is SizePolicy.CONTENT:
+            raise RuntimeError("The switch doesn't accept SizePolicy.CONTENT")
+        return super().size_policy(sp)
+
+
 class Image(Widget):
     def __init__(self, file_path: str | SimpleValue[str], use_cache: bool=True):
         if isinstance(file_path, SimpleValue):
