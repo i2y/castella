@@ -78,6 +78,26 @@ class Painter:
         sr = _to_skia_rect(rect)
         self._canvas.drawRect(sr, paint)
 
+    def fill_circle(self, circle: core.Circle) -> None:
+        style = cast(core.Style, self._style)
+        paint = skia.Paint(
+            Color=_to_skia_color(style.fill.color),
+            Style=skia.Paint.kFill_Style,
+            AntiAlias=True,
+        )
+        c = circle.center
+        self._canvas.drawCircle(c.x, c.y, circle.radius, paint)
+
+    def stroke_circle(self, circle: core.Circle) -> None:
+        style = cast(core.Style, self._style)
+        paint = skia.Paint(
+            Color=_to_skia_color(style.stroke.color),
+            Style=skia.Paint.kStroke_Style,
+            AntiAlias=True,
+        )
+        c = circle.center
+        self._canvas.drawCircle(c.x, c.y, circle.radius, paint)
+
     def measure_text(self, text: str) -> float:
         style = cast(core.Style, self._style)
         font = skia.Font(None, style.font.size)

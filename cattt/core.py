@@ -48,6 +48,15 @@ class Rect:
                 (p.y >= self.origin.y and
                  p.y <= self.origin.y + self.size.height))
 
+@dataclass(slots=True, frozen=True)
+class Circle:
+    center: Point
+    radius: float
+
+    def contain(self, p: Point) -> bool:
+        c = self.center
+        return  ((p.x-c.x)**2 + (p.y-c.y)**2) < self.radius**2
+
 
 class SizePolicy(Enum):
     FIXED = auto()
@@ -183,6 +192,12 @@ class Painter(Protocol):
         ...
 
     def stroke_rect(self, rect: Rect) -> None:
+        ...
+
+    def fill_circle(self, circle: Circle) -> None:
+        ...
+
+    def stroke_circle(self, circle: Circle) -> None:
         ...
 
     def translate(self, pos: Point) -> None:

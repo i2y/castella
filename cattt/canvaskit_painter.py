@@ -50,6 +50,24 @@ class Painter:
         sr = to_ck_rect(rect)
         self._canvas.drawRect(sr, paint)
 
+    def fill_circle(self, circle: core.Circle) -> None:
+        style = cast(core.Style, self._style)
+        paint = window.CK.Paint.new()
+        paint.setColor(to_ck_color(style.fill.color))
+        paint.setStyle(window.CK.PaintStyle.Fill)
+        paint.setAntiAlias(True)
+        c = circle.center
+        self._canvas.drawCircle(c.x, c.y, circle.radius, paint)
+
+    def stroke_circle(self, circle: core.Circle) -> None:
+        style = cast(core.Style, self._style)
+        paint = window.CK.Paint.new()
+        paint.setColor(to_ck_color(style.stroke.color))
+        paint.setStyle(window.CK.PaintStyle.Stroke)
+        paint.setAntiAlias(True)
+        c = circle.center
+        self._canvas.drawCircle(c.x, c.y, circle.radius, paint)
+
     def measure_text(self, text: str) -> float:
         style = cast(core.Style, self._style)
         font = window.CK.Font.new(window.typeface, style.font.size)
