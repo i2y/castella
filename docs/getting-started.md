@@ -123,16 +123,14 @@ App(Frame("Counter"), Counter()).run()
 ```
 
 ##### 4. Serve your app
+Finally, please serve your app using http server.
 ```sh
-$ python -m http.server 3030
+$ python -m http.server 3000
 ```
+Please open [http://127.0.0.1:3000/counter.html](http://127.0.0.1:3000/counter.html) with any browser.
 
-Please open [http://127.0.0.1:3030/counter.html](http://127.0.0.1:3030/counter.html) with any browser.
-You will see the following screen.
+Or, you can use live preview your app with Visual Studio Code or something like that.
 
-```
-TODO: paste the image
-```
-
-
-Also, the best way to see your application (the html page) in action is to use a live preview feature using an HTTP server and a browser, which provided with an editor/IDE such as VS Code.
+<video width="800" height="600" controls>
+    <source src="/counter.mp4" type="video/mp4">
+</video>

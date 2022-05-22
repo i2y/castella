@@ -18,9 +18,9 @@ The primary final goal of Cattt is to provide features for Python programmers ea
 ## Supported Platforms
 Currently, Cattt theoretically should support not-too-old versions of the following platforms.
 
-- Windows10/11
+- Windows 10/11
 - Mac OS X
 - Linux
 - Web browsers
 
-Unfortunately, however, I could not actually confirm this at all on Linux, as I don't have a Linux machine these days. I want it..
+Unfortunately, however, I could not actually confirm this at all on Linux, as I don't have a Linux machine these days. I want it, though..

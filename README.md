@@ -45,14 +45,14 @@ class Counter(Component):
 
 App(Frame("Counter", 800, 600), Counter()).run()
 ```
-<img src="counter.png" alt="counter image" title="counter" width=800>
+<img src="counter.png" alt="counter image" title="counter" width=400>
 
 You can see some other examples in [examples](examples) directory.
 
 ## Supported Platforms
 Currently, Cattt theoretically should support not-too-old versions of the following platforms.
 
-- Windows10/11
+- Windows 10/11
 - Mac OS X
 - Linux
 - Web browsers
