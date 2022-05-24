@@ -4,6 +4,7 @@ theme:
   language: 'en'
   features:
     - navigation.tabs
+    - content.code.annotate
   palette:
     - scheme: default
       primary: red
@@ -33,3 +34,9 @@ nav:
   - License: license.md
 plugins:
     - mkdocs-video
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
