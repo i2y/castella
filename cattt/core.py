@@ -979,12 +979,12 @@ def _get_theme() -> Theme:
             text_font=Font(size=50, size_policy=FontSizePolicy.FIXED)
         ),
         switch_normal=WidgetStyle(
-            bg_color=color_schema["bg-overlay"],
-            text_color=color_schema["bg-tertiary"],
+            bg_color=color.COLOR_SCALE_GRAY[8 if _is_darkmode() else 1][color_mode],
+            text_color=color.COLOR_SCALE_GRAY[6 if _is_darkmode() else 2][color_mode],
         ),
         switch_normal_selected=WidgetStyle(
             bg_color=color_schema["bg-overlay"],
-            text_color=color.COLOR_SCALE_GRAY[6 if _is_darkmode() else 2][color_mode],
+            text_color=color.COLOR_SCALE_GRAY[2 if _is_darkmode() else 6][color_mode],
         ),
         layout=WidgetStyle(
             bg_color=color_schema["bg-primary"],
