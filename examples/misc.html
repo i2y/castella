@@ -57,7 +57,7 @@ c: State[int] = State(0)
 
 App(Frame(title="Misc"),
     Column(Counter(c),
-           Switch(True).fixed_height(30),
+           Row(Switch(True).fixed_width(50), Switch(False)).fixed_height(25),
            Box(AsyncNetImage(url=TENT_IMG).fixed_size(500, 300)),
            Row(NumList(c), Box(NumpyImage(array).fixed_size(400, 200))),
            Input("fafa")).spacing(4)).run()

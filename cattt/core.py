@@ -899,6 +899,8 @@ class Theme:
     button_normal: WidgetStyle
     button_normal_hover: WidgetStyle
     button_normal_pushed: WidgetStyle
+    switch_normal: WidgetStyle
+    switch_normal_selected: WidgetStyle
     layout: WidgetStyle
     scrollbar: WidgetStyle
     scrollbox: WidgetStyle
@@ -975,6 +977,14 @@ def _get_theme() -> Theme:
             border_color=color_schema["border-secondary"],
             text_color=color_schema["text-primary"],
             text_font=Font(size=50, size_policy=FontSizePolicy.FIXED)
+        ),
+        switch_normal=WidgetStyle(
+            bg_color=color_schema["bg-overlay"],
+            text_color=color_schema["bg-tertiary"],
+        ),
+        switch_normal_selected=WidgetStyle(
+            bg_color=color_schema["bg-overlay"],
+            text_color=color.COLOR_SCALE_GRAY[6 if _is_darkmode() else 2][color_mode],
         ),
         layout=WidgetStyle(
             bg_color=color_schema["bg-primary"],
@@ -1287,7 +1297,6 @@ class Button(Widget):
         return s
 
 
-# TODO: WIP: Currently only the background is implemented.
 class Switch(Widget):
     def __init__(self, selected: bool | SimpleValue[bool]):
         super().__init__(
@@ -1297,35 +1306,44 @@ class Switch(Widget):
             pos_policy=None,
             size_policy=SizePolicy.EXPANDING,
         )
-        self._on_click = lambda ev: ...
         kind = Kind.NORMAL
         theme = get_theme()
-        self._style, self._text_style = theme.get_styles("button", kind, AppearanceState.NORMAL)
+        self._style, self._fg_style = theme.get_styles("switch", kind, AppearanceState.NORMAL)
         self._kind = kind
-        self._pushed_style, self._pushed_text_style = theme.get_styles("button", kind, AppearanceState.PUSHED)
-
-    def mouse_down(self, ev: MouseEvent) -> None:
-        ...
+        self._selected_style, self._selected_fg_style = theme.get_styles("switch", kind, AppearanceState.SELECTED)
 
     def mouse_up(self, ev: MouseEvent) -> None:
-        ...
-
-    def mouse_over(self) -> None:
-        ...
-
-    def mouse_out(self) -> None:
-        ...
+        state = cast(SimpleValue[bool], self._state)
+        state.set(not state.value())
 
     def redraw(self, p: Painter, _: bool) -> None:
         size = self.get_size()
-        radius = size.height / 2
-        left_circle = Circle(center=Point(radius, radius), radius=radius)
-        center_rect = Rect(origin=Point(radius, 0), size=size - Size(radius*2, 0))
-        right_circle = Circle(center=Point(size.width - radius, radius), radius=radius)
+        r = size.height / 2
+        left_circle = Circle(center=Point(r, r), radius=r)
+        center_rect = Rect(origin=Point(r, 0), size=size - Size(r*2, 0))
+        right_circle = Circle(center=Point(size.width - r, r), radius=r)
         p.style(self._style)
         p.fill_circle(left_circle)
         p.fill_rect(center_rect)
         p.fill_circle(right_circle)
+
+        inner_r = size.height * 0.6 / 2
+        w = size.width
+        h = size.height
+        state = cast(SimpleValue[bool], self._state)
+        if state.value():
+            inner_left_circle = Circle(center=Point(w*0.95 - r, r), radius=inner_r)
+            inner_center_rect = Rect(origin=Point(w*0.95 - r, h*0.2), size=size - Size(w*0.95, h*0.4))
+            inner_right_circle = Circle(center=Point(w - r, r), radius=inner_r)
+            p.style(self._selected_fg_style)
+        else:
+            inner_left_circle = Circle(center=Point(r, r), radius=inner_r)
+            inner_center_rect = Rect(origin=Point(r, h*0.2), size=size - Size(w*0.95, h*0.4))
+            inner_right_circle = Circle(center=Point(w*0.05 + r, r), radius=inner_r)
+            p.style(self._fg_style)
+        p.fill_circle(inner_left_circle)
+        p.fill_rect(inner_center_rect)
+        p.fill_circle(inner_right_circle)
 
     def size_policy(self, sp: SizePolicy): # -> Self:
         if sp is SizePolicy.CONTENT:
