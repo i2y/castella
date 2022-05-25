@@ -28,6 +28,12 @@ nav:
   - Getting started:
     - Installation: getting-started.md
     - Hello World: hello-world.md
+    - Layout: layout.md
+    - State: state.md
+    - Component: component.md
+    - Stateful Component: stateful-component.md
+    - Widgets: widgets.md
+    - Chart: chart.md
     - Hot restarting: hot-restarting.md
     - Hot reloading: hot-reloading.md
   - Packaging: packaging.md
