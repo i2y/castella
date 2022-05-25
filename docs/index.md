@@ -1,7 +1,7 @@
 Cattt is a pure Python cross-platform UI framework made for us Pythonista.
 
 ## Why
-Dart has Flutter and Kotlin has Compose Multiplatform as cross-platform declarative UI frameworks. These frameworks describe the core parts of the framework in that language itself. They also make programmers to be able to define UI declaratively in that language, not XML, HTML, or something like their own languages. Probably, those would be very us programmer friendly and enhance our productivity. Unfortunately, at this moment, at least as far as I know, there doesn't seem to be such a framework in Python. Cattt is an attempt to see if such a thing can be made for us Pythonista in Python.
+Dart has Flutter and Kotlin has Compose Multiplatform as cross-platform declarative UI frameworks. These frameworks describe the core parts of the framework in that language itself. They also make programmers to be able to define UI declaratively in that language, not XML, HTML, or something like their own languages. Probably, those would be very us programmer friendly and enhance our productivity. Unfortunately, at this moment (May 2022), at least as far as I know, there doesn't seem to be such a framework in Python. Cattt is an attempt to see if such a thing can be made for us Pythonista in Python.
 
 ## Goals
 The primary final goal of Cattt is to provide features for Python programmers easy to create a GUI application for several OS platforms and web browsers in a single most same code as possible as. The second goal is to provide a UI framework that Python programmers can easily understand, modify, and extend as needed.
