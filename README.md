@@ -5,12 +5,14 @@ Cattt (kˈæt) is a pure Python cross-platform UI framework.
 
 ## Goals
 The primary final goal of Cattt is to provide features for Python programmers easy to create a GUI application for several OS platforms and web browsers in a single most same code as possible as. The second goal is to provide a UI framework that Python programmers can easily understand, modify, and extend as needed.
+(Stated on May 25, 2022: This goal is the final goal. Currently this framework is in the super early stage, so this goal is far away. I hope to get much closer to the goal in a few months or a year by improving the implementation or documentation a little bit every day as much as possible.)
 
 ## Features
 - The core part as a UI framework of Cattt is written in only Python. It's not a wrapper for existing something written in other programing languages.
 - Cattt allows human to define UI declaratively in Python.
 - Cattt provides hot-reloading or hot-restarting on development.
 - Dark mode is supported. If the runtime environment is in dark mode, Cattt app's UI appearance will automatically be styled in dark mode. The default color scheme for light and dark mode might be very like the one of GitHub.
+- Cattt utilizes GPU via dependent libraries.
 
 ## Dependencies
 - For desktop platforms, Cattt is standing on existing excellent python bindings for window management library (GLFW or SDL2) and 2D graphics library (Skia).
