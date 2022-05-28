@@ -980,10 +980,10 @@ def _get_theme() -> Theme:
         ),
         switch_normal=WidgetStyle(
             bg_color=color.COLOR_SCALE_GRAY[8 if _is_darkmode() else 1][color_mode],
-            text_color=color.COLOR_SCALE_GRAY[6 if _is_darkmode() else 2][color_mode],
+            text_color=color.COLOR_SCALE_GRAY[2 if _is_darkmode() else 6][color_mode],
         ),
         switch_normal_selected=WidgetStyle(
-            bg_color=color_schema["bg-overlay"],
+            bg_color=color.COLOR_SCALE_GRAY[6 if _is_darkmode() else 2][color_mode],
             text_color=color.COLOR_SCALE_GRAY[2 if _is_darkmode() else 6][color_mode],
         ),
         layout=WidgetStyle(
@@ -1308,42 +1308,46 @@ class Switch(Widget):
         )
         kind = Kind.NORMAL
         theme = get_theme()
-        self._style, self._fg_style = theme.get_styles("switch", kind, AppearanceState.NORMAL)
+        self._bg_style, self._fg_style = theme.get_styles("switch", kind, AppearanceState.NORMAL)
         self._kind = kind
-        self._selected_style, self._selected_fg_style = theme.get_styles("switch", kind, AppearanceState.SELECTED)
+        self._selected_bg_style, _ = theme.get_styles("switch", kind, AppearanceState.SELECTED)
 
     def mouse_up(self, ev: MouseEvent) -> None:
         state = cast(SimpleValue[bool], self._state)
         state.set(not state.value())
 
     def redraw(self, p: Painter, _: bool) -> None:
-        size = self.get_size()
-        r = size.height / 2
+        self._draw_background(p)
+        self._draw_knob(p)
+
+    def _draw_background(self, p: Painter) -> None:
+        s = self.get_size()
+        r = s.height / 2
         left_circle = Circle(center=Point(r, r), radius=r)
-        center_rect = Rect(origin=Point(r, 0), size=size - Size(r*2, 0))
-        right_circle = Circle(center=Point(size.width - r, r), radius=r)
-        p.style(self._style)
+        center_rect = Rect(origin=Point(r, 0), size=s - Size(r*2, 0))
+        right_circle = Circle(center=Point(s.width - r, r), radius=r)
+
+        state = cast(SimpleValue[bool], self._state)
+        if state.value():
+            p.style(self._selected_bg_style)
+        else:
+            p.style(self._bg_style)
         p.fill_circle(left_circle)
         p.fill_rect(center_rect)
         p.fill_circle(right_circle)
 
-        inner_r = size.height * 0.6 / 2
-        w = size.width
-        h = size.height
+    def _draw_knob(self, p: Painter) -> None:
+        s = self.get_size()
+        r = s.height / 2
+        inner_r = s.height * 0.75 / 2
+        w = s.width
         state = cast(SimpleValue[bool], self._state)
+        p.style(self._fg_style)
         if state.value():
-            inner_left_circle = Circle(center=Point(w*0.95 - r, r), radius=inner_r)
-            inner_center_rect = Rect(origin=Point(w*0.95 - r, h*0.2), size=size - Size(w*0.95, h*0.4))
-            inner_right_circle = Circle(center=Point(w - r, r), radius=inner_r)
-            p.style(self._selected_fg_style)
+            knob = Circle(center=Point(w - r, r), radius=inner_r)
         else:
-            inner_left_circle = Circle(center=Point(r, r), radius=inner_r)
-            inner_center_rect = Rect(origin=Point(r, h*0.2), size=size - Size(w*0.95, h*0.4))
-            inner_right_circle = Circle(center=Point(w*0.05 + r, r), radius=inner_r)
-            p.style(self._fg_style)
-        p.fill_circle(inner_left_circle)
-        p.fill_rect(inner_center_rect)
-        p.fill_circle(inner_right_circle)
+            knob = Circle(center=Point(r, r), radius=inner_r)
+        p.fill_circle(knob)
 
     def size_policy(self, sp: SizePolicy): # -> Self:
         if sp is SizePolicy.CONTENT:
