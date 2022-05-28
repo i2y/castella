@@ -1,5 +1,5 @@
-from cat.core import App, Button, Column, Row, NumpyImage
-from cat.frame import Frame
+from cattt.core import App, Button, Column, Row, NumpyImage
+from cattt.frame import Frame
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -32,7 +32,7 @@ fig.patch.set_alpha(0.1)
 fig.canvas.draw()
 array = np.array(fig.canvas.renderer.buffer_rgba())
 
-App(Frame(title="Counter", width=800, height=600),
+App(Frame(title="NumPy Images", width=800, height=600),
     Column(Row(NumpyImage(array),
                NumpyImage(array), scrollable=True)
            .fixed_height(500).spacing(20),
