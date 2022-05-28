@@ -34,7 +34,7 @@ Also, actual text inside of Text widget is rendered scaled to fit the size of th
 
 ## Example 2
 
-This is an example of fixing the font size to a specified size, regardless on size of the Text widget and Frame.
+This is an example of fixing the font size to a specified size, regardless of the size of the Text widget and Frame.
 
 
 ```python
