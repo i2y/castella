@@ -77,8 +77,8 @@ class Frame:
         self._callback_on_mouse_wheel(
             core.WheelEvent(
                 pos=core.Point(*glfw.get_cursor_pos(self.window)),
-                x_offset=x_offset,
-                y_offset=y_offset,
+                x_offset=-x_offset * 20,
+                y_offset=-y_offset * 20,
             )
         )
 

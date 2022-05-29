@@ -40,8 +40,14 @@ class Frame:
         )
 
     def on_mouse_wheel(self, handler: Callable[[core.WheelEvent], None]) -> None:
-        # TODO
-        ...
+        self._add_mouse_wheel = lambda: document.body.addEventListener(
+            "wheel",
+            create_proxy(
+                lambda ev: handler(
+                    core.WheelEvent(core.Point(ev.x, ev.y), ev.deltaX, ev.deltaY)
+                )
+            ),
+        )
 
     def on_cursor_pos(self, handler: Callable[[core.MouseEvent], None]) -> None:
         self._add_cursor_pos = lambda: document.body.addEventListener(
@@ -165,6 +171,7 @@ class Frame:
 
         self._add_mouse_down()
         self._add_mouse_up()
+        self._add_mouse_wheel()
         self._add_cursor_pos()
         self._add_input_char()
         self._add_input_key()

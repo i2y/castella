@@ -1838,7 +1838,7 @@ class Column(Layout):
             )
 
     def mouse_wheel(self, ev: WheelEvent) -> None:
-        self.scroll_y(-int(ev.y_offset) * 20)
+        self.scroll_y(int(ev.y_offset))
 
     def has_scrollbar(self) -> bool:
         return self._scroll_box is not None
@@ -2072,7 +2072,7 @@ class Row(Layout):
             )
 
     def mouse_wheel(self, ev: WheelEvent) -> None:
-        self.scroll_x(-int(ev.x_offset) * 20)
+        self.scroll_x(int(ev.x_offset))
 
     def has_scrollbar(self) -> bool:
         return self._scroll_box is not None
@@ -2342,9 +2342,9 @@ class Box(Layout):
     def mouse_wheel(self, ev: WheelEvent) -> None:
         w, h = self.content_size()
         if ev.x_offset != 0:
-            self.scroll_x(w, -int(ev.x_offset) * 20)
+            self.scroll_x(w, int(ev.x_offset))
         if ev.y_offset != 0:
-            self.scroll_y(h, -int(ev.y_offset) * 20)
+            self.scroll_y(h, int(ev.y_offset))
 
     def has_scrollbar(self) -> bool:
         return self._scroll_box_x is not None or self._scroll_box_y is not None
