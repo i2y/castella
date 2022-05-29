@@ -6,7 +6,6 @@ from cattt.core import (
     Component,
     Image,
     Input,
-    Kind,
     NetImage,
     Row,
     SizePolicy,
