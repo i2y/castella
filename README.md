@@ -61,6 +61,8 @@ Currently, Cattt theoretically should support not-too-old versions of the follow
 - Web browsers
 
 Unfortunately, however, I could not actually confirm this at all on Linux, as I don't have a Linux machine these days. I want it..
+Also, currently I have a only windows machine and it had already been updated to Windows 11, so I now confirm only it on Windows 11.
+So, If anyone have an environment other than Windows 11, it would be helpful if you could try it and report back to me if you have any problems. If you find any problems, it would be more helpul if you could fix it.
 
 ## License
 MIT License
