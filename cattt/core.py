@@ -452,7 +452,9 @@ class Widget(ABC):
             return None, None
 
     def dispatch_to_scrollable(
-        self, p: Point
+        self,
+        p: Point,
+        is_direction_x: bool,
     ) -> tuple[Optional["Widget"], Point | None]:
         return None, None
 
@@ -1639,25 +1641,27 @@ class Layout(Widget, ABC):
         else:
             return None, None
 
-    def dispatch_to_scrollable(self, p: Point) -> tuple[Widget | None, Point | None]:
+    def dispatch_to_scrollable(
+        self, p: Point, is_direction_x: bool
+    ) -> tuple[Widget | None, Point | None]:
         if self.contain_in_content_area(p):
             p = self._adjust_pos(p)
             for c in self._children:
-                target, adjusted_p = c.dispatch_to_scrollable(p)
+                target, adjusted_p = c.dispatch_to_scrollable(p, is_direction_x)
                 if target is not None:
                     return target, adjusted_p
 
-            if self.has_scrollbar():
+            if self.has_scrollbar(is_direction_x):
                 return self, p
             else:
                 return None, None
-        elif self.contain(p) and self.has_scrollbar():
+        elif self.contain(p) and self.has_scrollbar(is_direction_x):
             return self, p
         else:
             return None, None
 
     @abstractmethod
-    def has_scrollbar(self) -> bool:
+    def has_scrollbar(self, is_direction_x: bool) -> bool:
         ...
 
     def _adjust_pos(self, p: Point) -> Point:
@@ -1840,8 +1844,8 @@ class Column(Layout):
     def mouse_wheel(self, ev: WheelEvent) -> None:
         self.scroll_y(int(ev.y_offset))
 
-    def has_scrollbar(self) -> bool:
-        return self._scroll_box is not None
+    def has_scrollbar(self, is_direction_x: bool) -> bool:
+        return (not is_direction_x) and self._scroll_box is not None
 
     def scroll_y(self, y: int):  # -> Self:
         if y > 0:
@@ -2074,8 +2078,8 @@ class Row(Layout):
     def mouse_wheel(self, ev: WheelEvent) -> None:
         self.scroll_x(int(ev.x_offset))
 
-    def has_scrollbar(self) -> bool:
-        return self._scroll_box is not None
+    def has_scrollbar(self, is_direction_x: bool) -> bool:
+        return is_direction_x and self._scroll_box is not None
 
     def scroll_x(self, x: int):  # -> Self:
         if x > 0:
@@ -2346,8 +2350,11 @@ class Box(Layout):
         if ev.y_offset != 0:
             self.scroll_y(h, int(ev.y_offset))
 
-    def has_scrollbar(self) -> bool:
-        return self._scroll_box_x is not None or self._scroll_box_y is not None
+    def has_scrollbar(self, is_direction_x: bool) -> bool:
+        if is_direction_x:
+            return self._scroll_box_x is not None
+        else:
+            return self._scroll_box_y is not None
 
     def scroll_x(self, w: float, x: int):  # -> Self:
         if x > 0:
@@ -2505,7 +2512,7 @@ class Component(Layout, ABC):
         child = self._children[0]
         child.move(self.get_pos())
 
-    def has_scrollbar(self) -> bool:
+    def has_scrollbar(self, is_direction_x: bool) -> bool:
         return False
 
     @abstractmethod
@@ -2614,7 +2621,9 @@ class App:
             self._downed = None
 
     def mouse_wheel(self, ev: WheelEvent) -> None:
-        target, _ = self.peek_layer()[0].dispatch_to_scrollable(ev.pos)
+        target, _ = self.peek_layer()[0].dispatch_to_scrollable(
+            ev.pos, abs(ev.x_offset) > abs(ev.y_offset)
+        )
         if target is not None:
             target.mouse_wheel(ev)
 
