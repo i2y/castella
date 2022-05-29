@@ -63,6 +63,10 @@ class Frame:
     def on_mouse_up(self, handler: Callable[[core.MouseEvent], None]) -> None:
         self._callback_on_mouse_up = handler
 
+    def on_mouse_wheel(self, handler: Callable[[core.WheelEvent], None]) -> None:
+        # TODO
+        ...
+
     def on_cursor_pos(self, handler: Callable[[core.MouseEvent], None]) -> None:
         self._callback_on_cursor_pos = handler
 

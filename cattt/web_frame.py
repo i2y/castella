@@ -32,6 +32,10 @@ class Frame:
             'mouseup',
             create_proxy(lambda ev: handler(core.MouseEvent(core.Point(ev.x, ev.y)))))
 
+    def on_mouse_wheel(self, handler: Callable[[core.WheelEvent], None]) -> None:
+        # TODO
+        ...
+
     def on_cursor_pos(self, handler: Callable[[core.MouseEvent], None]) -> None:
         self._add_cursor_pos = lambda: document.body.addEventListener(
             'mousemove',

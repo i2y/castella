@@ -27,6 +27,7 @@ class Frame:
         self.window = window
         GL.glClear(GL.GL_COLOR_BUFFER_BIT)
         glfw.set_mouse_button_callback(window, self.mouse_button)
+        glfw.set_scroll_callback(window, self.mouse_wheel)
         glfw.set_cursor_pos_callback(window, self.cursor_pos)
         glfw.set_char_callback(window, self.input_char)
         glfw.set_key_callback(window, self.input_key)
@@ -72,6 +73,15 @@ class Frame:
     def on_mouse_up(self, handler: Callable[[core.MouseEvent], None]) -> None:
         self._callback_on_mouse_up = handler
 
+    def mouse_wheel(self, window, x_offset: float, y_offset: float):
+        self._callback_on_mouse_wheel(
+            core.WheelEvent(pos=core.Point(*glfw.get_cursor_pos(self.window)),
+                            x_offset=x_offset,
+                            y_offset=y_offset))
+
+    def on_mouse_wheel(self, handler: Callable[[core.WheelEvent], None]) -> None:
+        self._callback_on_mouse_wheel = handler
+
     def cursor_pos(self, window, x: float, y: float) -> None:
         self._callback_on_cursor_pos(core.MouseEvent(core.Point(x, y)))
 
@@ -86,9 +96,9 @@ class Frame:
 
     def input_key(self, window, key: int, scancode: int, action: int, mods: int) -> None:
         self._callback_on_input_key(core.InputKeyEvent(convert_to_key_code(key),
-                                                      scancode,
-                                                      convert_to_key_action(action),
-                                                      mods))
+                                                       scancode,
+                                                       convert_to_key_action(action),
+                                                       mods))
 
     def on_input_key(self, handler: Callable[[core.InputKeyEvent], None]) -> None:
         self._callback_on_input_key = handler

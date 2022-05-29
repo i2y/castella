@@ -281,7 +281,14 @@ class MouseEvent(Generic[W]):
         return MouseEvent(self.pos - p, self.target)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
+class WheelEvent:
+    pos: Point
+    x_offset: float
+    y_offset: float
+
+
+@dataclass(slots=True, frozen=True)
 class InputCharEvent:
     char: str
 
@@ -320,6 +327,9 @@ class Frame(Protocol):
         ...
 
     def on_mouse_up(self, handler: Callable[[MouseEvent], None]) -> None:
+        ...
+
+    def on_mouse_wheel(self, handler: Callable[[WheelEvent], None]) -> None:
         ...
 
     def on_cursor_pos(self, handler: Callable[[MouseEvent], None]) -> None:
@@ -426,14 +436,18 @@ class Widget(ABC):
         self._enable_to_detach = True
         self._parent = None
 
-
-    def contain(self, p: Point) -> tuple[Optional["Widget"], Point|None]:
-        if (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
-            p.y > self._pos.y and p.y < self._pos.y + self._size.height
-        ):
+    def dispatch(self, p: Point) -> tuple[Optional["Widget"], Point|None]:
+        if self.contain(p):
             return self, p
         else:
             return None, None
+
+    def dispatch_to_scrollable(self, p: Point) -> tuple[Optional["Widget"], Point|None]:
+        return None, None
+
+    def contain(self, p: Point) -> bool:
+        return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
+                p.y > self._pos.y and p.y < self._pos.y + self._size.height)
 
     def on_attach(self, o: Observable) -> None:
         self._observable.append(o)
@@ -466,6 +480,9 @@ class Widget(ABC):
         pass
 
     def mouse_out(self) -> None:
+        pass
+
+    def mouse_wheel(self, ev: WheelEvent) -> None:
         pass
 
     def input_char(self, ev: InputCharEvent) -> None:
@@ -1068,12 +1085,6 @@ class Text(Widget):
         if font_size is not None:
             self._text_style = replace_font_size(self._text_style, font_size, FontSizePolicy.FIXED)
 
-    def mouse_down(self, ev: MouseEvent) -> None:
-        pass
-
-    def mouse_up(self, ev: MouseEvent) -> None:
-        pass
-
     def redraw(self, p: Painter, _: bool) -> None:
         state: State = cast(State, self._state)
         p.style(self._rect_style)
@@ -1541,18 +1552,39 @@ class Layout(Widget, ABC):
         self._children.remove(w)
         w.delete_parent(self)
 
-    def contain(self, p: Point) -> tuple[Widget|None, Point|None]:
+    def dispatch(self, p: Point) -> tuple[Widget|None, Point|None]:
         if self.contain_in_content_area(p):
             p = self._adjust_pos(p)
             for c in self._children:
-                target, adjusted_p = c.contain(p)
+                target, adjusted_p = c.dispatch(p)
                 if target is not None:
                     return target, adjusted_p
             return self, p
-        elif self.contain_in_my_area(p):
+        elif self.contain(p):
             return self, p
         else:
             return None, None
+
+    def dispatch_to_scrollable(self, p: Point) -> tuple[Widget|None, Point|None]:
+        if self.contain_in_content_area(p):
+            p = self._adjust_pos(p)
+            for c in self._children:
+                target, adjusted_p = c.dispatch_to_scrollable(p)
+                if target is not None:
+                    return target, adjusted_p
+
+            if self.has_scrollbar():
+                return self, p
+            else:
+                return None, None
+        elif self.contain(p) and self.has_scrollbar():
+            return self, p
+        else:
+            return None, None
+
+    @abstractmethod
+    def has_scrollbar(self) -> bool:
+        ...
 
     def _adjust_pos(self, p: Point) -> Point:
         return p + Point(0, 0)
@@ -1561,24 +1593,15 @@ class Layout(Widget, ABC):
         return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
                 p.y > self._pos.y and p.y < self._pos.y + self._size.height)
 
-    def contain_in_my_area(self, p: Point) -> bool:
-        return False
-
-    def mouse_down(self, _: MouseEvent) -> None:
-        pass
-
-    def mouse_up(self, _: MouseEvent) -> None:
-        pass
-
     def redraw(self, p: Painter, completely: bool) -> None:
         p.style(self._style)
         if completely or self.is_dirty():
             p.fill_rect(Rect(origin=Point(0, 0), size=self.get_size()))
-        self._relocattte_children(p)
+        self._relocate_children(p)
         self._redraw_children(p, completely)
 
     @abstractmethod
-    def _relocattte_children(self, p: Painter) -> None:
+    def _relocate_children(self, p: Painter) -> None:
         ...
 
     def _redraw_children(self, p: Painter, completely: bool) -> None:
@@ -1586,7 +1609,7 @@ class Layout(Widget, ABC):
             if completely or c.is_dirty():
                 p.save()
                 p.translate((c.get_pos() - self.get_pos()))
-                p.clip(Rect(Point(0, 0), c.get_size())) # TODO orig self.get_size()))
+                p.clip(Rect(Point(0, 0), c.get_size()))
                 c.redraw(p, completely)
                 p.restore()
                 c.dirty(False)
@@ -1680,7 +1703,7 @@ class Column(Layout):
 
         orig_width = self.get_width()
         self._size.width -= scroll_bar_width
-        self._relocattte_children(p)
+        self._relocate_children(p)
         self._redraw_children(p, completely)
         self._size.width = orig_width
         p.restore()
@@ -1715,6 +1738,12 @@ class Column(Layout):
         self._last_drag_pos = ev.pos
         if self._under_dragging and last_drag_pos is not None:
             self.scroll_y(int((ev.pos.y - last_drag_pos.y)*(self.content_height()/self.get_height())))
+
+    def mouse_wheel(self, ev: WheelEvent) -> None:
+        self.scroll_y(-int(ev.y_offset) * 20)
+
+    def has_scrollbar(self) -> bool:
+        return self._scroll_box is not None
 
     def scroll_y(self, y: int): # -> Self:
         if y > 0:
@@ -1762,7 +1791,7 @@ class Column(Layout):
         return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
                 p.y > self._pos.y and p.y < self._pos.y + self._size.height)
 
-    def _relocattte_children(self, p: Painter) -> None:
+    def _relocate_children(self, p: Painter) -> None:
         self._resize_children(p)
         self._move_children()
 
@@ -1877,7 +1906,7 @@ class Row(Layout):
 
         orig_height = self.get_height()
         self._size.height -= scroll_bar_height
-        self._relocattte_children(p)
+        self._relocate_children(p)
         self._redraw_children(p, completely)
         self._size.height = orig_height
         p.restore()
@@ -1909,6 +1938,12 @@ class Row(Layout):
         self._last_drag_pos = ev.pos
         if self._under_dragging and last_drag_pos is not None:
             self.scroll_x(int((ev.pos.x - last_drag_pos.x)*(self.content_width()/self.get_width())))
+
+    def mouse_wheel(self, ev: WheelEvent) -> None:
+        self.scroll_x(-int(ev.x_offset) * 20)
+
+    def has_scrollbar(self) -> bool:
+        return self._scroll_box is not None
 
     def scroll_x(self, x: int): # -> Self:
         if x > 0:
@@ -1959,7 +1994,7 @@ class Row(Layout):
         return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
                 p.y > self._pos.y and p.y < self._pos.y + self._size.height)
 
-    def _relocattte_children(self, p: Painter) -> None:
+    def _relocate_children(self, p: Painter) -> None:
         self._resize_children(p)
         self._move_children()
 
@@ -2058,7 +2093,7 @@ class Box(Layout):
         p.translate(Point(-self._scroll_x, -self._scroll_y))
         self._size.height -= x_scroll_bar_height
         self._size.width -= y_scroll_bar_width
-        self._relocattte_children(p)
+        self._relocate_children(p)
         self._redraw_children(p, completely)
         self._size.height = orig_height
         self._size.width = orig_width
@@ -2116,6 +2151,16 @@ class Box(Layout):
             self.scroll_x(w, int((ev.pos.x - last_drag_pos.x)*(w/self.get_width())))
         elif self._under_dragging_y:
             self.scroll_y(h, int((ev.pos.y - last_drag_pos.y)*(h/self.get_height())))
+
+    def mouse_wheel(self, ev: WheelEvent) -> None:
+        w, h = self.content_size()
+        if ev.x_offset != 0:
+            self.scroll_x(w, -int(ev.x_offset) * 20)
+        if ev.y_offset != 0:
+            self.scroll_y(h, -int(ev.y_offset) * 20)
+
+    def has_scrollbar(self) -> bool:
+        return self._scroll_box_x is not None or self._scroll_box_y is not None
 
     def scroll_x(self, w: float, x: int): # -> Self:
         if x > 0:
@@ -2187,7 +2232,7 @@ class Box(Layout):
         return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
                 p.y > self._pos.y and p.y < self._pos.y + self._size.height)
 
-    def _relocattte_children(self, p: Painter) -> None:
+    def _relocate_children(self, p: Painter) -> None:
         self._resize_children(p)
         self._move_children()
 
@@ -2241,7 +2286,7 @@ class Component(Layout, ABC):
         )
         self._child = None
 
-    def _relocattte_children(self, p: Painter) -> None:
+    def _relocate_children(self, p: Painter) -> None:
         self._resize_children(p)
         self._move_children()
 
@@ -2255,6 +2300,9 @@ class Component(Layout, ABC):
     def _move_children(self):
         child = self._children[0]
         child.move(self.get_pos())
+
+    def has_scrollbar(self) -> bool:
+        return False
 
     @abstractmethod
     def view(self) -> Widget:
@@ -2329,7 +2377,7 @@ class App:
         return self._layers[-1], self._layerPositions[-1]
 
     def mouse_down(self, ev: MouseEvent) -> None:
-        target, p = self.peek_layer()[0].contain(ev.pos)
+        target, p = self.peek_layer()[0].dispatch(ev.pos)
         if target is not None and p is not None:
             ev.target = target
             self._prev_abs_pos = ev.pos
@@ -2361,9 +2409,14 @@ class App:
         finally:
             self._downed = None
 
+    def mouse_wheel(self, ev: WheelEvent) -> None:
+        target, _ = self.peek_layer()[0].dispatch_to_scrollable(ev.pos)
+        if target is not None:
+            target.mouse_wheel(ev)
+
     def cursor_pos(self, ev: MouseEvent) -> None:
         layer = self.peek_layer()[0]
-        target, p = layer.contain(ev.pos)
+        target, p = layer.dispatch(ev.pos)
         if target is None:
             return
         elif self._downed is None:
@@ -2378,7 +2431,7 @@ class App:
                 self._mouse_overed_layer = layer
                 target.mouse_over()
             return
-        elif (target is self._downed or self._downed.contain(ev.pos)[0] is not None) and p is not None:
+        elif (target is self._downed or self._downed.dispatch(ev.pos)[0] is not None) and p is not None:
             diff = ev.pos - self._prev_abs_pos
             self._prev_abs_pos = ev.pos
             ev.pos =  self._prev_rel_pos + diff
@@ -2401,7 +2454,7 @@ class App:
         for i in range(len(self._layers)):
             l = self._layers[i]
             pos = self._layerPositions[i]
-            self._relocattte_layout(l, pos)
+            self._relocate_layout(l, pos)
             if completely or l.is_dirty():
                 p.save()
                 p.translate(l.get_pos())
@@ -2411,7 +2464,7 @@ class App:
                 l.dirty(False)
         p.flush()
 
-    def _relocattte_layout(self, w: Widget, p: PositionPolicy) -> None:
+    def _relocate_layout(self, w: Widget, p: PositionPolicy) -> None:
         if w is None:
             return
 
@@ -2446,6 +2499,7 @@ class App:
     def run(self) -> None:
         self._frame.on_mouse_down(self.mouse_down)
         self._frame.on_mouse_up(self.mouse_up)
+        self._frame.on_mouse_wheel(self.mouse_wheel)
         self._frame.on_cursor_pos(self.cursor_pos)
         self._frame.on_input_char(self.input_char)
         self._frame.on_input_key(self.input_key)
