@@ -1,3 +1,4 @@
+import platform
 import threading
 from queue import SimpleQueue
 from typing import Callable, cast
@@ -17,6 +18,8 @@ class Frame:
 
         glfw.window_hint(glfw.STENCIL_BITS, 8)
         glfw.window_hint(glfw.DOUBLEBUFFER, glfw.FALSE)
+        if platform.system() == "Darwin":
+            glfw.window_hint(glfw.COCOA_RETINA_FRAMEBUFFER, glfw.FALSE)
         window = glfw.create_window(width, height, title, None, None)
 
         if not window:
@@ -40,6 +43,7 @@ class Frame:
 
     def _update_surface_and_painter(self) -> None:
         (fb_width, fb_height) = glfw.get_framebuffer_size(self.window)
+        # GL.glViewport(0, 0, int(fb_width), int(fb_height))
         backend_render_target = skia.GrBackendRenderTarget(
             fb_width,
             fb_height,
@@ -110,9 +114,9 @@ class Frame:
         self._callback_on_input_key = handler
 
     def on_redraw(self, handler: Callable[[core.Painter, bool], None]) -> None:
-        glfw.set_window_size_callback(
-            self.window, lambda window, w, h: self._on_redraw(window, w, h, handler)
-        )
+        callback = lambda window, w, h: self._on_redraw(window, w, h, handler)
+        self._on_load = callback
+        glfw.set_window_size_callback(self.window, callback)
 
     def _on_redraw(
         self, window, w, h, handler: Callable[[core.Painter, bool], None]
@@ -167,8 +171,13 @@ class Frame:
             raise RuntimeError("run method must be called from main thread")
 
         try:
+            on_load = True
             while not glfw.window_should_close(self.window):
                 glfw.wait_events()
+                if on_load:
+                    size = self._size
+                    self._on_load(self.window, size.width, size.height)
+                    on_load = False
                 if not self._update_event_queue.empty():
                     self._post_update(self._update_event_queue.get_nowait())
         finally:
