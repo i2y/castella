@@ -27,7 +27,7 @@ class Counter(Component):
 App(
     Frame("Counter", width=1200, height=600),
     Column(
-        Row(Counter(0),Counter(0)).spacing(10),
+        Row(Counter(0), Counter(0)).spacing(10),
         Row(Counter(100).flex(1)).spacing(10),
     ).spacing(20),
 ).run()

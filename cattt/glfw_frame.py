@@ -75,9 +75,12 @@ class Frame:
 
     def mouse_wheel(self, window, x_offset: float, y_offset: float):
         self._callback_on_mouse_wheel(
-            core.WheelEvent(pos=core.Point(*glfw.get_cursor_pos(self.window)),
-                            x_offset=x_offset,
-                            y_offset=y_offset))
+            core.WheelEvent(
+                pos=core.Point(*glfw.get_cursor_pos(self.window)),
+                x_offset=x_offset,
+                y_offset=y_offset,
+            )
+        )
 
     def on_mouse_wheel(self, handler: Callable[[core.WheelEvent], None]) -> None:
         self._callback_on_mouse_wheel = handler
@@ -94,11 +97,14 @@ class Frame:
     def on_input_char(self, handler: Callable[[core.InputCharEvent], None]) -> None:
         self._callback_on_input_char = handler
 
-    def input_key(self, window, key: int, scancode: int, action: int, mods: int) -> None:
-        self._callback_on_input_key(core.InputKeyEvent(convert_to_key_code(key),
-                                                       scancode,
-                                                       convert_to_key_action(action),
-                                                       mods))
+    def input_key(
+        self, window, key: int, scancode: int, action: int, mods: int
+    ) -> None:
+        self._callback_on_input_key(
+            core.InputKeyEvent(
+                convert_to_key_code(key), scancode, convert_to_key_action(action), mods
+            )
+        )
 
     def on_input_key(self, handler: Callable[[core.InputKeyEvent], None]) -> None:
         self._callback_on_input_key = handler
@@ -108,7 +114,9 @@ class Frame:
             self.window, lambda window, w, h: self._on_redraw(window, w, h, handler)
         )
 
-    def _on_redraw(self, window, w, h, handler: Callable[[core.Painter, bool], None]) -> None:
+    def _on_redraw(
+        self, window, w, h, handler: Callable[[core.Painter, bool], None]
+    ) -> None:
         self._size = core.Size(w, h)
         self._update_surface_and_painter()
         handler(self.painter, True)

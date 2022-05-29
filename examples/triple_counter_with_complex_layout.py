@@ -30,7 +30,9 @@ App(
         Row(
             Counter(0).fixed_width(300),
             Counter(0),
-        ).flex(3).spacing(10),
+        )
+        .flex(3)
+        .spacing(10),
         Row(Counter(100).flex(1)).spacing(10),
     ).spacing(20),
 ).run()

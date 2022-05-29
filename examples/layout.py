@@ -9,11 +9,11 @@ App(
         Row(
             Button("Button 2").flex(2),
             Column(Button("Button 3"), Button("Button 4")),
-        )
-        .fixed_height(200),
+        ).fixed_height(200),
     ),
 ).push_layer(
-    Column(Button("Button X").on_click(lambda ev: App.get().pop_layer()))
-    .fixed_size(300, 300),
+    Column(Button("Button X").on_click(lambda ev: App.get().pop_layer())).fixed_size(
+        300, 300
+    ),
     PositionPolicy.CENTER,
 ).run()

@@ -3,10 +3,22 @@ import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
 from enum import Enum, IntEnum, auto
-from typing import (Any, Callable, Generator, Generic, List, Optional,
-                    Protocol, TypeVar, Union, cast, runtime_checkable)
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Generic,
+    List,
+    Optional,
+    Protocol,
+    TypeVar,
+    Union,
+    cast,
+    runtime_checkable,
+)
 
 import numpy as np
+
 if "pyodide" in sys.modules:
     import color
 else:
@@ -43,10 +55,10 @@ class Rect:
     size: Size
 
     def contain(self, p: Point) -> bool:
-        return ((p.x >= self.origin.x and
-                 p.x <= self.origin.x + self.size.width) and
-                (p.y >= self.origin.y and
-                 p.y <= self.origin.y + self.size.height))
+        return (p.x >= self.origin.x and p.x <= self.origin.x + self.size.width) and (
+            p.y >= self.origin.y and p.y <= self.origin.y + self.size.height
+        )
+
 
 @dataclass(slots=True, frozen=True)
 class Circle:
@@ -55,7 +67,7 @@ class Circle:
 
     def contain(self, p: Point) -> bool:
         c = self.center
-        return  ((p.x-c.x)**2 + (p.y-c.y)**2) < self.radius**2
+        return ((p.x - c.x) ** 2 + (p.y - c.y) ** 2) < self.radius**2
 
 
 class SizePolicy(Enum):
@@ -140,7 +152,7 @@ class Style:
     stroke: StrokeStyle = StrokeStyle()
     line: LineStyle = LineStyle()
     font: Font = Font()
-    padding: int = 8 # currently this value has the meaning only for Text and Button
+    padding: int = 8  # currently this value has the meaning only for Text and Button
 
 
 @dataclass(slots=True, frozen=True)
@@ -206,14 +218,10 @@ class Painter(Protocol):
     def clip(self, rect: Rect) -> None:
         ...
 
-    def fill_text(
-        self, text: str, pos: Point, max_width: Optional[float]
-    ) -> None:
+    def fill_text(self, text: str, pos: Point, max_width: Optional[float]) -> None:
         ...
 
-    def stroke_text(
-        self, text: str, pos: Point, max_width: Optional[float]
-    ) -> None:
+    def stroke_text(self, text: str, pos: Point, max_width: Optional[float]) -> None:
         ...
 
     def measure_text(self, text: str) -> float:
@@ -226,16 +234,16 @@ class Painter(Protocol):
     def draw_paragraph(self, paragraph: Paragraph, pos: Point) -> None:
         ...
 
-    def draw_image(self, file_path: str, rect: Rect, use_cache: bool=True) -> None:
+    def draw_image(self, file_path: str, rect: Rect, use_cache: bool = True) -> None:
         ...
 
-    def measure_image(self, file_path: str, use_cache: bool=True) -> Size:
+    def measure_image(self, file_path: str, use_cache: bool = True) -> Size:
         ...
 
-    def draw_net_image(self, url: str, rect: Rect, use_cache: bool=True) -> None:
+    def draw_net_image(self, url: str, rect: Rect, use_cache: bool = True) -> None:
         ...
 
-    def measure_net_image(self, url: str, use_cache: bool=True) -> Size:
+    def measure_net_image(self, url: str, use_cache: bool = True) -> Size:
         ...
 
     def measure_np_array_as_an_image(self, array: np.ndarray) -> Size:
@@ -320,7 +328,7 @@ class InputKeyEvent:
 
 
 class Frame(Protocol):
-    def __init__(self, title: str, width: float=0, height: float = 0) -> None:
+    def __init__(self, title: str, width: float = 0, height: float = 0) -> None:
         ...
 
     def on_mouse_down(self, handler: Callable[[MouseEvent], None]) -> None:
@@ -404,13 +412,14 @@ class ObservableBase(ABC):
 
 V = TypeVar("V")
 
+
 @runtime_checkable
 class SimpleValue(Observable, Protocol[V]):
-   def set(self, value: V):
-       ...
+    def set(self, value: V):
+        ...
 
-   def value(self) -> V:
-       ...
+    def value(self) -> V:
+        ...
 
 
 class Widget(ABC):
@@ -436,18 +445,21 @@ class Widget(ABC):
         self._enable_to_detach = True
         self._parent = None
 
-    def dispatch(self, p: Point) -> tuple[Optional["Widget"], Point|None]:
+    def dispatch(self, p: Point) -> tuple[Optional["Widget"], Point | None]:
         if self.contain(p):
             return self, p
         else:
             return None, None
 
-    def dispatch_to_scrollable(self, p: Point) -> tuple[Optional["Widget"], Point|None]:
+    def dispatch_to_scrollable(
+        self, p: Point
+    ) -> tuple[Optional["Widget"], Point | None]:
         return None, None
 
     def contain(self, p: Point) -> bool:
         return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
-                p.y > self._pos.y and p.y < self._pos.y + self._size.height)
+            p.y > self._pos.y and p.y < self._pos.y + self._size.height
+        )
 
     def on_attach(self, o: Observable) -> None:
         self._observable.append(o)
@@ -507,31 +519,31 @@ class Widget(ABC):
     def dirty(self, flag: bool) -> None:
         self._dirty = flag
 
-    def move(self, p: Point): # -> Self:
+    def move(self, p: Point):  # -> Self:
         if p != self._pos:
             self._pos = p
             self._dirty = True
         return self
 
-    def move_x(self, x: float): # -> Self:
+    def move_x(self, x: float):  # -> Self:
         if x != self._pos.x:
             self._pos.x = x
             self._dirty = True
         return self
 
-    def move_y(self, y: float): # -> Self:
+    def move_y(self, y: float):  # -> Self:
         if y != self._pos.y:
             self._pos.y = y
             self._dirty = True
         return self
 
-    def resize(self, s: Size): # -> Self:
+    def resize(self, s: Size):  # -> Self:
         if s != self._size:
             self._size = s
             self._dirty = True
         return self
 
-    def width(self, w: float): # -> Self:
+    def width(self, w: float):  # -> Self:
         if w != self._size.width:
             self._dirty = True
             self._size.width = w
@@ -540,7 +552,7 @@ class Widget(ABC):
     def get_width(self) -> float:
         return self._size.width
 
-    def height(self, h: float): # -> Self:
+    def height(self, h: float):  # -> Self:
         if h != self._size.height:
             self._size.height = h
             self._dirty = True
@@ -552,7 +564,7 @@ class Widget(ABC):
     def get_pos(self) -> Point:
         return self._pos
 
-    def pos(self, pos: Point): # -> Self:
+    def pos(self, pos: Point):  # -> Self:
         if pos != self._pos:
             self._pos = pos
             self._dirty = True
@@ -576,7 +588,12 @@ class Widget(ABC):
             parent = parent._parent
 
         if root is None:
-            App.get().post_update(self, completely or self.is_scrollable() or isinstance(self, StatefulComponent))
+            App.get().post_update(
+                self,
+                completely
+                or self.is_scrollable()
+                or isinstance(self, StatefulComponent),
+            )
         else:
             App.get().post_update(root, True)
 
@@ -589,14 +606,14 @@ class Widget(ABC):
     def state(self) -> Observable | None:
         return self._state
 
-    def size_policy(self, sp: SizePolicy): # -> Self:
+    def size_policy(self, sp: SizePolicy):  # -> Self:
         self._size_policy = sp
         return self
 
     def get_flex(self) -> int:
         return self._flex
 
-    def flex(self, flex: int): # -> Self:
+    def flex(self, flex: int):  # -> Self:
         self._flex = flex
         return self
 
@@ -629,7 +646,7 @@ class Widget(ABC):
     def parent(self, parent: "Widget") -> None:
         self._parent = parent
 
-    def get_parent(self): # -> Self:
+    def get_parent(self):  # -> Self:
         return self._parent
 
     def delete_parent(self, parent: "Widget") -> None:
@@ -640,16 +657,16 @@ class Widget(ABC):
         if self._parent is not None:
             App.get().post_update(self._parent, completely)
 
-    def fixed_height(self, height: float): # -> Self:
+    def fixed_height(self, height: float):  # -> Self:
         return self.size_policy(SizePolicy.FIXED_HEIGHT).height(height)
 
-    def fixed_width(self, width: float): # -> Self:
+    def fixed_width(self, width: float):  # -> Self:
         return self.size_policy(SizePolicy.FIXED_WIDTH).width(width)
 
-    def fixed_size(self, width: float, height: float): # -> Self:
+    def fixed_size(self, width: float, height: float):  # -> Self:
         return self.size_policy(SizePolicy.FIXED).resize(Size(width, height))
 
-    def fit(self): # -> Self:
+    def fit(self):  # -> Self:
         return self.size_policy(SizePolicy.EXPANDING)
 
 
@@ -674,7 +691,7 @@ class State(ObservableBase, Generic[T]):
     def __str__(self) -> str:
         return str(self._value)
 
-    def __iadd__(self, value): # -> Self:
+    def __iadd__(self, value):  # -> Self:
         self._value += value
         self.notify()
         return self
@@ -682,17 +699,17 @@ class State(ObservableBase, Generic[T]):
     def __add__(self, value) -> T:
         return self._value + value
 
-    def __isub__(self, value): # -> Self:
+    def __isub__(self, value):  # -> Self:
         self._value -= value
         self.notify()
         return self
 
-    def __imul__(self, value): # -> Self:
+    def __imul__(self, value):  # -> Self:
         self._value *= value
         self.notify()
         return self
 
-    def __itruediv__(self, value): # -> Self:
+    def __itruediv__(self, value):  # -> Self:
         self._value /= value
         self.notify()
         return self
@@ -706,7 +723,7 @@ class ListState(list, ObservableBase, Generic[T]):
         super().__init__(items)
         ObservableBase.__init__(self)
 
-    def __add__(self, rhs: Iterable[T]): # -> Self:
+    def __add__(self, rhs: Iterable[T]):  # -> Self:
         return ListState(super().__add__(list(rhs)))
 
     def __delattr__(self, name: str) -> None:
@@ -717,33 +734,33 @@ class ListState(list, ObservableBase, Generic[T]):
         super().__setattr__(name, value)
         self.notify()
 
-    def __iadd__(self, rhs: Iterable[T]): # -> Self:
+    def __iadd__(self, rhs: Iterable[T]):  # -> Self:
         super().__iadd__(rhs)
         self.notify()
         return self
 
-    def __imul__(self, rhs: int): # -> Self:
+    def __imul__(self, rhs: int):  # -> Self:
         super().__imul__(rhs)
         self.notify()
         return self
 
-    def __mul__(self, rhs: int): # -> Self:
+    def __mul__(self, rhs: int):  # -> Self:
         return ListState(super().__mul__(rhs))
 
-    def __rmul__(self, lhs: int): # -> Self:
+    def __rmul__(self, lhs: int):  # -> Self:
         return ListState(super().__rmul__(lhs))
 
-    def __reversed__(self): # -> Self:
+    def __reversed__(self):  # -> Self:
         super().__reversed__()
         self.notify()
         return self
 
-    def __setitem__(self, index: int, value: T): # -> Self:
+    def __setitem__(self, index: int, value: T):  # -> Self:
         super().__setitem__(index, value)
         self.notify()
         return self
 
-    def __delitem__(self, index: int): # -> Self:
+    def __delitem__(self, index: int):  # -> Self:
         super().__delitem__(index)
         self.notify()
         return self
@@ -802,7 +819,7 @@ class TextInputState(ObservableBase):
 
     def value(self) -> str:
         if self._editing:
-            return self._text[:self._caret] + "|" + self._text[self._caret:]
+            return self._text[: self._caret] + "|" + self._text[self._caret :]
         else:
             return self._text
 
@@ -825,7 +842,7 @@ class TextInputState(ObservableBase):
     def insert(self, text: str) -> None:
         if not self._editing:
             return
-        self._text = self._text[:self._caret] + text + self._text[self._caret:]
+        self._text = self._text[: self._caret] + text + self._text[self._caret :]
         self._caret += len(text)
         self.notify()
 
@@ -834,16 +851,16 @@ class TextInputState(ObservableBase):
             return
         if self._caret == 0:
             return
-        self._text = self._text[:self._caret-1] + self._text[self._caret:]
+        self._text = self._text[: self._caret - 1] + self._text[self._caret :]
         self._caret -= 1
         self.notify()
 
     def delete_next(self) -> None:
         if not self._editing:
             return
-        if len(self._text[self._caret+1:]) == 0:
+        if len(self._text[self._caret + 1 :]) == 0:
             return
-        self._text = self._text[:self._caret] + self._text[self._caret+1:]
+        self._text = self._text[: self._caret] + self._text[self._caret + 1 :]
         self.notify()
 
     def move_to_prev(self) -> None:
@@ -864,7 +881,8 @@ class TextInputState(ObservableBase):
 def _is_darkmode() -> bool:
     if "pyodide" in sys.modules:
         import js
-        return js.window.matchMedia('(prefers-color-scheme: dark)').matches
+
+        return js.window.matchMedia("(prefers-color-scheme: dark)").matches
 
     import darkdetect
 
@@ -922,24 +940,38 @@ class Theme:
     scrollbar: WidgetStyle
     scrollbox: WidgetStyle
 
-    def _get_widget_style(self,
-                          widget: str,
-                          kind: Kind = Kind.NORMAL,
-                          state: AppearanceState = AppearanceState.NORMAL) -> WidgetStyle:
+    def _get_widget_style(
+        self,
+        widget: str,
+        kind: Kind = Kind.NORMAL,
+        state: AppearanceState = AppearanceState.NORMAL,
+    ) -> WidgetStyle:
         style_name = f"{widget}{kind.value}{state.value}".format(widget, kind, state)
         if hasattr(self, style_name):
             return getattr(self, style_name)
         else:
             raise RuntimeError(f"Unknown style: {style_name}".format(style_name))
 
-    def _convert_widget_style_to_painter_styles(self, widget_style: WidgetStyle) -> tuple[Style, Style]:
-        return (Style(FillStyle(color=widget_style.bg_color),
-                      StrokeStyle(color=widget_style.border_color)),
-                Style(fill=FillStyle(color=widget_style.text_color),
-                                      font=widget_style.text_font))
+    def _convert_widget_style_to_painter_styles(
+        self, widget_style: WidgetStyle
+    ) -> tuple[Style, Style]:
+        return (
+            Style(
+                FillStyle(color=widget_style.bg_color),
+                StrokeStyle(color=widget_style.border_color),
+            ),
+            Style(
+                fill=FillStyle(color=widget_style.text_color),
+                font=widget_style.text_font,
+            ),
+        )
 
-    def get_styles(self, widget: str, kind: Kind, state: AppearanceState) -> tuple[Style, Style]:
-        return self._convert_widget_style_to_painter_styles(self._get_widget_style(widget, kind, state))
+    def get_styles(
+        self, widget: str, kind: Kind, state: AppearanceState
+    ) -> tuple[Style, Style]:
+        return self._convert_widget_style_to_painter_styles(
+            self._get_widget_style(widget, kind, state)
+        )
 
 
 def _get_theme() -> Theme:
@@ -963,37 +995,37 @@ def _get_theme() -> Theme:
             bg_color=color_schema["bg-success"],
             border_color=color_schema["border-success"],
             text_color=color_schema["text-primary"],
-            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED)
+            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED),
         ),
         text_warning=WidgetStyle(
             bg_color=color_schema["bg-warning"],
             border_color=color_schema["border-warning"],
             text_color=color_schema["text-warning"],
-            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED)
+            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED),
         ),
         text_danger=WidgetStyle(
             bg_color=color_schema["bg-danger"],
             border_color=color_schema["border-danger"],
             text_color=color_schema["text-danger"],
-            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED)
+            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED),
         ),
         button_normal=WidgetStyle(
             bg_color=color_schema["bg-tertiary"],
             border_color=color_schema["border-primary"],
             text_color=color_schema["text-primary"],
-            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED)
+            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED),
         ),
         button_normal_hover=WidgetStyle(
             bg_color=color_schema["bg-overlay"],
             border_color=color_schema["border-primary"],
             text_color=color_schema["text-primary"],
-            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED)
+            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED),
         ),
         button_normal_pushed=WidgetStyle(
             bg_color=color.COLOR_SCALE_GRAY[6 if _is_darkmode() else 2][color_mode],
             border_color=color_schema["border-secondary"],
             text_color=color_schema["text-primary"],
-            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED)
+            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED),
         ),
         switch_normal=WidgetStyle(
             bg_color=color.COLOR_SCALE_GRAY[8 if _is_darkmode() else 1][color_mode],
@@ -1017,6 +1049,7 @@ def _get_theme() -> Theme:
 
 
 _theme = None
+
 
 def get_theme() -> Theme:
     global _theme
@@ -1049,24 +1082,24 @@ class Spacer(Widget):
     def redraw(self, _: Painter, completely: bool) -> None:
         pass
 
-    def size_policy(self, sp: SizePolicy): # -> Self:
+    def size_policy(self, sp: SizePolicy):  # -> Self:
         if sp is SizePolicy.CONTENT:
             raise RuntimeError("Spacer doesn't accept SizePolicy.CONTENT")
         return super().size_policy(sp)
 
 
 def replace_font_size(style: Style, size: float, policy: FontSizePolicy) -> Style:
-    return replace(style, font=replace(style.font,
-                                       size=size,
-                                       size_policy=policy))
+    return replace(style, font=replace(style.font, size=size, size_policy=policy))
 
 
 class Text(Widget):
-    def __init__(self,
-                 text: Any,
-                 kind: Kind = Kind.NORMAL,
-                 align: TextAlign = TextAlign.CENTER,
-                 font_size: int | None = None):
+    def __init__(
+        self,
+        text: Any,
+        kind: Kind = Kind.NORMAL,
+        align: TextAlign = TextAlign.CENTER,
+        font_size: int | None = None,
+    ):
         if isinstance(text, SimpleValue):
             state = text
         else:
@@ -1081,9 +1114,13 @@ class Text(Widget):
         )
 
         self._align = align
-        self._rect_style, self._text_style = get_theme().get_styles("text", kind, AppearanceState.NORMAL)
+        self._rect_style, self._text_style = get_theme().get_styles(
+            "text", kind, AppearanceState.NORMAL
+        )
         if font_size is not None:
-            self._text_style = replace_font_size(self._text_style, font_size, FontSizePolicy.FIXED)
+            self._text_style = replace_font_size(
+                self._text_style, font_size, FontSizePolicy.FIXED
+            )
 
     def redraw(self, p: Painter, _: bool) -> None:
         state: State = cast(State, self._state)
@@ -1117,9 +1154,7 @@ class Text(Widget):
             )
         elif self._align is TextAlign.RIGHT:
             pos = Point(
-                width
-                - p.measure_text(str(state))
-                - self._rect_style.padding,
+                width - p.measure_text(str(state)) - self._rect_style.padding,
                 height / 2 + p.get_font_metrics().cap_height / 2,
             )
         else:
@@ -1134,9 +1169,14 @@ class Text(Widget):
             max_width=width,
         )
 
-    def size_policy(self, sp: SizePolicy): # -> Self:
-        if sp is SizePolicy.CONTENT and self._text_style.font.size_policy is not FontSizePolicy.FIXED:
-            raise RuntimeError("Text doesn't accept SizePolicy.CONTENT because the font size policy is not FIXED")
+    def size_policy(self, sp: SizePolicy):  # -> Self:
+        if (
+            sp is SizePolicy.CONTENT
+            and self._text_style.font.size_policy is not FontSizePolicy.FIXED
+        ):
+            raise RuntimeError(
+                "Text doesn't accept SizePolicy.CONTENT because the font size policy is not FIXED"
+            )
         return super().size_policy(sp)
 
     def measure(self, p: Painter) -> Size:
@@ -1149,7 +1189,9 @@ class Text(Widget):
 
 
 class Input(Text):
-    def __init__(self, text: str, align: TextAlign = TextAlign.LEFT, font_size: int | None = None):
+    def __init__(
+        self, text: str, align: TextAlign = TextAlign.LEFT, font_size: int | None = None
+    ):
         super().__init__(TextInputState(text), Kind.NORMAL, align, font_size)
 
     def focused(self) -> None:
@@ -1196,10 +1238,12 @@ def determine_font(
 
 
 class Button(Widget):
-    def __init__(self,
-                 text: str,
-                 align: TextAlign = TextAlign.CENTER,
-                 font_size: int | None = None):
+    def __init__(
+        self,
+        text: str,
+        align: TextAlign = TextAlign.CENTER,
+        font_size: int | None = None,
+    ):
         super().__init__(
             state=ButtonState(text),
             size=Size(0, 0),
@@ -1211,11 +1255,17 @@ class Button(Widget):
         self._align = align
         kind = Kind.NORMAL
         theme = get_theme()
-        self._style, self._text_style = theme.get_styles("button", kind, AppearanceState.NORMAL)
+        self._style, self._text_style = theme.get_styles(
+            "button", kind, AppearanceState.NORMAL
+        )
         self._kind = kind
-        self._pushed_style, self._pushed_text_style = theme.get_styles("button", kind, AppearanceState.PUSHED)
+        self._pushed_style, self._pushed_text_style = theme.get_styles(
+            "button", kind, AppearanceState.PUSHED
+        )
         if font_size is not None:
-            self._text_style = replace_font_size(self._text_style, font_size, FontSizePolicy.FIXED)
+            self._text_style = replace_font_size(
+                self._text_style, font_size, FontSizePolicy.FIXED
+            )
 
     def mouse_down(self, ev: MouseEvent) -> None:
         state: ButtonState = cast(ButtonState, self._state)
@@ -1227,14 +1277,18 @@ class Button(Widget):
         self._on_click(ev)
 
     def mouse_over(self) -> None:
-        self._style, self._text_style = get_theme().get_styles("button", self._kind, AppearanceState.HOVER)
+        self._style, self._text_style = get_theme().get_styles(
+            "button", self._kind, AppearanceState.HOVER
+        )
         self.update()
 
     def mouse_out(self) -> None:
-        self._style, self._text_style = get_theme().get_styles("button", self._kind, AppearanceState.NORMAL)
+        self._style, self._text_style = get_theme().get_styles(
+            "button", self._kind, AppearanceState.NORMAL
+        )
         self.update()
 
-    def on_click(self, callback: Callable[[MouseEvent], Any]): # -> Self:
+    def on_click(self, callback: Callable[[MouseEvent], Any]):  # -> Self:
         self._on_click = callback
         return self
 
@@ -1277,9 +1331,7 @@ class Button(Widget):
             )
         elif self._align is TextAlign.RIGHT:
             pos = Point(
-                width
-                - p.measure_text(str(state._text))
-                - self._style.padding,
+                width - p.measure_text(str(state._text)) - self._style.padding,
                 height / 2 + p.get_font_metrics().cap_height / 2,
             )
         else:
@@ -1294,16 +1346,24 @@ class Button(Widget):
             max_width=width - 2 * self._style.padding,
         )
 
-    def size_policy(self, sp: SizePolicy): # -> Self:
-        if sp is SizePolicy.CONTENT and self._text_style.font.size_policy is not FontSizePolicy.FIXED:
-            raise RuntimeError("The button doesn't accept SizePolicy.CONTENT because the font size policy is not FIXED")
+    def size_policy(self, sp: SizePolicy):  # -> Self:
+        if (
+            sp is SizePolicy.CONTENT
+            and self._text_style.font.size_policy is not FontSizePolicy.FIXED
+        ):
+            raise RuntimeError(
+                "The button doesn't accept SizePolicy.CONTENT because the font size policy is not FIXED"
+            )
         return super().size_policy(sp)
 
     def measure(self, p: Painter) -> Size:
         p.save()
         p.style(self._text_style)
         state: State = cast(State, self._state)
-        s = Size(p.measure_text(str(state)) + 2 * self._style.padding, self._text_style.font.size)
+        s = Size(
+            p.measure_text(str(state)) + 2 * self._style.padding,
+            self._text_style.font.size,
+        )
         p.restore()
         return s
 
@@ -1319,9 +1379,13 @@ class Switch(Widget):
         )
         kind = Kind.NORMAL
         theme = get_theme()
-        self._bg_style, self._fg_style = theme.get_styles("switch", kind, AppearanceState.NORMAL)
+        self._bg_style, self._fg_style = theme.get_styles(
+            "switch", kind, AppearanceState.NORMAL
+        )
         self._kind = kind
-        self._selected_bg_style, _ = theme.get_styles("switch", kind, AppearanceState.SELECTED)
+        self._selected_bg_style, _ = theme.get_styles(
+            "switch", kind, AppearanceState.SELECTED
+        )
 
     def mouse_up(self, ev: MouseEvent) -> None:
         state = cast(SimpleValue[bool], self._state)
@@ -1335,7 +1399,7 @@ class Switch(Widget):
         s = self.get_size()
         r = s.height / 2
         left_circle = Circle(center=Point(r, r), radius=r)
-        center_rect = Rect(origin=Point(r, 0), size=s - Size(r*2, 0))
+        center_rect = Rect(origin=Point(r, 0), size=s - Size(r * 2, 0))
         right_circle = Circle(center=Point(s.width - r, r), radius=r)
 
         state = cast(SimpleValue[bool], self._state)
@@ -1360,14 +1424,14 @@ class Switch(Widget):
             knob = Circle(center=Point(r, r), radius=inner_r)
         p.fill_circle(knob)
 
-    def size_policy(self, sp: SizePolicy): # -> Self:
+    def size_policy(self, sp: SizePolicy):  # -> Self:
         if sp is SizePolicy.CONTENT:
             raise RuntimeError("The switch doesn't accept SizePolicy.CONTENT")
         return super().size_policy(sp)
 
 
 class Image(Widget):
-    def __init__(self, file_path: str | SimpleValue[str], use_cache: bool=True):
+    def __init__(self, file_path: str | SimpleValue[str], use_cache: bool = True):
         if isinstance(file_path, SimpleValue):
             state = file_path
         else:
@@ -1393,7 +1457,7 @@ class Image(Widget):
 
 
 class NetImage(Widget):
-    def __init__(self, url: str | SimpleValue[str], use_cache: bool=True):
+    def __init__(self, url: str | SimpleValue[str], use_cache: bool = True):
         if isinstance(url, SimpleValue):
             state = url
         else:
@@ -1411,7 +1475,9 @@ class NetImage(Widget):
 
     def redraw(self, p: Painter, _: bool) -> None:
         state: SimpleValue[str] = cast(SimpleValue[str], self._state)
-        p.draw_net_image(state.value(), Rect(Point(0, 0), self.get_size()), self._use_cache)
+        p.draw_net_image(
+            state.value(), Rect(Point(0, 0), self.get_size()), self._use_cache
+        )
 
     def measure(self, p: Painter) -> Size:
         state: SimpleValue[str] = cast(SimpleValue[str], self._state)
@@ -1447,13 +1513,14 @@ class AsyncNetImage(Widget):
         else:
             self.ask_parent_to_render(True)
 
-    def size_policy(self, sp: SizePolicy): # -> Self:
+    def size_policy(self, sp: SizePolicy):  # -> Self:
         if sp is SizePolicy.CONTENT:
             raise RuntimeError("AsyncNetImage doesn't accept SizePolicy.CONTENT")
         return super().size_policy(sp)
 
 
 if "pyodide" in sys.modules:
+
     class NumpyImage(Widget):
         def __init__(self, array: np.ndarray | SimpleValue[np.ndarray]):
             if isinstance(array, SimpleValue):
@@ -1466,7 +1533,7 @@ if "pyodide" in sys.modules:
                 size=Size(0, 0),
                 pos=Point(0, 0),
                 pos_policy=None,
-                size_policy=SizePolicy.FIXED
+                size_policy=SizePolicy.FIXED,
             )
 
         def redraw(self, p: Painter, _: bool) -> None:
@@ -1488,7 +1555,9 @@ if "pyodide" in sys.modules:
             if sp is SizePolicy.CONTENT:
                 raise RuntimeError("NumpyImage doesn't accept SizePolicy.CONTENT")
             return super().size_policy(sp)
+
 else:
+
     class NumpyImage(Widget):
         def __init__(self, array: np.ndarray | SimpleValue[np.ndarray]):
             if isinstance(array, SimpleValue):
@@ -1506,7 +1575,9 @@ else:
 
         def redraw(self, p: Painter, _: bool) -> None:
             state: SimpleValue[np.ndarray] = cast(SimpleValue[np.ndarray], self._state)
-            p.draw_np_array_as_an_image_rect(state.value(), Rect(Point(0, 0), self.get_size()))
+            p.draw_np_array_as_an_image_rect(
+                state.value(), Rect(Point(0, 0), self.get_size())
+            )
 
         def measure(self, p: Painter) -> Size:
             state: SimpleValue[np.ndarray] = cast(SimpleValue[np.ndarray], self._state)
@@ -1536,9 +1607,12 @@ class Layout(Widget, ABC):
         yield from self._children
 
     def add(self, w: Widget) -> None:
-        if (self._size_policy is SizePolicy.CONTENT
-            and (self.is_height_expanding() or self.is_width_expanding())):
-            raise RuntimeError("Layout with CONTENT size policy cannot have an size expandable child widget")
+        if self._size_policy is SizePolicy.CONTENT and (
+            self.is_height_expanding() or self.is_width_expanding()
+        ):
+            raise RuntimeError(
+                "Layout with CONTENT size policy cannot have an size expandable child widget"
+            )
 
         self._children.append(w)
         w.parent(self)
@@ -1552,7 +1626,7 @@ class Layout(Widget, ABC):
         self._children.remove(w)
         w.delete_parent(self)
 
-    def dispatch(self, p: Point) -> tuple[Widget|None, Point|None]:
+    def dispatch(self, p: Point) -> tuple[Widget | None, Point | None]:
         if self.contain_in_content_area(p):
             p = self._adjust_pos(p)
             for c in self._children:
@@ -1565,7 +1639,7 @@ class Layout(Widget, ABC):
         else:
             return None, None
 
-    def dispatch_to_scrollable(self, p: Point) -> tuple[Widget|None, Point|None]:
+    def dispatch_to_scrollable(self, p: Point) -> tuple[Widget | None, Point | None]:
         if self.contain_in_content_area(p):
             p = self._adjust_pos(p)
             for c in self._children:
@@ -1591,7 +1665,8 @@ class Layout(Widget, ABC):
 
     def contain_in_content_area(self, p: Point) -> bool:
         return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
-                p.y > self._pos.y and p.y < self._pos.y + self._size.height)
+            p.y > self._pos.y and p.y < self._pos.y + self._size.height
+        )
 
     def redraw(self, p: Painter, completely: bool) -> None:
         p.style(self._style)
@@ -1614,9 +1689,11 @@ class Layout(Widget, ABC):
                 p.restore()
                 c.dirty(False)
 
-    def size_policy(self, sp: SizePolicy): # -> Self:
+    def size_policy(self, sp: SizePolicy):  # -> Self:
         if sp is SizePolicy.CONTENT and self.has_size_expandable_children():
-            raise RuntimeError("Layout with CONTENT size policy cannot have an size expandable child widget")
+            raise RuntimeError(
+                "Layout with CONTENT size policy cannot have an size expandable child widget"
+            )
 
         self._size_policy = sp
         return self
@@ -1635,11 +1712,13 @@ SCROLL_BAR_SIZE = 20
 class Column(Layout):
     _scrollbar_widget_style = get_theme().scrollbar
     _scrollbox_widget_style = get_theme().scrollbox
-    _scrollbar_style = Style(FillStyle(color=_scrollbar_widget_style.bg_color),
-                             StrokeStyle(color=_scrollbar_widget_style.border_color))
+    _scrollbar_style = Style(
+        FillStyle(color=_scrollbar_widget_style.bg_color),
+        StrokeStyle(color=_scrollbar_widget_style.border_color),
+    )
     _scrollbox_style = Style(FillStyle(color=_scrollbox_widget_style.bg_color))
 
-    def __init__(self, *children: Widget, scrollable: bool=False):
+    def __init__(self, *children: Widget, scrollable: bool = False):
         super().__init__(
             state=None,
             pos=Point(0, 0),
@@ -1658,7 +1737,9 @@ class Column(Layout):
 
     def add(self, w: Widget) -> None:
         if self._scrollable and w.is_height_expanding():
-            raise RuntimeError("Scrollable Column cannot have an hight expandable child widget")
+            raise RuntimeError(
+                "Scrollable Column cannot have an hight expandable child widget"
+            )
         super().add(w)
 
     def get_children(self) -> Generator[Widget, None, None]:
@@ -1671,11 +1752,9 @@ class Column(Layout):
             yield c
         yield self._spacer
 
-    def spacing(self, size: int): # -> Self:
+    def spacing(self, size: int):  # -> Self:
         self._spacing = size
-        self._spacer = (
-            Spacer().size_policy(SizePolicy.FIXED_HEIGHT).height(size)
-        )
+        self._spacer = Spacer().size_policy(SizePolicy.FIXED_HEIGHT).height(size)
         return self
 
     def redraw(self, p: Painter, completely: bool) -> None:
@@ -1710,14 +1789,28 @@ class Column(Layout):
 
         p.save()
         p.style(Column._scrollbar_style)
-        p.fill_rect(Rect(origin=Point(orig_width - scroll_bar_width, 0), size=Size(scroll_bar_width, self.get_height())))
-        p.stroke_rect(Rect(origin=Point(orig_width - scroll_bar_width, -1), size=Size(scroll_bar_width, self.get_height()+2)))
+        p.fill_rect(
+            Rect(
+                origin=Point(orig_width - scroll_bar_width, 0),
+                size=Size(scroll_bar_width, self.get_height()),
+            )
+        )
+        p.stroke_rect(
+            Rect(
+                origin=Point(orig_width - scroll_bar_width, -1),
+                size=Size(scroll_bar_width, self.get_height() + 2),
+            )
+        )
         p.style(Column._scrollbox_style)
         if content_height != 0 and self.get_height() != 0:
-            scroll_box_height = self.get_height() * self.get_height()/content_height
-            scroll_box = Rect(origin=Point(orig_width - scroll_bar_width,
-                                           (self._scroll_y/content_height)*self.get_height()),
-                              size=Size(scroll_bar_width, scroll_box_height))
+            scroll_box_height = self.get_height() * self.get_height() / content_height
+            scroll_box = Rect(
+                origin=Point(
+                    orig_width - scroll_bar_width,
+                    (self._scroll_y / content_height) * self.get_height(),
+                ),
+                size=Size(scroll_bar_width, scroll_box_height),
+            )
             self._scroll_box = scroll_box
             p.fill_rect(scroll_box)
         p.restore()
@@ -1737,7 +1830,12 @@ class Column(Layout):
         last_drag_pos = self._last_drag_pos
         self._last_drag_pos = ev.pos
         if self._under_dragging and last_drag_pos is not None:
-            self.scroll_y(int((ev.pos.y - last_drag_pos.y)*(self.content_height()/self.get_height())))
+            self.scroll_y(
+                int(
+                    (ev.pos.y - last_drag_pos.y)
+                    * (self.content_height() / self.get_height())
+                )
+            )
 
     def mouse_wheel(self, ev: WheelEvent) -> None:
         self.scroll_y(-int(ev.y_offset) * 20)
@@ -1745,7 +1843,7 @@ class Column(Layout):
     def has_scrollbar(self) -> bool:
         return self._scroll_box is not None
 
-    def scroll_y(self, y: int): # -> Self:
+    def scroll_y(self, y: int):  # -> Self:
         if y > 0:
             max_scroll_y = self.content_height() - self.get_height()
             if self._scroll_y == max_scroll_y:
@@ -1772,24 +1870,31 @@ class Column(Layout):
 
     def measure(self, p: Painter) -> Size:
         width = max((0, *map(lambda c: c.measure(p).width, self.get_children())))
-        height = functools.reduce(lambda total, child: total + child.measure(p).height, self.get_children(), 0)
+        height = functools.reduce(
+            lambda total, child: total + child.measure(p).height, self.get_children(), 0
+        )
         return Size(width, height)
 
     def content_height(self) -> float:
-        return functools.reduce(lambda total, child: total + child.get_height(), self.get_children(), 0)
+        return functools.reduce(
+            lambda total, child: total + child.get_height(), self.get_children(), 0
+        )
 
     def _adjust_pos(self, p: Point) -> Point:
         return p + Point(0, self._scroll_y)
 
     def contain_in_content_area(self, p: Point) -> bool:
         if self._scrollable and self.content_height() > self.get_height():
-            return (p.x > self._pos.x and p.x < self._pos.x + self._size.width - SCROLL_BAR_SIZE) and (
-                    p.y > self._pos.y and p.y < self._pos.y + self._size.height)
+            return (
+                p.x > self._pos.x
+                and p.x < self._pos.x + self._size.width - SCROLL_BAR_SIZE
+            ) and (p.y > self._pos.y and p.y < self._pos.y + self._size.height)
         return self.contain_in_my_area(p)
 
     def contain_in_my_area(self, p: Point) -> bool:
         return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
-                p.y > self._pos.y and p.y < self._pos.y + self._size.height)
+            p.y > self._pos.y and p.y < self._pos.y + self._size.height
+        )
 
     def _relocate_children(self, p: Painter) -> None:
         self._resize_children(p)
@@ -1813,7 +1918,11 @@ class Column(Layout):
                 remaining_children.append(c)
                 total_flex = total_flex + c.get_flex()
 
-        fraction = remaining_height % total_flex if remaining_height > 0 and total_flex > 0 else 0
+        fraction = (
+            remaining_height % total_flex
+            if remaining_height > 0 and total_flex > 0
+            else 0
+        )
         for rc in remaining_children:
             flex = rc.get_flex()
             height = (remaining_height * flex) / total_flex
@@ -1837,11 +1946,13 @@ class Column(Layout):
 class Row(Layout):
     _scrollbar_widget_style = get_theme().scrollbar
     _scrollbox_widget_style = get_theme().scrollbox
-    _scrollbar_style = Style(FillStyle(color=_scrollbar_widget_style.bg_color),
-                             StrokeStyle(color=_scrollbar_widget_style.border_color))
+    _scrollbar_style = Style(
+        FillStyle(color=_scrollbar_widget_style.bg_color),
+        StrokeStyle(color=_scrollbar_widget_style.border_color),
+    )
     _scrollbox_style = Style(FillStyle(color=_scrollbox_widget_style.bg_color))
 
-    def __init__(self, *children: Widget, scrollable: bool=False):
+    def __init__(self, *children: Widget, scrollable: bool = False):
         super().__init__(
             state=None,
             pos=Point(0, 0),
@@ -1860,7 +1971,9 @@ class Row(Layout):
 
     def add(self, w: Widget) -> None:
         if self._scrollable and w.is_width_expanding():
-            raise RuntimeError("Scrollable Row cannot have an width expandable child widget")
+            raise RuntimeError(
+                "Scrollable Row cannot have an width expandable child widget"
+            )
         super().add(w)
 
     def get_children(self) -> Generator[Widget, None, None]:
@@ -1873,7 +1986,7 @@ class Row(Layout):
             yield c
         yield self._spacer
 
-    def spacing(self, size: int): # -> Self:
+    def spacing(self, size: int):  # -> Self:
         self._spacing = size
         self._spacer = Spacer().size_policy(SizePolicy.FIXED_WIDTH).width(size)
         return self
@@ -1913,14 +2026,28 @@ class Row(Layout):
 
         p.save()
         p.style(Row._scrollbar_style)
-        p.fill_rect(Rect(origin=Point(0, orig_height - scroll_bar_height), size=Size(self.get_width(), scroll_bar_height)))
-        p.stroke_rect(Rect(origin=Point(-1, orig_height - scroll_bar_height), size=Size(self.get_width()+2, scroll_bar_height)))
+        p.fill_rect(
+            Rect(
+                origin=Point(0, orig_height - scroll_bar_height),
+                size=Size(self.get_width(), scroll_bar_height),
+            )
+        )
+        p.stroke_rect(
+            Rect(
+                origin=Point(-1, orig_height - scroll_bar_height),
+                size=Size(self.get_width() + 2, scroll_bar_height),
+            )
+        )
         p.style(Row._scrollbox_style)
         if content_width != 0 and self.get_width() != 0:
-            scroll_box_width = self.get_width() * self.get_width()/content_width
-            scroll_box = Rect(origin=Point((self._scroll_x/content_width)*self.get_width(),
-                                           orig_height - scroll_bar_height),
-                              size=Size(scroll_box_width, scroll_bar_height))
+            scroll_box_width = self.get_width() * self.get_width() / content_width
+            scroll_box = Rect(
+                origin=Point(
+                    (self._scroll_x / content_width) * self.get_width(),
+                    orig_height - scroll_bar_height,
+                ),
+                size=Size(scroll_box_width, scroll_bar_height),
+            )
             self._scroll_box = scroll_box
             p.fill_rect(scroll_box)
         p.restore()
@@ -1937,7 +2064,12 @@ class Row(Layout):
         last_drag_pos = self._last_drag_pos
         self._last_drag_pos = ev.pos
         if self._under_dragging and last_drag_pos is not None:
-            self.scroll_x(int((ev.pos.x - last_drag_pos.x)*(self.content_width()/self.get_width())))
+            self.scroll_x(
+                int(
+                    (ev.pos.x - last_drag_pos.x)
+                    * (self.content_width() / self.get_width())
+                )
+            )
 
     def mouse_wheel(self, ev: WheelEvent) -> None:
         self.scroll_x(-int(ev.x_offset) * 20)
@@ -1945,7 +2077,7 @@ class Row(Layout):
     def has_scrollbar(self) -> bool:
         return self._scroll_box is not None
 
-    def scroll_x(self, x: int): # -> Self:
+    def scroll_x(self, x: int):  # -> Self:
         if x > 0:
             max_scroll_x = self.content_width() - self.get_width()
             if self._scroll_x == max_scroll_x:
@@ -1974,12 +2106,16 @@ class Row(Layout):
         return self._scrollable
 
     def measure(self, p: Painter) -> Size:
-        width = functools.reduce(lambda total, child: total + child.measure(p).width, self.get_children(), 0)
-        height= max((0, *map(lambda c: c.measure(p).height, self.get_children())))
+        width = functools.reduce(
+            lambda total, child: total + child.measure(p).width, self.get_children(), 0
+        )
+        height = max((0, *map(lambda c: c.measure(p).height, self.get_children())))
         return Size(width, height)
 
     def content_width(self) -> float:
-        return functools.reduce(lambda total, child: total + child.get_width(), self.get_children(), 0)
+        return functools.reduce(
+            lambda total, child: total + child.get_width(), self.get_children(), 0
+        )
 
     def _adjust_pos(self, p: Point) -> Point:
         return p + Point(self._scroll_x, 0)
@@ -1987,12 +2123,15 @@ class Row(Layout):
     def contain_in_content_area(self, p: Point) -> bool:
         if self._scrollable and self.content_width() > self.get_width():
             return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
-                    p.y > self._pos.y and p.y < self._pos.y + self._size.height - SCROLL_BAR_SIZE)
+                p.y > self._pos.y
+                and p.y < self._pos.y + self._size.height - SCROLL_BAR_SIZE
+            )
         return self.contain_in_my_area(p)
 
     def contain_in_my_area(self, p: Point) -> bool:
         return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
-                p.y > self._pos.y and p.y < self._pos.y + self._size.height)
+            p.y > self._pos.y and p.y < self._pos.y + self._size.height
+        )
 
     def _relocate_children(self, p: Painter) -> None:
         self._resize_children(p)
@@ -2016,7 +2155,11 @@ class Row(Layout):
                 remaining_children.append(c)
                 total_flex = total_flex + c.get_flex()
 
-        fraction = remaining_width % total_flex if remaining_width > 0 and total_flex > 0 else 0
+        fraction = (
+            remaining_width % total_flex
+            if remaining_width > 0 and total_flex > 0
+            else 0
+        )
         for rc in remaining_children:
             flex = rc.get_flex()
             width = (remaining_width * flex) / total_flex
@@ -2040,8 +2183,10 @@ class Row(Layout):
 class Box(Layout):
     _scrollbar_widget_style = get_theme().scrollbar
     _scrollbox_widget_style = get_theme().scrollbox
-    _scrollbar_style = Style(FillStyle(color=_scrollbar_widget_style.bg_color),
-                             StrokeStyle(color=_scrollbar_widget_style.border_color))
+    _scrollbar_style = Style(
+        FillStyle(color=_scrollbar_widget_style.bg_color),
+        StrokeStyle(color=_scrollbar_widget_style.border_color),
+    )
     _scrollbox_style = Style(FillStyle(color=_scrollbox_widget_style.bg_color))
 
     def __init__(self, child: Widget):
@@ -2101,26 +2246,66 @@ class Box(Layout):
 
         p.save()
         p.style(Box._scrollbar_style)
-        p.fill_rect(Rect(origin=Point(0, orig_height - x_scroll_bar_height), size=Size(self.get_width() - y_scroll_bar_width, x_scroll_bar_height)))
-        p.stroke_rect(Rect(origin=Point(-1, orig_height - x_scroll_bar_height), size=Size(self.get_width()+2 - y_scroll_bar_width, x_scroll_bar_height)))
+        p.fill_rect(
+            Rect(
+                origin=Point(0, orig_height - x_scroll_bar_height),
+                size=Size(self.get_width() - y_scroll_bar_width, x_scroll_bar_height),
+            )
+        )
+        p.stroke_rect(
+            Rect(
+                origin=Point(-1, orig_height - x_scroll_bar_height),
+                size=Size(
+                    self.get_width() + 2 - y_scroll_bar_width, x_scroll_bar_height
+                ),
+            )
+        )
         p.style(Box._scrollbox_style)
         if content_width != 0 and self.get_width() != 0:
-            scroll_box_width = (self.get_width() - y_scroll_bar_width) * self.get_width()/content_width
-            scroll_box = Rect(origin=Point((self._scroll_x/content_width)*self.get_width(),
-                                           orig_height - x_scroll_bar_height),
-                              size=Size(scroll_box_width, x_scroll_bar_height))
+            scroll_box_width = (
+                (self.get_width() - y_scroll_bar_width)
+                * self.get_width()
+                / content_width
+            )
+            scroll_box = Rect(
+                origin=Point(
+                    (self._scroll_x / content_width) * self.get_width(),
+                    orig_height - x_scroll_bar_height,
+                ),
+                size=Size(scroll_box_width, x_scroll_bar_height),
+            )
             self._scroll_box_x = scroll_box
             p.fill_rect(scroll_box)
 
         p.style(Box._scrollbar_style)
-        p.fill_rect(Rect(origin=Point(orig_width - y_scroll_bar_width, 0), size=Size(y_scroll_bar_width, self.get_height() - x_scroll_bar_height)))
-        p.stroke_rect(Rect(origin=Point(orig_width - y_scroll_bar_width, -1), size=Size(y_scroll_bar_width, self.get_height()+2 - x_scroll_bar_height)))
+        p.fill_rect(
+            Rect(
+                origin=Point(orig_width - y_scroll_bar_width, 0),
+                size=Size(y_scroll_bar_width, self.get_height() - x_scroll_bar_height),
+            )
+        )
+        p.stroke_rect(
+            Rect(
+                origin=Point(orig_width - y_scroll_bar_width, -1),
+                size=Size(
+                    y_scroll_bar_width, self.get_height() + 2 - x_scroll_bar_height
+                ),
+            )
+        )
         p.style(Box._scrollbox_style)
         if content_height != 0 and self.get_height() != 0:
-            scroll_box_height = (self.get_height() - x_scroll_bar_height) * self.get_height()/content_height
-            scroll_box = Rect(origin=Point(orig_width - y_scroll_bar_width,
-                                           (self._scroll_y/content_height)*self.get_height()),
-                              size=Size(y_scroll_bar_width, scroll_box_height))
+            scroll_box_height = (
+                (self.get_height() - x_scroll_bar_height)
+                * self.get_height()
+                / content_height
+            )
+            scroll_box = Rect(
+                origin=Point(
+                    orig_width - y_scroll_bar_width,
+                    (self._scroll_y / content_height) * self.get_height(),
+                ),
+                size=Size(y_scroll_bar_width, scroll_box_height),
+            )
             self._scroll_box_y = scroll_box
             p.fill_rect(scroll_box)
         p.restore()
@@ -2148,9 +2333,11 @@ class Box(Layout):
             return
 
         if self._under_dragging_x:
-            self.scroll_x(w, int((ev.pos.x - last_drag_pos.x)*(w/self.get_width())))
+            self.scroll_x(w, int((ev.pos.x - last_drag_pos.x) * (w / self.get_width())))
         elif self._under_dragging_y:
-            self.scroll_y(h, int((ev.pos.y - last_drag_pos.y)*(h/self.get_height())))
+            self.scroll_y(
+                h, int((ev.pos.y - last_drag_pos.y) * (h / self.get_height()))
+            )
 
     def mouse_wheel(self, ev: WheelEvent) -> None:
         w, h = self.content_size()
@@ -2162,7 +2349,7 @@ class Box(Layout):
     def has_scrollbar(self) -> bool:
         return self._scroll_box_x is not None or self._scroll_box_y is not None
 
-    def scroll_x(self, w: float, x: int): # -> Self:
+    def scroll_x(self, w: float, x: int):  # -> Self:
         if x > 0:
             max_scroll_x = w - self.get_width()
             if self._scroll_x == max_scroll_x:
@@ -2187,7 +2374,7 @@ class Box(Layout):
                 self.update(True)
             return self
 
-    def scroll_y(self, h: float, y: int): # -> Self:
+    def scroll_y(self, h: float, y: int):  # -> Self:
         if y > 0:
             max_scroll_y = h - self.get_height()
             if self._scroll_y == max_scroll_y:
@@ -2216,21 +2403,34 @@ class Box(Layout):
         return self._child.measure(p)
 
     def content_size(self) -> tuple[float, float]:
-        return functools.reduce(lambda total, child: (total[0] + child.get_width(), total[1] + child.get_height()),
-                                self.get_children(),
-                                (0, 0))
+        return functools.reduce(
+            lambda total, child: (
+                total[0] + child.get_width(),
+                total[1] + child.get_height(),
+            ),
+            self.get_children(),
+            (0, 0),
+        )
 
     def _adjust_pos(self, p: Point) -> Point:
         return p + Point(self._scroll_x, self._scroll_y)
 
     def contain_in_content_area(self, p: Point) -> bool:
         w, h = self.content_size()
-        return (p.x > self._pos.x and p.x < self._pos.x + self._size.width - SCROLL_BAR_SIZE * (h > self.get_height())) and (
-                p.y > self._pos.y and p.y < self._pos.y + self._size.height - SCROLL_BAR_SIZE * (w > self.get_width()))
+        return (
+            p.x > self._pos.x
+            and p.x
+            < self._pos.x + self._size.width - SCROLL_BAR_SIZE * (h > self.get_height())
+        ) and (
+            p.y > self._pos.y
+            and p.y
+            < self._pos.y + self._size.height - SCROLL_BAR_SIZE * (w > self.get_width())
+        )
 
     def contain_in_my_area(self, p: Point) -> bool:
         return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
-                p.y > self._pos.y and p.y < self._pos.y + self._size.height)
+            p.y > self._pos.y and p.y < self._pos.y + self._size.height
+        )
 
     def _relocate_children(self, p: Painter) -> None:
         self._resize_children(p)
@@ -2254,7 +2454,11 @@ class Box(Layout):
                 remaining_children.append(c)
                 total_flex = total_flex + c.get_flex()
 
-        fraction = remaining_width % total_flex if remaining_width > 0 and total_flex > 0 else 0
+        fraction = (
+            remaining_width % total_flex
+            if remaining_width > 0 and total_flex > 0
+            else 0
+        )
         for rc in remaining_children:
             flex = rc.get_flex()
             width = (remaining_width * flex) / total_flex
@@ -2358,16 +2562,16 @@ class App:
         self.push_layer(widget, PositionPolicy.FIXED)
 
     @classmethod
-    def get(cls): # -> Self:
+    def get(cls):  # -> Self:
         return cls._instance
 
-    def push_layer(self, l: Widget, p: PositionPolicy): # -> Self:
+    def push_layer(self, l: Widget, p: PositionPolicy):  # -> Self:
         self._layers.append(l)
         self._layerPositions.append(p)
         self._frame.post_update(UpdateEvent(self, True))
         return self
 
-    def pop_layer(self): # -> Self:
+    def pop_layer(self):  # -> Self:
         self._layers.pop()
         self._layerPositions.pop()
         self._frame.post_update(UpdateEvent(self, True))
@@ -2403,7 +2607,7 @@ class App:
             ev.target = self._downed
             diff = ev.pos - self._prev_abs_pos
             self._prev_abs_pos = ev.pos
-            ev.pos =  self._prev_rel_pos + diff
+            ev.pos = self._prev_rel_pos + diff
             self._prev_rel_pos = ev.pos
             self._downed.mouse_up(ev)
         finally:
@@ -2431,10 +2635,12 @@ class App:
                 self._mouse_overed_layer = layer
                 target.mouse_over()
             return
-        elif (target is self._downed or self._downed.dispatch(ev.pos)[0] is not None) and p is not None:
+        elif (
+            target is self._downed or self._downed.dispatch(ev.pos)[0] is not None
+        ) and p is not None:
             diff = ev.pos - self._prev_abs_pos
             self._prev_abs_pos = ev.pos
-            ev.pos =  self._prev_rel_pos + diff
+            ev.pos = self._prev_rel_pos + diff
             self._prev_rel_pos = ev.pos
             self._downed.mouse_drag(ev)
 
@@ -2493,7 +2699,7 @@ class App:
             )
         w.resize(Size(width=width, height=height))
 
-    def post_update(self, w: Widget, completely: bool= False) -> None:
+    def post_update(self, w: Widget, completely: bool = False) -> None:
         self._frame.post_update(UpdateEvent(w, completely))
 
     def run(self) -> None:

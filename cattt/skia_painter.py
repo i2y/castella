@@ -43,9 +43,7 @@ def _to_skia_font(font: core.Font) -> skia.Font:
     else:
         font_slant = skia.FontStyle.kItalic_Slant
 
-    font_style = skia.FontStyle(font_weight,
-                                skia.FontStyle.kNormal_Width,
-                                font_slant)
+    font_style = skia.FontStyle(font_weight, skia.FontStyle.kNormal_Width, font_slant)
     return skia.Font(_get_font_face(font.family, font_style), font.size)
 
 
@@ -112,13 +110,16 @@ class Painter:
         self._canvas.translate(pos.x, pos.y)
 
     def clip(self, rect: core.Rect) -> None:
-        self._canvas.clipRect(_to_skia_rect(core.Rect(core.Point(0, 0),
-                                                    core.Size(rect.size.width+1,
-                                                             rect.size.height+1))))
+        self._canvas.clipRect(
+            _to_skia_rect(
+                core.Rect(
+                    core.Point(0, 0),
+                    core.Size(rect.size.width + 1, rect.size.height + 1),
+                )
+            )
+        )
 
-    def fill_text(
-        self, text: str, pos: core.Point, max_width: Optional[float]
-    ) -> None:
+    def fill_text(self, text: str, pos: core.Point, max_width: Optional[float]) -> None:
         if text == "":
             return
 
@@ -153,28 +154,30 @@ class Painter:
     def draw_paragraph(self, paragraph: core.Paragraph, pos: core.Point) -> None:
         raise NotImplementedError()
 
-    def draw_image(self, file_path: str, rect: core.Rect, use_cache: bool=True) -> None:
+    def draw_image(
+        self, file_path: str, rect: core.Rect, use_cache: bool = True
+    ) -> None:
         if use_cache:
             image = _get_cached_image(file_path)
         else:
             image = skia.Image.open(file_path)
         self._canvas.drawImageRect(image, _to_skia_rect(rect))
 
-    def measure_image(self, file_path: str, use_cache: bool=True) -> core.Size:
+    def measure_image(self, file_path: str, use_cache: bool = True) -> core.Size:
         if use_cache:
             image = _get_cached_image(file_path)
         else:
             image = skia.Image.open(file_path)
         return core.Size(image.width(), image.height())
 
-    def draw_net_image(self, url: str, rect: core.Rect, use_cache: bool=True) -> None:
+    def draw_net_image(self, url: str, rect: core.Rect, use_cache: bool = True) -> None:
         if use_cache:
             image = _get_cached_net_image(url)
         else:
             image = _get_net_image(url)
         self._canvas.drawImageRect(image, _to_skia_rect(rect))
 
-    def measure_net_image(self, url: str, use_cache: bool=True) -> core.Size:
+    def measure_net_image(self, url: str, use_cache: bool = True) -> core.Size:
         if use_cache:
             image = _get_cached_net_image(url)
         else:
@@ -195,7 +198,9 @@ class Painter:
         image = skia.Image.fromarray(array)
         self.draw_image_object(image, x, y)
 
-    def draw_np_array_as_an_image_rect(self, array: np.ndarray, rect: core.Rect) -> None:
+    def draw_np_array_as_an_image_rect(
+        self, array: np.ndarray, rect: core.Rect
+    ) -> None:
         image = skia.Image.fromarray(array)
         self._canvas.drawImageRect(image, _to_skia_rect(rect))
 
@@ -222,9 +227,11 @@ class Painter:
 def _get_cached_image(path: str) -> skia.Image:
     return skia.Image.open(path)
 
+
 @cache
 def _get_cached_net_image(url: str) -> skia.Image:
     return _get_net_image(url)
+
 
 def _get_net_image(url: str) -> skia.Image:
     return skia.Image.open(io.BytesIO(urllib.request.urlopen(url).read()))

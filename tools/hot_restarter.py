@@ -45,7 +45,7 @@ class FileChangeHandler(PatternMatchingEventHandler):
         self._monitor.restart_proc()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     filename = sys.argv[1]
     monitor = Monitor(filename)
     observer = Observer()

@@ -13,6 +13,7 @@ from . import skia_painter as painter
 
 if platform.system() == "Windows":
     import ctypes
+
     user32 = ctypes.windll.user32
     user32.SetProcessDPIAware()
 
@@ -22,9 +23,9 @@ def rgba_masks():
         return (0, 0, 0, 0)
 
     if sdl.SDL_BYTEORDER == sdl.SDL_BIG_ENDIAN:
-        return (0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff)
+        return (0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF)
     else:
-        return (0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000)
+        return (0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000)
 
 
 class Frame:
@@ -38,9 +39,13 @@ class Frame:
         self._rgba_masks = rgba_masks()
         window = sdl.SDL_CreateWindow(
             bytes(title, "utf8"),
-            sdl.SDL_WINDOWPOS_CENTERED, sdl.SDL_WINDOWPOS_CENTERED,
-            width, height,
-            sdl.SDL_WINDOW_SHOWN | sdl.SDL_WINDOW_RESIZABLE | sdl.SDL_WINDOW_ALLOW_HIGHDPI
+            sdl.SDL_WINDOWPOS_CENTERED,
+            sdl.SDL_WINDOWPOS_CENTERED,
+            width,
+            height,
+            sdl.SDL_WINDOW_SHOWN
+            | sdl.SDL_WINDOW_RESIZABLE
+            | sdl.SDL_WINDOW_ALLOW_HIGHDPI,
         )
 
         self._window = window
@@ -52,7 +57,9 @@ class Frame:
         zengl.context(zengl.loader(headless=True))
 
         info = skia.ImageInfo.MakeN32Premul(self._size.width, self._size.height)
-        surface = skia.Surface.MakeRenderTarget(skia.GrDirectContext.MakeGL(), skia.Budgeted.kNo, info)
+        surface = skia.Surface.MakeRenderTarget(
+            skia.GrDirectContext.MakeGL(), skia.Budgeted.kNo, info
+        )
 
         self._surface = surface
         self._painter = painter.Painter(self, self._surface)
@@ -129,8 +136,13 @@ class Frame:
         width = size.width
         height = size.height
         sdl_surface = sdl.SDL_CreateRGBSurfaceFrom(
-            skia_bytes, width, height, self.PIXEL_DEPTH, self.PIXEL_PITCH_FACTOR * width,
-            *self._rgba_masks)
+            skia_bytes,
+            width,
+            height,
+            self.PIXEL_DEPTH,
+            self.PIXEL_PITCH_FACTOR * width,
+            *self._rgba_masks
+        )
 
         rect = sdl.SDL_Rect(0, 0, width, height)
         window_surface = sdl.SDL_GetWindowSurface(self._window)
@@ -164,18 +176,30 @@ class Frame:
                         height = event.window.data2
                         self._on_redraw(width, height, self._callback_on_redraw)
                 case sdl.SDL_MOUSEBUTTONDOWN:
-                    self._callback_on_mouse_down(core.MouseEvent(core.Point(event.button.x, event.button.y)))
+                    self._callback_on_mouse_down(
+                        core.MouseEvent(core.Point(event.button.x, event.button.y))
+                    )
                 case sdl.SDL_MOUSEBUTTONUP:
-                    self._callback_on_mouse_up(core.MouseEvent(core.Point(event.button.x, event.button.y)))
+                    self._callback_on_mouse_up(
+                        core.MouseEvent(core.Point(event.button.x, event.button.y))
+                    )
                 case sdl.SDL_MOUSEMOTION:
-                    self._callback_on_cursor_pos(core.MouseEvent(core.Point(event.motion.x, event.motion.y)))
+                    self._callback_on_cursor_pos(
+                        core.MouseEvent(core.Point(event.motion.x, event.motion.y))
+                    )
                 case sdl.SDL_KEYDOWN:
-                    self._callback_on_input_key(core.InputKeyEvent(convert_to_key_code(event.key.keysym.sym),
-                                                                  0,
-                                                                  core.KeyAction.PRESS,
-                                                                  0))
+                    self._callback_on_input_key(
+                        core.InputKeyEvent(
+                            convert_to_key_code(event.key.keysym.sym),
+                            0,
+                            core.KeyAction.PRESS,
+                            0,
+                        )
+                    )
                 case sdl.SDL_TEXTINPUT:
-                    self._callback_on_input_char(core.InputCharEvent(event.text.text.decode('utf-8')))
+                    self._callback_on_input_char(
+                        core.InputCharEvent(event.text.text.decode("utf-8"))
+                    )
 
 
 def convert_to_key_code(keysym: int) -> core.KeyCode:

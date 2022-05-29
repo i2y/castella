@@ -7,7 +7,7 @@ from pyodide import create_proxy
 import core
 
 
-def code2rgb(color_code): # TODO alpha
+def code2rgb(color_code):  # TODO alpha
     r = int(color_code[1:3], 16)
     g = int(color_code[3:5], 16)
     b = int(color_code[5:7], 16)
@@ -19,7 +19,9 @@ def to_ck_color(color: str) -> int:
 
 
 def to_ck_rect(rect: core.Rect):
-    return window.CK.XYWHRect(rect.origin.x, rect.origin.y, rect.size.width, rect.size.height)
+    return window.CK.XYWHRect(
+        rect.origin.x, rect.origin.y, rect.size.width, rect.size.height
+    )
 
 
 class Painter:
@@ -75,21 +77,24 @@ class Painter:
 
     def get_font_metrics(self) -> core.FontMetrics:
         style = cast(core.Style, self._style)
-        return core.FontMetrics(cap_height=style.font.size - style.font.size/4)
+        return core.FontMetrics(cap_height=style.font.size - style.font.size / 4)
 
     def translate(self, pos: core.Point) -> None:
         self._canvas.translate(pos.x, pos.y)
 
     def clip(self, rect: core.Rect) -> None:
-        self._canvas.clipRect(to_ck_rect(core.Rect(core.Point(0, 0),
-                                                    core.Size(rect.size.width+1,
-                                                             rect.size.height+1))),
-                              window.CK.ClipOp.Intersect,
-                              True)
+        self._canvas.clipRect(
+            to_ck_rect(
+                core.Rect(
+                    core.Point(0, 0),
+                    core.Size(rect.size.width + 1, rect.size.height + 1),
+                )
+            ),
+            window.CK.ClipOp.Intersect,
+            True,
+        )
 
-    def fill_text(
-        self, text: str, pos: core.Point, max_width: Optional[float]
-    ) -> None:
+    def fill_text(self, text: str, pos: core.Point, max_width: Optional[float]) -> None:
         if text == "":
             return
 
@@ -124,10 +129,12 @@ class Painter:
         # self._canvas.drawParagraph(paragraph.to_ck_paragraph(), pos.x, pos.y)
         ...
 
-    def draw_image(self, file_path: str, rect: core.Rect, use_cache: bool=True) -> None:
+    def draw_image(
+        self, file_path: str, rect: core.Rect, use_cache: bool = True
+    ) -> None:
         raise NotImplementedError()
 
-    def measure_image(self, file_path: str, use_cache: bool=True) -> core.Size:
+    def measure_image(self, file_path: str, use_cache: bool = True) -> core.Size:
         raise NotImplementedError()
 
     def get_net_image_async(self, name, url, callback):
@@ -140,16 +147,17 @@ class Painter:
 
     def _on_get_image(self, name, img, callback):
         from operator import setitem
+
         setitem(self._images, name, window.CK.MakeImageFromCanvasImageSource(img))
         callback()
 
     def draw_image_object(self, img, x, y):
         self._canvas.drawImage(img, x, y)
 
-    def draw_net_image(self, url: str, rect: core.Rect, use_cache: bool=True) -> None:
+    def draw_net_image(self, url: str, rect: core.Rect, use_cache: bool = True) -> None:
         raise NotImplementedError()
 
-    def measure_net_image(self, url: str, use_cache: bool=True) -> core.Size:
+    def measure_net_image(self, url: str, use_cache: bool = True) -> core.Size:
         raise NotImplementedError()
 
     def measure_np_array_as_an_image(self, array: np.ndarray) -> core.Size:
@@ -159,7 +167,9 @@ class Painter:
     def draw_np_array_as_an_image(self, array: np.ndarray, x: float, y: float) -> None:
         raise NotImplementedError()
 
-    def draw_np_array_as_an_image_rect(self, array: np.ndarray, rect: core.Rect) -> None:
+    def draw_np_array_as_an_image_rect(
+        self, array: np.ndarray, rect: core.Rect
+    ) -> None:
         raise NotImplementedError()
 
     def get_numpy_image_async(self, array, callback):

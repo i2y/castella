@@ -24,11 +24,11 @@ class Paragraph:
 def to_ck_paragraph_style(style: core.ParagraphStyle):
     ps = {
         "textStyle": {
-            "color": window.CK.WHITE, # TODO
-            "fontFamilies" : style.text_style.fontFamilies,
+            "color": window.CK.WHITE,  # TODO
+            "fontFamilies": style.text_style.fontFamilies,
             "fontSize": style.text_style.fontSize,
         },
-        "textAlign": window.CK.TextAlign.Left, # TODO
+        "textAlign": window.CK.TextAlign.Left,  # TODO
         "disableHinting": True,
     }
     pso = to_js(ps, dict_converter=Object.fromEntries)
@@ -37,7 +37,9 @@ def to_ck_paragraph_style(style: core.ParagraphStyle):
 
 class ParagraphBuilder:
     def __init__(self, style: core.ParagraphStyle):
-        self._builder = window.CK.ParagraphBuilder.Make(to_ck_paragraph_style(style), window.fontMgr)
+        self._builder = window.CK.ParagraphBuilder.Make(
+            to_ck_paragraph_style(style), window.fontMgr
+        )
 
     def add_text(self, text: str) -> None:
         self._builder.addText(text)

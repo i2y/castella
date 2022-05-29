@@ -14,23 +14,30 @@ class Frame:
 
     def _update_surface_and_painter(self):
         self._surface = window.CK.MakeWebGLCanvasSurface(
-            "cattt-app", window.CK.ColorSpace.SRGB,
-            to_js({
-                # "explicitSwapControl": 1,
-                "preserveDrawingBuffer": 1,
-                # "renderViaOffscreenBackBuffer": 0,
-            }, dict_converter=Object.fromEntries))
+            "cattt-app",
+            window.CK.ColorSpace.SRGB,
+            to_js(
+                {
+                    # "explicitSwapControl": 1,
+                    "preserveDrawingBuffer": 1,
+                    # "renderViaOffscreenBackBuffer": 0,
+                },
+                dict_converter=Object.fromEntries,
+            ),
+        )
         self._painter = Painter(self, self._surface)
 
     def on_mouse_down(self, handler: Callable[[core.MouseEvent], None]) -> None:
         self._add_mouse_down = lambda: document.body.addEventListener(
-            'mousedown',
-            create_proxy(lambda ev: handler(core.MouseEvent(core.Point(ev.x, ev.y)))))
+            "mousedown",
+            create_proxy(lambda ev: handler(core.MouseEvent(core.Point(ev.x, ev.y)))),
+        )
 
     def on_mouse_up(self, handler: Callable[[core.MouseEvent], None]) -> None:
         self._add_mouse_up = lambda: document.body.addEventListener(
-            'mouseup',
-            create_proxy(lambda ev: handler(core.MouseEvent(core.Point(ev.x, ev.y)))))
+            "mouseup",
+            create_proxy(lambda ev: handler(core.MouseEvent(core.Point(ev.x, ev.y)))),
+        )
 
     def on_mouse_wheel(self, handler: Callable[[core.WheelEvent], None]) -> None:
         # TODO
@@ -38,26 +45,32 @@ class Frame:
 
     def on_cursor_pos(self, handler: Callable[[core.MouseEvent], None]) -> None:
         self._add_cursor_pos = lambda: document.body.addEventListener(
-            'mousemove',
-            create_proxy(lambda ev: handler(core.MouseEvent(core.Point(ev.x, ev.y)))))
+            "mousemove",
+            create_proxy(lambda ev: handler(core.MouseEvent(core.Point(ev.x, ev.y)))),
+        )
 
     def on_input_char(self, handler: Callable[[core.InputCharEvent], None]) -> None:
         self._add_input_char = lambda: document.body.addEventListener(
-            'keypress',
-            create_proxy(lambda ev: handler(core.InputCharEvent(str(ev.key)))))
+            "keypress",
+            create_proxy(lambda ev: handler(core.InputCharEvent(str(ev.key)))),
+        )
 
     def on_input_key(self, handler: Callable[[core.InputKeyEvent], None]) -> None:
         self._add_input_key = lambda: document.body.addEventListener(
-            'keydown',
-            create_proxy(lambda ev: handler(core.InputKeyEvent(convert_to_key_code(ev.keyCode),
-                                                               0,
-                                                               core.KeyAction.PRESS,
-                                                               0))))
+            "keydown",
+            create_proxy(
+                lambda ev: handler(
+                    core.InputKeyEvent(
+                        convert_to_key_code(ev.keyCode), 0, core.KeyAction.PRESS, 0
+                    )
+                )
+            ),
+        )
 
     def on_redraw(self, handler: Callable[[core.Painter, bool], None]) -> None:
         self._add_redraw = lambda: window.addEventListener(
-            'resize',
-            create_proxy(lambda ev: self._on_redraw(handler)))
+            "resize", create_proxy(lambda ev: self._on_redraw(handler))
+        )
 
     def _on_redraw(self, handler: Callable[[core.Painter, bool], None]) -> None:
         self._size = core.Size(window.innerWidth, window.innerHeight)
@@ -123,7 +136,7 @@ class Frame:
         document.body.appendChild(canvas)
         self._canvas = document.getElementById("cattt-app")
 
-        init_script = document.createElement('script')
+        init_script = document.createElement("script")
         init_script.innerHTML = """
         const loadFont = fetch('https://storage.googleapis.com/skia-cdn/misc/Roboto-Regular.ttf')
             .then((response) => response.arrayBuffer());
@@ -156,6 +169,7 @@ class Frame:
         self._add_input_char()
         self._add_input_key()
         self._add_redraw()
+
 
 def convert_to_key_code(code: int) -> core.KeyCode:
     print(code)

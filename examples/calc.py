@@ -1,5 +1,14 @@
-from cattt.core import (App, Button, Column, Component, Row, State, Text,
-                       TextAlign, Widget)
+from cattt.core import (
+    App,
+    Button,
+    Column,
+    Component,
+    Row,
+    State,
+    Text,
+    TextAlign,
+    Widget,
+)
 from cattt.frame import Frame
 
 
