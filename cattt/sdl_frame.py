@@ -1,6 +1,6 @@
 import platform
 import threading
-from ctypes import byref
+from ctypes import byref, c_int
 from queue import SimpleQueue
 from typing import Callable, Final, cast
 
@@ -71,8 +71,7 @@ class Frame:
         self._callback_on_mouse_up = handler
 
     def on_mouse_wheel(self, handler: Callable[[core.WheelEvent], None]) -> None:
-        # TODO
-        ...
+        self._callback_on_mouse_wheel = handler
 
     def on_cursor_pos(self, handler: Callable[[core.MouseEvent], None]) -> None:
         self._callback_on_cursor_pos = handler
@@ -182,6 +181,16 @@ class Frame:
                 case sdl.SDL_MOUSEBUTTONUP:
                     self._callback_on_mouse_up(
                         core.MouseEvent(core.Point(event.button.x, event.button.y))
+                    )
+                case sdl.SDL_MOUSEWHEEL:
+                    x, y = c_int(0), c_int(0)
+                    sdl.SDL_GetMouseState(byref(x), byref(y))
+                    self._callback_on_mouse_wheel(
+                        core.WheelEvent(
+                            core.Point(x.value, y.value),
+                            -event.wheel.x * 20,
+                            -event.wheel.y * 20,
+                        )
                     )
                 case sdl.SDL_MOUSEMOTION:
                     self._callback_on_cursor_pos(
