@@ -22,7 +22,7 @@
 <py-script>
 import numpy as np
 
-from core import (App, Row, Column, Button, Text, Spacer, State, Component, Switch,
+from core import (App, Row, Column, Kind, Button, Text, Spacer, State, Component, Switch,
                   StatefulComponent, Input, Box, Image, AsyncNetImage, NumpyImage, SizePolicy)
 from frame import Frame
 
@@ -37,9 +37,9 @@ class Counter(Component):
 
     def view(self):
         c = self.count
-        return Row(Button("Up").on_click(lambda _: c.set(c() + 1)),
+        return Row(Button("Up", font_size=50).on_click(lambda _: c.set(c() + 1)),
                    Text(self.count),
-                   Button("Down").on_click(lambda _: c.set(c() - 1))).spacing(4)
+                   Button("Down", font_size=50).on_click(lambda _: c.set(c() - 1))).spacing(4)
 
 
 class NumList(StatefulComponent):
@@ -57,6 +57,10 @@ c: State[int] = State(0)
 
 App(Frame(title="Misc"),
     Column(Counter(c),
+           Text("hoge", kind=Kind.INFO),
+           Text("hoge", kind=Kind.SUCCESS),
+           Text("hoge", kind=Kind.WARNING),
+           Text("hoge", kind=Kind.DANGER),
            Row(Switch(True).fixed_width(50), Switch(False)).fixed_height(25),
            Box(AsyncNetImage(url=TENT_IMG).fixed_size(500, 300)),
            Row(NumList(c), Box(NumpyImage(array).fixed_size(400, 200))),

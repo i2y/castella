@@ -179,7 +179,6 @@ class Frame:
 
 
 def convert_to_key_code(code: int) -> core.KeyCode:
-    print(code)
     if code == 8:
         return core.KeyCode.BACKSPACE
     elif code == 37:

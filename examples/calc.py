@@ -1,3 +1,4 @@
+from tkinter import font
 from cattt.core import (
     App,
     Button,
@@ -85,16 +86,16 @@ class Calc(Component):
         )
 
     def number(self, num: int) -> Button:
-        return Button(str(num)).on_click(self.press_number)
+        return Button(str(num), font_size=50).on_click(self.press_number)
 
     def dot(self) -> Button:
-        return Button(".").on_click(self.press_dot)
+        return Button(".", font_size=50).on_click(self.press_dot)
 
     def ac(self) -> Button:
-        return Button("AC").on_click(self.all_clear)
+        return Button("AC", font_size=50).on_click(self.all_clear)
 
     def op(self, label: str) -> Button:
-        return Button(label).on_click(self.press_operator)
+        return Button(label, font_size=50).on_click(self.press_operator)
 
     @staticmethod
     def calc(lhs: str, op: str, rhs: str):

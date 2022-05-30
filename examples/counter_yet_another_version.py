@@ -9,7 +9,11 @@ class Counter(Component):
         down = lambda _: count.set(count() - 1)
 
         return Column(
-            Text(count), Row(Button("+").on_click(up), Button("-").on_click(down))
+            Text(count),
+            Row(
+                Button("+", font_size=50).on_click(up),
+                Button("-", font_size=50).on_click(down),
+            ),
         )
 
 

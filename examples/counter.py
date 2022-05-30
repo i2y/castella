@@ -10,7 +10,10 @@ class Counter(Component):
     def view(self):
         return Column(
             Text(self._count),
-            Row(Button("Up").on_click(self.up), Button("Down").on_click(self.down)),
+            Row(
+                Button("Up", font_size=50).on_click(self.up),
+                Button("Down", font_size=50).on_click(self.down),
+            ),
         )
 
     def up(self, _):

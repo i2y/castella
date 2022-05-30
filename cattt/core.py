@@ -990,52 +990,46 @@ def _get_theme() -> Theme:
         ),
         text_info=WidgetStyle(
             bg_color=color_schema["bg-info"],
-            border_color=color_schema["border-primary"],
-            text_color=color_schema["text-primary"],
+            border_color=color_schema["border-info"],
+            text_color=color_schema["text-info"],
         ),
         text_success=WidgetStyle(
             bg_color=color_schema["bg-success"],
             border_color=color_schema["border-success"],
-            text_color=color_schema["text-primary"],
-            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED),
+            text_color=color_schema["text-success"],
         ),
         text_warning=WidgetStyle(
             bg_color=color_schema["bg-warning"],
             border_color=color_schema["border-warning"],
             text_color=color_schema["text-warning"],
-            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED),
         ),
         text_danger=WidgetStyle(
             bg_color=color_schema["bg-danger"],
             border_color=color_schema["border-danger"],
             text_color=color_schema["text-danger"],
-            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED),
         ),
         button_normal=WidgetStyle(
             bg_color=color_schema["bg-tertiary"],
             border_color=color_schema["border-primary"],
             text_color=color_schema["text-primary"],
-            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED),
         ),
         button_normal_hover=WidgetStyle(
             bg_color=color_schema["bg-overlay"],
             border_color=color_schema["border-primary"],
             text_color=color_schema["text-primary"],
-            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED),
         ),
         button_normal_pushed=WidgetStyle(
-            bg_color=color.COLOR_SCALE_GRAY[6 if _is_darkmode() else 2][color_mode],
+            bg_color=color_schema["bg-pushed"],
             border_color=color_schema["border-secondary"],
             text_color=color_schema["text-primary"],
-            text_font=Font(size=50, size_policy=FontSizePolicy.FIXED),
         ),
         switch_normal=WidgetStyle(
-            bg_color=color.COLOR_SCALE_GRAY[8 if _is_darkmode() else 1][color_mode],
-            text_color=color.COLOR_SCALE_GRAY[2 if _is_darkmode() else 6][color_mode],
+            bg_color=color_schema["bg-tertiary"],
+            text_color=color_schema["fg"],
         ),
         switch_normal_selected=WidgetStyle(
-            bg_color=color.COLOR_SCALE_GRAY[6 if _is_darkmode() else 2][color_mode],
-            text_color=color.COLOR_SCALE_GRAY[2 if _is_darkmode() else 6][color_mode],
+            bg_color=color_schema["bg-selected"],
+            text_color=color_schema["fg"],
         ),
         layout=WidgetStyle(
             bg_color=color_schema["bg-primary"],
@@ -1253,7 +1247,7 @@ class Button(Widget):
             pos_policy=None,
             size_policy=SizePolicy.EXPANDING,
         )
-        self._on_click = lambda ev: ...
+        self._on_click = lambda _: ...
         self._align = align
         kind = Kind.NORMAL
         theme = get_theme()
@@ -1264,10 +1258,17 @@ class Button(Widget):
         self._pushed_style, self._pushed_text_style = theme.get_styles(
             "button", kind, AppearanceState.PUSHED
         )
+        self._font_size = 0
+        self._font_size_policy = FontSizePolicy.EXPANDING
         if font_size is not None:
             self._text_style = replace_font_size(
                 self._text_style, font_size, FontSizePolicy.FIXED
             )
+            self._pushed_text_style = replace_font_size(
+                self._pushed_text_style, font_size, FontSizePolicy.FIXED
+            )
+            self._font_size = font_size
+            self._font_size_policy = FontSizePolicy.FIXED
 
     def mouse_down(self, ev: MouseEvent) -> None:
         state: ButtonState = cast(ButtonState, self._state)
@@ -1282,11 +1283,17 @@ class Button(Widget):
         self._style, self._text_style = get_theme().get_styles(
             "button", self._kind, AppearanceState.HOVER
         )
+        self._text_style = replace_font_size(
+            self._text_style, self._font_size, self._font_size_policy
+        )
         self.update()
 
     def mouse_out(self) -> None:
         self._style, self._text_style = get_theme().get_styles(
             "button", self._kind, AppearanceState.NORMAL
+        )
+        self._text_style = replace_font_size(
+            self._text_style, self._font_size, self._font_size_policy
         )
         self.update()
 
@@ -1314,14 +1321,25 @@ class Button(Widget):
         width = self.get_width()
         height = self.get_height()
         font_family, font_size = determine_font(
-            width, height, self._text_style, state._text
+            width,
+            height,
+            replace(
+                self._text_style,
+                font=Font(
+                    self._text_style.font.family,
+                    self._text_style.font.size,
+                    self._font_size_policy,
+                ),
+            ),
+            state._text,
         )
         p.style(
             replace(
-                self._pushed_text_style,
+                self._text_style,
                 font=Font(
                     font_family,
                     font_size,
+                    self._font_size_policy,
                 ),
             ),
         )

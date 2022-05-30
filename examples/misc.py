@@ -25,9 +25,9 @@ class Counter(Component):
     def view(self):
         c = self.count
         return Row(
-            Button("Up").on_click(lambda _: c.set(c() + 1)),
+            Button("Up", font_size=50).on_click(lambda _: c.set(c() + 1)),
             Text(self.count),
-            Button("Down").on_click(lambda _: c.set(c() - 1)),
+            Button("Down", font_size=50).on_click(lambda _: c.set(c() - 1)),
         )
 
 
