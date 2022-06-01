@@ -1,4 +1,3 @@
-from tkinter import font
 from cattt.core import (
     App,
     Button,
