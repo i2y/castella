@@ -1,28 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-
-    <title>Misc</title>
-    <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
-    <script type="text/javascript" src="https://unpkg.com/canvaskit-wasm@0.33.0/bin/canvaskit.js"></script>
-    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
-</head>
-<py-env>
-    - numpy
-    - paths:
-        - ../cattt/color.py
-        - ../cattt/core.py
-        - ../cattt/web_frame.py
-        - ../cattt/frame.py
-        - ../cattt/canvaskit_painter.py
-</py-env>
-<py-script>
 import numpy as np
 
-from core import (
+from cattt.core import (
     App,
     Row,
     Column,
@@ -30,18 +8,16 @@ from core import (
     Button,
     Text,
     MultilineText,
-    Spacer,
     State,
     Component,
     Switch,
     StatefulComponent,
     Input,
     Box,
-    AsyncNetImage,
+    Image,
     NumpyImage,
-    SizePolicy,
 )
-from frame import Frame
+from cattt.frame import Frame
 
 array = np.zeros((200, 400, 4), dtype=np.uint8)
 array[:, :, 3] = 255
@@ -95,11 +71,9 @@ occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim 
                 )
             ),
             Row(Switch(True).fixed_width(50), Switch(False)).fixed_height(25),
-            Box(AsyncNetImage(url=TENT_IMG).fixed_size(500, 300)).flex(4),
+            Box(Image(TENT_IMG).fixed_size(500, 300)).flex(4),
             Row(NumList(c), Box(NumpyImage(array).fixed_size(400, 200))),
             Input("fafa"),
         ).spacing(4)
     ).spacing(8),
 ).run()
-</py-script>
-</html>

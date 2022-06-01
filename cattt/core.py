@@ -1121,12 +1121,13 @@ class Text(Widget):
     def redraw(self, p: Painter, _: bool) -> None:
         state: State = cast(State, self._state)
         p.style(self._rect_style)
-        rect = Rect(origin=Point(0, 0), size=self.get_size())
+        size = self.get_size()
+        rect = Rect(origin=Point(0, 0), size=size)
         p.fill_rect(rect)
         p.stroke_rect(rect)
 
-        width = self.get_width()
-        height = self.get_height()
+        width = size.width
+        height = size.height
         font_family, font_size = determine_font(
             width,
             height,
@@ -1182,6 +1183,71 @@ class Text(Widget):
         s = Size(p.measure_text(str(state)), self._text_style.font.size)
         p.restore()
         return s
+
+
+# only content policy and fixed font size
+class MultilineText(Widget):
+    def __init__(
+        self, text: str | SimpleValue[str], font_size: int, padding: int = 8, line_spacing: int = 4, kind: Kind = Kind.NORMAL
+    ):
+        if isinstance(text, SimpleValue):
+            state = text
+        else:
+            state = State(text)
+
+        super().__init__(
+            state=state,
+            size=Size(0, 0),
+            pos=Point(0, 0),
+            pos_policy=None,
+            size_policy=SizePolicy.CONTENT,
+        )
+
+        self._rect_style, self._text_style = get_theme().get_styles(
+            "text", kind, AppearanceState.NORMAL
+        )
+
+        self._text_style = replace_font_size(
+            self._text_style, font_size, FontSizePolicy.FIXED
+        )
+
+        self.padding = padding
+        self.line_spacing = line_spacing
+
+    def redraw(self, p: Painter, _: bool) -> None:
+        padding = self.padding
+        line_spacing = self.line_spacing
+
+        state: SimpleValue[str] = cast(SimpleValue[str], self._state)
+
+        p.style(self._rect_style)
+        rect = Rect(origin=Point(0, 0), size=self.get_size())
+        p.fill_rect(rect)
+        p.stroke_rect(rect)
+
+        p.style(self._text_style)
+        h = self._text_style.font.size
+        y = h + line_spacing
+        for line in state.value().splitlines():
+            p.fill_text(line, Point(padding, y), None)
+            y += h + line_spacing
+        y += padding
+
+    def measure(self, p: Painter) -> Size:
+        padding = self.padding
+        line_spacing = self.line_spacing
+
+        state: SimpleValue[str] = cast(SimpleValue[str], self._state)
+        w, h = 0, 0
+        lines = state.value().splitlines()
+        p.save()
+        p.style(self._text_style)
+        w = max(p.measure_text(line) for line in lines) + padding * 2
+        h = (self._text_style.font.size + line_spacing) * len(
+            lines
+        ) + padding
+        p.restore()
+        return Size(w, h)
 
 
 class Input(Text):
@@ -2218,7 +2284,6 @@ class Box(Layout):
             pos_policy=None,
             size=Size(0, 0),
             size_policy=SizePolicy.EXPANDING,
-            # size_constraint=None,
         )
         self.add(child)
         self._child = child
@@ -2231,68 +2296,80 @@ class Box(Layout):
         self._scroll_box_y = None
 
     def redraw(self, p: Painter, completely: bool) -> None:
+        self_size = self._size
+        self_height = self_size.height
+        self_width = self_size.width
+        if self_width == 0 or self_height == 0:
+            return
+
         for c in self.get_children():
             if c._size_policy is SizePolicy.CONTENT:
                 c.resize(c.measure(p))
         content_width, content_height = self.content_size()
 
-        orig_height = self.get_height()
-        orig_width = self.get_width()
         x_scroll_bar_height = 0
         y_scroll_bar_width = 0
 
-        if content_width > self.get_width():
+        if content_width > self_width - y_scroll_bar_width:
             x_scroll_bar_height = SCROLL_BAR_SIZE
-        else:
+
+        if content_height > self_height - x_scroll_bar_height:
+            y_scroll_bar_width = SCROLL_BAR_SIZE
+
+        if content_width > self_width - y_scroll_bar_width:
+            x_scroll_bar_height = SCROLL_BAR_SIZE
+
+        if x_scroll_bar_height == 0:
             self._scroll_x = 0
             self._scroll_box_x = None
 
-        if content_height > self.get_height():
-            y_scroll_bar_width = SCROLL_BAR_SIZE
-        else:
+        if y_scroll_bar_width == 0:
             self._scroll_y = 0
             self._scroll_box_y = None
 
         p.save()
         p.style(self._style)
         if completely or self.is_dirty():
-            p.fill_rect(Rect(origin=Point(0, 0), size=self.get_size()))
-        p.translate(Point(-self._scroll_x, -self._scroll_y))
+            p.fill_rect(Rect(origin=Point(0, 0), size=self_size))
+
+        p.translate(
+            Point(
+                -self._scroll_x * (self_width + y_scroll_bar_width) / self_size.width,
+                -self._scroll_y
+                * (self_height + x_scroll_bar_height)
+                / self_size.height,
+            )
+        )
         self._size.height -= x_scroll_bar_height
         self._size.width -= y_scroll_bar_width
         self._relocate_children(p)
         self._redraw_children(p, completely)
-        self._size.height = orig_height
-        self._size.width = orig_width
+        self._size.height = self_height
+        self._size.width = self_width
         p.restore()
 
         p.save()
         p.style(Box._scrollbar_style)
         p.fill_rect(
             Rect(
-                origin=Point(0, orig_height - x_scroll_bar_height),
-                size=Size(self.get_width() - y_scroll_bar_width, x_scroll_bar_height),
+                origin=Point(0, self_height - x_scroll_bar_height),
+                size=Size(self_width - y_scroll_bar_width, x_scroll_bar_height),
             )
         )
         p.stroke_rect(
             Rect(
-                origin=Point(-1, orig_height - x_scroll_bar_height),
-                size=Size(
-                    self.get_width() + 2 - y_scroll_bar_width, x_scroll_bar_height
-                ),
+                origin=Point(-1, self_height - x_scroll_bar_height),
+                size=Size(self_width + 2 - y_scroll_bar_width, x_scroll_bar_height),
             )
         )
         p.style(Box._scrollbox_style)
-        if content_width != 0 and self.get_width() != 0:
-            scroll_box_width = (
-                (self.get_width() - y_scroll_bar_width)
-                * self.get_width()
-                / content_width
-            )
+        if content_width != 0 and self_width != 0:
+            scroll_box_width = (self_width - y_scroll_bar_width) ** 2 / content_width
             scroll_box = Rect(
                 origin=Point(
-                    (self._scroll_x / content_width) * self.get_width(),
-                    orig_height - x_scroll_bar_height,
+                    (self._scroll_x / content_width)
+                    * (self_width - y_scroll_bar_width),
+                    self_height - x_scroll_bar_height,
                 ),
                 size=Size(scroll_box_width, x_scroll_bar_height),
             )
@@ -2302,29 +2379,26 @@ class Box(Layout):
         p.style(Box._scrollbar_style)
         p.fill_rect(
             Rect(
-                origin=Point(orig_width - y_scroll_bar_width, 0),
-                size=Size(y_scroll_bar_width, self.get_height() - x_scroll_bar_height),
+                origin=Point(self_width - y_scroll_bar_width, 0),
+                size=Size(y_scroll_bar_width, self_height - x_scroll_bar_height),
             )
         )
         p.stroke_rect(
             Rect(
-                origin=Point(orig_width - y_scroll_bar_width, -1),
-                size=Size(
-                    y_scroll_bar_width, self.get_height() + 2 - x_scroll_bar_height
-                ),
+                origin=Point(self_width - y_scroll_bar_width, -1),
+                size=Size(y_scroll_bar_width, self_height + 2 - x_scroll_bar_height),
             )
         )
         p.style(Box._scrollbox_style)
-        if content_height != 0 and self.get_height() != 0:
+        if content_height != 0 and self_height != 0:
             scroll_box_height = (
-                (self.get_height() - x_scroll_bar_height)
-                * self.get_height()
-                / content_height
-            )
+                self_height - x_scroll_bar_height
+            ) ** 2 / content_height
             scroll_box = Rect(
                 origin=Point(
-                    orig_width - y_scroll_bar_width,
-                    (self._scroll_y / content_height) * self.get_height(),
+                    self_width - y_scroll_bar_width,
+                    (self._scroll_y / content_height)
+                    * (self_height - x_scroll_bar_height),
                 ),
                 size=Size(y_scroll_bar_width, scroll_box_height),
             )
@@ -2376,7 +2450,11 @@ class Box(Layout):
 
     def scroll_x(self, w: float, x: int):  # -> Self:
         if x > 0:
-            max_scroll_x = w - self.get_width()
+            max_scroll_x = (
+                w
+                - self.get_width()
+                + (0 if self._scroll_box_y is None else SCROLL_BAR_SIZE)
+            )
             if self._scroll_x == max_scroll_x:
                 return self
             self._scroll_x += x
@@ -2401,7 +2479,11 @@ class Box(Layout):
 
     def scroll_y(self, h: float, y: int):  # -> Self:
         if y > 0:
-            max_scroll_y = h - self.get_height()
+            max_scroll_y = (
+                h
+                - self.get_height()
+                + (0 if self._scroll_box_x is None else SCROLL_BAR_SIZE)
+            )
             if self._scroll_y == max_scroll_y:
                 return self
             self._scroll_y += y
@@ -2445,11 +2527,15 @@ class Box(Layout):
         return (
             p.x > self._pos.x
             and p.x
-            < self._pos.x + self._size.width - SCROLL_BAR_SIZE * (h > self.get_height())
+            < self._pos.x
+            + self._size.width
+            - (0 if self._scroll_box_y is None else SCROLL_BAR_SIZE)
         ) and (
             p.y > self._pos.y
             and p.y
-            < self._pos.y + self._size.height - SCROLL_BAR_SIZE * (w > self.get_width())
+            < self._pos.y
+            + self._size.height
+            - (0 if self._scroll_box_x is None else SCROLL_BAR_SIZE)
         )
 
     def contain_in_my_area(self, p: Point) -> bool:
