@@ -1,4 +1,4 @@
-from cattt.core import App, Text, TextAlign
+from cattt.core import App, Text
 from cattt.frame import Frame
 
 

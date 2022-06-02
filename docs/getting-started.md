@@ -68,6 +68,9 @@ You can download and use precompiled version from [this page](https://www.libsdl
 After downloading and storing it, please set the installed folder path to the environment variable `PYSDL2_DLL_PATH`.
 (For more information on how PySDL2 finds SDL2 DLL, see [this page](https://pysdl2.readthedocs.io/en/rel_0_9_7/integration.html).)
 
+### Confirmation of successful installation
+If the installation was successful, then [hello_world.py](https://github.com/i2y/cattt/blob/main/examples/hello_world.py), [calc.py](https://github.com/i2y/cattt/blob/main/examples/calc.py), etc. under [the examples folder](https://github.com/i2y/cattt/tree/main/examples) will work.
+
 
 ## For Web Browsers
 Sorry, we have not yet established a clean and easy way to do this.
