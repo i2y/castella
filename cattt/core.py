@@ -393,6 +393,20 @@ class Observable(Protocol):
         ...
 
 
+class UpdateListener:
+    def __init__(self, callback: Callable[[], None]):
+        self._callback = callback
+
+    def on_attach(self, o: "ObservableBase"):
+        self._observable = o
+
+    def on_detach(self, o: "ObservableBase"):
+        del self._observable
+
+    def on_notify(self):
+        self._callback()
+
+
 class ObservableBase(ABC):
     def __init__(self) -> None:
         self._observers: list[Observer] = []
@@ -408,6 +422,9 @@ class ObservableBase(ABC):
     def notify(self) -> None:
         for o in self._observers:
             o.on_notify()
+
+    def on_update(self, callback: Callable) -> None:
+        self.attach(UpdateListener(callback))
 
 
 V = TypeVar("V")
@@ -808,7 +825,7 @@ class ButtonState(ObservableBase):
         self.notify()
 
 
-class TextInputState(ObservableBase):
+class InputState(ObservableBase):
     def __init__(self, text: str):
         super().__init__()
         self._text = text
@@ -824,6 +841,9 @@ class TextInputState(ObservableBase):
             return self._text[: self._caret] + "|" + self._text[self._caret :]
         else:
             return self._text
+
+    def raw_value(self) -> str:
+        return self._text
 
     def __str__(self) -> str:
         return self.value()
@@ -933,6 +953,11 @@ class Theme:
     text_success: WidgetStyle
     text_warning: WidgetStyle
     text_danger: WidgetStyle
+    input_normal: WidgetStyle
+    input_info: WidgetStyle
+    input_success: WidgetStyle
+    input_warning: WidgetStyle
+    input_danger: WidgetStyle
     button_normal: WidgetStyle
     button_normal_hover: WidgetStyle
     button_normal_pushed: WidgetStyle
@@ -985,7 +1010,7 @@ def _get_theme() -> Theme:
         ),
         text_normal=WidgetStyle(
             bg_color=color_schema["bg-primary"],
-            border_color=color_schema["border-primary"],
+            border_color=color_schema["bg-primary"],
             text_color=color_schema["text-primary"],
         ),
         text_info=WidgetStyle(
@@ -1004,6 +1029,31 @@ def _get_theme() -> Theme:
             text_color=color_schema["text-warning"],
         ),
         text_danger=WidgetStyle(
+            bg_color=color_schema["bg-danger"],
+            border_color=color_schema["border-danger"],
+            text_color=color_schema["text-danger"],
+        ),
+        input_normal=WidgetStyle(
+            bg_color=color_schema["bg-primary"],
+            border_color=color_schema["border-primary"],
+            text_color=color_schema["text-primary"],
+        ),
+        input_info=WidgetStyle(
+            bg_color=color_schema["bg-info"],
+            border_color=color_schema["border-info"],
+            text_color=color_schema["text-info"],
+        ),
+        input_success=WidgetStyle(
+            bg_color=color_schema["bg-success"],
+            border_color=color_schema["border-success"],
+            text_color=color_schema["text-success"],
+        ),
+        input_warning=WidgetStyle(
+            bg_color=color_schema["bg-warning"],
+            border_color=color_schema["border-warning"],
+            text_color=color_schema["text-warning"],
+        ),
+        input_danger=WidgetStyle(
             bg_color=color_schema["bg-danger"],
             border_color=color_schema["border-danger"],
             text_color=color_schema["text-danger"],
@@ -1111,7 +1161,7 @@ class Text(Widget):
 
         self._align = align
         self._rect_style, self._text_style = get_theme().get_styles(
-            "text", kind, AppearanceState.NORMAL
+            self.__class__.__name__.lower(), kind, AppearanceState.NORMAL
         )
         if font_size is not None:
             self._text_style = replace_font_size(
@@ -1188,7 +1238,12 @@ class Text(Widget):
 # only content policy and fixed font size
 class MultilineText(Widget):
     def __init__(
-        self, text: str | SimpleValue[str], font_size: int, padding: int = 8, line_spacing: int = 4, kind: Kind = Kind.NORMAL
+        self,
+        text: str | SimpleValue[str],
+        font_size: int,
+        padding: int = 8,
+        line_spacing: int = 4,
+        kind: Kind = Kind.NORMAL,
     ):
         if isinstance(text, SimpleValue):
             state = text
@@ -1243,42 +1298,53 @@ class MultilineText(Widget):
         p.save()
         p.style(self._text_style)
         w = max(p.measure_text(line) for line in lines) + padding * 2
-        h = (self._text_style.font.size + line_spacing) * len(
-            lines
-        ) + padding
+        h = (self._text_style.font.size + line_spacing) * len(lines) + padding
         p.restore()
         return Size(w, h)
 
 
 class Input(Text):
     def __init__(
-        self, text: str, align: TextAlign = TextAlign.LEFT, font_size: int | None = None
+        self,
+        text: str | InputState,
+        align: TextAlign = TextAlign.LEFT,
+        font_size: int | None = None,
     ):
-        super().__init__(TextInputState(text), Kind.NORMAL, align, font_size)
+        if isinstance(text, InputState):
+            super().__init__(text, Kind.NORMAL, align, font_size)
+        else:
+            super().__init__(InputState(text), Kind.NORMAL, align, font_size)
+        self._callback = lambda v: ...
 
     def focused(self) -> None:
-        state = cast(TextInputState, self._state)
+        state = cast(InputState, self._state)
         state.start_editing()
 
     def unfocused(self) -> None:
-        state = cast(TextInputState, self._state)
+        state = cast(InputState, self._state)
         state.finish_editing()
 
     def input_char(self, ev: InputCharEvent) -> None:
-        state = cast(TextInputState, self._state)
+        state = cast(InputState, self._state)
         state.insert(ev.char)
+        self._callback(state.raw_value())
 
     def input_key(self, ev: InputKeyEvent) -> None:
         if ev.action is KeyAction.RELEASE:
             return
 
-        state = cast(TextInputState, self._state)
+        state = cast(InputState, self._state)
         if ev.key is KeyCode.BACKSPACE:
             state.delete_prev()
+            self._callback(state.raw_value())
         elif ev.key is KeyCode.LEFT:
             state.move_to_prev()
         elif ev.key is KeyCode.RIGHT:
             state.move_to_next()
+
+    def on_change(self, callback: Callable[[str], None]):  # -> Self:
+        self._callback = callback
+        return self
 
 
 def determine_font(
