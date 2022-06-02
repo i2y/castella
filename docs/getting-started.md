@@ -4,9 +4,21 @@ Cattt for Desktop depends on either GLFW or SDL2, so the installation method of 
 
 ### In case of using Cattt with GLFW
 
-You can install Cattt with the following command.
+You can install Cattt from PyPI with the following command.
 ```
 $ pip install cattt[glfw]
+```
+
+Instead using PyPI, to install the latest Cattt source code from GitHub, you can execute the following command.
+```
+$ pip install "git+https://github.com/i2y/cattt.git"[glfw]
+```
+
+If you run the above command in PowerShell on Windows it may fail. In that case, please clone the git repository as follows and then do `pip install .[glfw]`.
+```
+$ git clone git+https://github.com/i2y/cattt.git
+$ cd cattt
+$ pip install .[glfw]
 ```
 
 If GLFW is not already installed in your environment, please install it as well.
@@ -33,9 +45,21 @@ $ sudo yum install -y libglfw3-dev
 
 
 ### In case of using Cattt with SDL2
-You can install Cattt with the following command.
+You can install Cattt from PyPI with the following command.
 ```
 $ pip install cattt[sdl]
+```
+
+Instead using PyPI, to install the latest Cattt source code from GitHub, you can execute the following command.
+```
+$ pip install "git+https://github.com/i2y/cattt.git"[sdl]
+```
+
+If you run the above command in PowerShell on Windows it may fail. In that case, please clone the git repository as follows and then do `pip install .[sdl]`.
+```
+$ git clone git+https://github.com/i2y/cattt.git
+$ cd cattt
+$ pip install .[sdl]
 ```
 
 If SDL2 is not already installed in your environment, please install it as well.
