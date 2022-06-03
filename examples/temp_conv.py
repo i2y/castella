@@ -2,11 +2,9 @@ from cattt.core import (
     App,
     Input,
     Component,
-    Column,
     Row,
     InputState,
     Text,
-    Spacer,
     TextAlign,
 )
 from cattt.frame import Frame
@@ -19,24 +17,12 @@ class TempConv(Component):
         self._f = InputState("32")
 
     def view(self):
-        return Column(
-            Spacer().fixed_height(8),
-            Row(
-                Row(
-                    Input(self._c, font_size=80, align=TextAlign.RIGHT).on_change(
-                        self.to_f
-                    ),
-                    Text("°C", font_size=80).fixed_width(100),
-                ),
-                Text("=", font_size=50).fixed_width(100),
-                Row(
-                    Input(self._f, font_size=80, align=TextAlign.RIGHT).on_change(
-                        self.to_c
-                    ),
-                    Text("°F", font_size=80).fixed_width(100),
-                ),
-            ).spacing(8),
-            Spacer().fixed_height(8),
+        return Row(
+            Input(self._c, font_size=80, align=TextAlign.RIGHT).on_change(self.to_f),
+            Text("°C", font_size=80).fixed_width(100),
+            Text("=", font_size=50).fixed_width(100),
+            Input(self._f, font_size=80, align=TextAlign.RIGHT).on_change(self.to_c),
+            Text("°F", font_size=80).fixed_width(100),
         )
 
     def to_f(self, v: str):
