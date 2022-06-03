@@ -1015,7 +1015,6 @@ class Theme:
 
 def _get_theme() -> Theme:
     color_schema = _get_color_schema()
-    color_mode = color.DARK_MODE if _is_darkmode() else color.LIGHT_MODE
     return Theme(
         app=WidgetStyle(
             bg_color=color_schema["bg-canvas"],
