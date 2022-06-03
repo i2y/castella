@@ -462,6 +462,13 @@ class Widget(ABC):
         self._enable_to_detach = True
         self._parent = None
 
+    def get_styles(
+        self, kind: "Kind", appearance_state: "AppearanceState"
+    ) -> tuple[Style, Style]:
+        return get_theme().get_styles(
+            self.__class__.__name__.lower(), kind, appearance_state
+        )
+
     def dispatch(self, p: Point) -> tuple[Optional["Widget"], Point | None]:
         if self.contain(p):
             return self, p
@@ -953,6 +960,11 @@ class Theme:
     text_success: WidgetStyle
     text_warning: WidgetStyle
     text_danger: WidgetStyle
+    multilinetext_normal: WidgetStyle
+    multilinetext_info: WidgetStyle
+    multilinetext_success: WidgetStyle
+    multilinetext_warning: WidgetStyle
+    multilinetext_danger: WidgetStyle
     input_normal: WidgetStyle
     input_info: WidgetStyle
     input_success: WidgetStyle
@@ -1029,6 +1041,31 @@ def _get_theme() -> Theme:
             text_color=color_schema["text-warning"],
         ),
         text_danger=WidgetStyle(
+            bg_color=color_schema["bg-danger"],
+            border_color=color_schema["border-danger"],
+            text_color=color_schema["text-danger"],
+        ),
+        multilinetext_normal=WidgetStyle(
+            bg_color=color_schema["bg-primary"],
+            border_color=color_schema["bg-primary"],
+            text_color=color_schema["text-primary"],
+        ),
+        multilinetext_info=WidgetStyle(
+            bg_color=color_schema["bg-info"],
+            border_color=color_schema["border-info"],
+            text_color=color_schema["text-info"],
+        ),
+        multilinetext_success=WidgetStyle(
+            bg_color=color_schema["bg-success"],
+            border_color=color_schema["border-success"],
+            text_color=color_schema["text-success"],
+        ),
+        multilinetext_warning=WidgetStyle(
+            bg_color=color_schema["bg-warning"],
+            border_color=color_schema["border-warning"],
+            text_color=color_schema["text-warning"],
+        ),
+        multilinetext_danger=WidgetStyle(
             bg_color=color_schema["bg-danger"],
             border_color=color_schema["border-danger"],
             text_color=color_schema["text-danger"],
@@ -1160,8 +1197,8 @@ class Text(Widget):
         )
 
         self._align = align
-        self._rect_style, self._text_style = get_theme().get_styles(
-            self.__class__.__name__.lower(), kind, AppearanceState.NORMAL
+        self._rect_style, self._text_style = self.get_styles(
+            kind, AppearanceState.NORMAL
         )
         if font_size is not None:
             self._text_style = replace_font_size(
@@ -1258,10 +1295,9 @@ class MultilineText(Widget):
             size_policy=SizePolicy.CONTENT,
         )
 
-        self._rect_style, self._text_style = get_theme().get_styles(
-            "text", kind, AppearanceState.NORMAL
+        self._rect_style, self._text_style = self.get_styles(
+            kind, AppearanceState.NORMAL
         )
-
         self._text_style = replace_font_size(
             self._text_style, font_size, FontSizePolicy.FIXED
         )
@@ -1382,13 +1418,10 @@ class Button(Widget):
         self._on_click = lambda _: ...
         self._align = align
         kind = Kind.NORMAL
-        theme = get_theme()
-        self._style, self._text_style = theme.get_styles(
-            "button", kind, AppearanceState.NORMAL
-        )
+        self._style, self._text_style = self.get_styles(kind, AppearanceState.NORMAL)
         self._kind = kind
-        self._pushed_style, self._pushed_text_style = theme.get_styles(
-            "button", kind, AppearanceState.PUSHED
+        self._pushed_style, self._pushed_text_style = self.get_styles(
+            kind, AppearanceState.PUSHED
         )
         self._font_size = 0
         self._font_size_policy = FontSizePolicy.EXPANDING
@@ -1412,8 +1445,8 @@ class Button(Widget):
         self._on_click(ev)
 
     def mouse_over(self) -> None:
-        self._style, self._text_style = get_theme().get_styles(
-            "button", self._kind, AppearanceState.HOVER
+        self._style, self._text_style = self.get_styles(
+            self._kind, AppearanceState.HOVER
         )
         self._text_style = replace_font_size(
             self._text_style, self._font_size, self._font_size_policy
@@ -1421,8 +1454,8 @@ class Button(Widget):
         self.update()
 
     def mouse_out(self) -> None:
-        self._style, self._text_style = get_theme().get_styles(
-            "button", self._kind, AppearanceState.NORMAL
+        self._style, self._text_style = self.get_styles(
+            self._kind, AppearanceState.NORMAL
         )
         self._text_style = replace_font_size(
             self._text_style, self._font_size, self._font_size_policy
@@ -1530,14 +1563,9 @@ class Switch(Widget):
             size_policy=SizePolicy.EXPANDING,
         )
         kind = Kind.NORMAL
-        theme = get_theme()
-        self._bg_style, self._fg_style = theme.get_styles(
-            "switch", kind, AppearanceState.NORMAL
-        )
+        self._bg_style, self._fg_style = self.get_styles(kind, AppearanceState.NORMAL)
         self._kind = kind
-        self._selected_bg_style, _ = theme.get_styles(
-            "switch", kind, AppearanceState.SELECTED
-        )
+        self._selected_bg_style, _ = self.get_styles(kind, AppearanceState.SELECTED)
 
     def mouse_up(self, ev: MouseEvent) -> None:
         state = cast(SimpleValue[bool], self._state)
