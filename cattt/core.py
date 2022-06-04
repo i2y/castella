@@ -524,6 +524,11 @@ class Widget(ABC):
             ),
         )
 
+    def erase_border(self):  # -> Self:
+        return self.border_color(
+            self._get_widget_style(Kind.NORMAL, AppearanceState.NORMAL).bg_color
+        )
+
     def _on_update_widget_styles(self) -> None:
         pass
 
@@ -1617,6 +1622,7 @@ class Button(Widget):
 class Switch(Widget):
     def __init__(self, selected: bool | SimpleValue[bool]):
         self._kind = Kind.NORMAL
+        self._callback = lambda _: ...
         super().__init__(
             state=selected if isinstance(selected, SimpleValue) else State(selected),
             size=Size(0, 0),
@@ -1627,7 +1633,9 @@ class Switch(Widget):
 
     def mouse_up(self, ev: MouseEvent) -> None:
         state = cast(SimpleValue[bool], self._state)
-        state.set(not state.value())
+        new_value = not state.value()
+        state.set(new_value)
+        self._callback(new_value)
 
     def _on_update_widget_styles(self) -> None:
         self._bg_style, self._fg_style = self._get_painter_styles(
@@ -1674,6 +1682,10 @@ class Switch(Widget):
         if sp is SizePolicy.CONTENT:
             raise RuntimeError("The switch doesn't accept SizePolicy.CONTENT")
         return super().size_policy(sp)
+
+    def on_change(self, callback: Callable[[bool], None]):  # -> Self:
+        self._callback = callback
+        return self
 
 
 class Image(Widget):
