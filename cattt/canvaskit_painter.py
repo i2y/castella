@@ -20,7 +20,7 @@ def to_ck_color(color: str) -> int:
 
 def to_ck_rect(rect: core.Rect):
     return window.CK.XYWHRect(
-        rect.origin.x, rect.origin.y, rect.size.width, rect.size.height
+        rect.origin.x, rect.origin.y, rect.size.width - 1, rect.size.height - 1
     )
 
 
