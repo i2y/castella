@@ -482,22 +482,32 @@ class Widget(ABC):
                 f"Unknown style: {widget}.{kind.value}{state.value}".format(kind, state)
             )
 
-    def modify_style(
-        self, kind: "Kind", state: "AppearanceState", changes: "WidgetStyle"
+    def change_style(
+        self, kind: "Kind", state: "AppearanceState", new_style: "WidgetStyle"
     ):  # -> Self:
         styles = self._widget_styles
         style_name = f"{kind.value}{state.value}".format(kind, state)
-        style = styles.get(style_name, WidgetStyle())
-
-        new_style = replace(
-            style,
-            **dict(
-                (field.name, getattr(changes, field.name)) for field in fields(changes)
-            ),
-        )
         styles[style_name] = new_style
         self._on_update_widget_styles()
         return self
+
+    def bg_color(self, rgb: str):  # -> Self:
+        return self.change_style(
+            Kind.NORMAL, AppearanceState.NORMAL, replace(self._get_widget_style(Kind.NORMAL, AppearanceState.NORMAL), bg_color=rgb)
+        )
+
+    def text_color(self, rgb: str):  # -> Self:
+        return self.change_style(
+             Kind.NORMAL, AppearanceState.NORMAL, replace(self._get_widget_style(Kind.NORMAL, AppearanceState.NORMAL), text_color=rgb)
+        )
+
+    def fg_color(self, rgb: str):  # -> Self:
+        return self.text_color(rgb)
+
+    def border_color(self, rgb: str):  # -> Self:
+        return self.change_style(
+             Kind.NORMAL, AppearanceState.NORMAL, replace(self._get_widget_style(Kind.NORMAL, AppearanceState.NORMAL), border_color=rgb)
+        )
 
     def _on_update_widget_styles(self) -> None:
         pass

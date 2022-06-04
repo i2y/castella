@@ -94,7 +94,7 @@ occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim 
                     kind=Kind.DANGER,
                 )
             ),
-            Row(Switch(True).fixed_width(50), Switch(False)).fixed_height(25),
+            Row(Switch(True).fg_color("#FF0000").fixed_width(50), Switch(False)).fixed_height(25),
             Box(AsyncNetImage(url=TENT_IMG).fixed_size(500, 300)).flex(4),
             Row(NumList(c), Box(NumpyImage(array).fixed_size(400, 200))),
             Input("fafa"),
