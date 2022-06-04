@@ -1044,7 +1044,7 @@ def _get_theme() -> Theme:
         text={
             "normal": WidgetStyle(
                 bg_color=color_schema["bg-primary"],
-                border_color=color_schema["bg-primary"],
+                border_color=color_schema["border-primary"],
                 text_color=color_schema["text-primary"],
             ),
             "info": WidgetStyle(
