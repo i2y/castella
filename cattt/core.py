@@ -1127,7 +1127,7 @@ def _get_theme() -> Theme:
         },
         input={
             "normal": WidgetStyle(
-                bg_color=color_schema["bg-primary"],
+                bg_color=color_schema["bg-secondary"],
                 border_color=color_schema["border-primary"],
                 text_color=color_schema["text-primary"],
             ),
