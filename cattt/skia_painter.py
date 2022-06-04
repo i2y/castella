@@ -84,7 +84,7 @@ class Painter:
             AntiAlias=True,
         )
         c = circle.center
-        self._canvas.drawCircle(c.x, c.y, circle.radius, paint)
+        self._canvas.drawCircle(c.x - 0.5, c.y - 0.5, circle.radius - 1, paint)
 
     def stroke_circle(self, circle: core.Circle) -> None:
         style = cast(core.Style, self._style)
@@ -94,7 +94,7 @@ class Painter:
             AntiAlias=True,
         )
         c = circle.center
-        self._canvas.drawCircle(c.x, c.y, circle.radius, paint)
+        self._canvas.drawCircle(c.x - 0.5, c.y - 0.5, circle.radius - 1, paint)
 
     def measure_text(self, text: str) -> float:
         style = cast(core.Style, self._style)
