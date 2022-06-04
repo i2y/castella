@@ -1651,7 +1651,7 @@ class Switch(Widget):
 
     def _draw_background(self, p: Painter) -> None:
         s = self.get_size()
-        r = s.height / 2
+        r = s.height / 2 - 0.5
         left_circle = Circle(center=Point(r, r), radius=r)
         center_rect = Rect(origin=Point(r, 0), size=s - Size(r * 2, 0))
         right_circle = Circle(center=Point(s.width - r, r), radius=r)
@@ -1667,8 +1667,8 @@ class Switch(Widget):
 
     def _draw_knob(self, p: Painter) -> None:
         s = self.get_size()
-        r = s.height / 2
-        inner_r = s.height * 0.75 / 2
+        r = s.height / 2 - 0.5
+        inner_r = s.height * 0.75 / 2 - 0.5
         w = s.width
         state = cast(SimpleValue[bool], self._state)
         p.style(self._fg_style)
@@ -2530,8 +2530,8 @@ class Box(Layout):
         )
         p.stroke_rect(
             Rect(
-                origin=Point(-1, self_height - x_scroll_bar_height),
-                size=Size(self_width + 2 - y_scroll_bar_width, x_scroll_bar_height),
+                origin=Point(0, self_height - x_scroll_bar_height),
+                size=Size(self_width - y_scroll_bar_width, x_scroll_bar_height),
             )
         )
         p.style(Box._scrollbox_style)
@@ -2557,8 +2557,8 @@ class Box(Layout):
         )
         p.stroke_rect(
             Rect(
-                origin=Point(self_width - y_scroll_bar_width, -1),
-                size=Size(y_scroll_bar_width, self_height + 2 - x_scroll_bar_height),
+                origin=Point(self_width - y_scroll_bar_width, 0),
+                size=Size(y_scroll_bar_width, self_height - x_scroll_bar_height),
             )
         )
         p.style(Box._scrollbox_style)
