@@ -1,7 +1,9 @@
 import functools
 import sys
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, replace
+from collections.abc import Iterable
+from copy import deepcopy
+from dataclasses import dataclass, fields, replace
 from enum import Enum, IntEnum, auto
 from typing import (
     Any,
@@ -11,6 +13,7 @@ from typing import (
     List,
     Optional,
     Protocol,
+    TypeAlias,
     TypeVar,
     Union,
     cast,
@@ -461,12 +464,64 @@ class Widget(ABC):
         self._dirty = True
         self._enable_to_detach = True
         self._parent = None
+        self._widget_styles = get_theme().get_widget_styles(self)
+        self._on_update_widget_styles()
 
-    def get_styles(
+    def _get_widget_style(
+        self, kind: "Kind", state: "AppearanceState"
+    ) -> "WidgetStyle":
+        style_name = f"{kind.value}{state.value}".format(kind, state)
+        styles = self._widget_styles
+
+        if style_name in styles:
+            s = styles[style_name]
+            return s
+        else:
+            widget = self.__class__.__name__.lower()
+            raise RuntimeError(
+                f"Unknown style: {widget}.{kind.value}{state.value}".format(kind, state)
+            )
+
+    def modify_style(
+        self, kind: "Kind", state: "AppearanceState", changes: "WidgetStyle"
+    ):  # -> Self:
+        styles = self._widget_styles
+        style_name = f"{kind.value}{state.value}".format(kind, state)
+        style = styles.get(style_name, WidgetStyle())
+
+        new_style = replace(
+            style,
+            **dict(
+                (field.name, getattr(changes, field.name)) for field in fields(changes)
+            ),
+        )
+        styles[style_name] = new_style
+        self._on_update_widget_styles()
+        return self
+
+    def _on_update_widget_styles(self) -> None:
+        pass
+
+    @staticmethod
+    def _convert_widget_style_to_painter_styles(
+        widget_style: "WidgetStyle",
+    ) -> tuple[Style, Style]:
+        return (
+            Style(
+                FillStyle(color=widget_style.bg_color),
+                StrokeStyle(color=widget_style.border_color),
+            ),
+            Style(
+                fill=FillStyle(color=widget_style.text_color),
+                font=deepcopy(widget_style.text_font),
+            ),
+        )
+
+    def _get_painter_styles(
         self, kind: "Kind", appearance_state: "AppearanceState"
     ) -> tuple[Style, Style]:
-        return get_theme().get_styles(
-            self.__class__.__name__.lower(), kind, appearance_state
+        return Widget._convert_widget_style_to_painter_styles(
+            self._get_widget_style(kind, appearance_state)
         )
 
     def dispatch(self, p: Point) -> tuple[Optional["Widget"], Point | None]:
@@ -741,9 +796,6 @@ class State(ObservableBase, Generic[T]):
         return self
 
 
-from collections.abc import Iterable
-
-
 class ListState(list, ObservableBase, Generic[T]):
     def __init__(self, items):
         super().__init__(items)
@@ -936,12 +988,16 @@ class WidgetStyle:
     text_font: Font = Font()
 
 
+# WidgetStyles = NewType('WidgetStyles', Mapping[str, WidgetStyle])
+WidgetStyles: TypeAlias = dict[str, WidgetStyle]
+
+
 class Kind(Enum):
-    NORMAL = "_normal"
-    INFO = "_info"
-    SUCCESS = "_success"
-    WARNING = "_warning"
-    DANGER = "_danger"
+    NORMAL = "normal"
+    INFO = "info"
+    SUCCESS = "success"
+    WARNING = "warning"
+    DANGER = "danger"
 
 
 class AppearanceState(Enum):
@@ -955,62 +1011,18 @@ class AppearanceState(Enum):
 @dataclass(slots=True, frozen=True)
 class Theme:
     app: WidgetStyle
-    text_normal: WidgetStyle
-    text_info: WidgetStyle
-    text_success: WidgetStyle
-    text_warning: WidgetStyle
-    text_danger: WidgetStyle
-    multilinetext_normal: WidgetStyle
-    multilinetext_info: WidgetStyle
-    multilinetext_success: WidgetStyle
-    multilinetext_warning: WidgetStyle
-    multilinetext_danger: WidgetStyle
-    input_normal: WidgetStyle
-    input_info: WidgetStyle
-    input_success: WidgetStyle
-    input_warning: WidgetStyle
-    input_danger: WidgetStyle
-    button_normal: WidgetStyle
-    button_normal_hover: WidgetStyle
-    button_normal_pushed: WidgetStyle
-    switch_normal: WidgetStyle
-    switch_normal_selected: WidgetStyle
-    layout: WidgetStyle
     scrollbar: WidgetStyle
     scrollbox: WidgetStyle
+    layout: WidgetStyle
+    text: WidgetStyles
+    multilinetext: WidgetStyles
+    input: WidgetStyles
+    button: WidgetStyles
+    switch: WidgetStyles
 
-    def _get_widget_style(
-        self,
-        widget: str,
-        kind: Kind = Kind.NORMAL,
-        state: AppearanceState = AppearanceState.NORMAL,
-    ) -> WidgetStyle:
-        style_name = f"{widget}{kind.value}{state.value}".format(widget, kind, state)
-        if hasattr(self, style_name):
-            return getattr(self, style_name)
-        else:
-            raise RuntimeError(f"Unknown style: {style_name}".format(style_name))
-
-    def _convert_widget_style_to_painter_styles(
-        self, widget_style: WidgetStyle
-    ) -> tuple[Style, Style]:
-        return (
-            Style(
-                FillStyle(color=widget_style.bg_color),
-                StrokeStyle(color=widget_style.border_color),
-            ),
-            Style(
-                fill=FillStyle(color=widget_style.text_color),
-                font=widget_style.text_font,
-            ),
-        )
-
-    def get_styles(
-        self, widget: str, kind: Kind, state: AppearanceState
-    ) -> tuple[Style, Style]:
-        return self._convert_widget_style_to_painter_styles(
-            self._get_widget_style(widget, kind, state)
-        )
+    def get_widget_styles(self, widget: Widget) -> WidgetStyles:
+        class_name = widget.__class__.__name__.lower()
+        return deepcopy(getattr(self, class_name)) if hasattr(self, class_name) else {}
 
 
 def _get_theme() -> Theme:
@@ -1018,104 +1030,6 @@ def _get_theme() -> Theme:
     return Theme(
         app=WidgetStyle(
             bg_color=color_schema["bg-canvas"],
-        ),
-        text_normal=WidgetStyle(
-            bg_color=color_schema["bg-primary"],
-            border_color=color_schema["bg-primary"],
-            text_color=color_schema["text-primary"],
-        ),
-        text_info=WidgetStyle(
-            bg_color=color_schema["bg-info"],
-            border_color=color_schema["border-info"],
-            text_color=color_schema["text-info"],
-        ),
-        text_success=WidgetStyle(
-            bg_color=color_schema["bg-success"],
-            border_color=color_schema["border-success"],
-            text_color=color_schema["text-success"],
-        ),
-        text_warning=WidgetStyle(
-            bg_color=color_schema["bg-warning"],
-            border_color=color_schema["border-warning"],
-            text_color=color_schema["text-warning"],
-        ),
-        text_danger=WidgetStyle(
-            bg_color=color_schema["bg-danger"],
-            border_color=color_schema["border-danger"],
-            text_color=color_schema["text-danger"],
-        ),
-        multilinetext_normal=WidgetStyle(
-            bg_color=color_schema["bg-primary"],
-            border_color=color_schema["bg-primary"],
-            text_color=color_schema["text-primary"],
-        ),
-        multilinetext_info=WidgetStyle(
-            bg_color=color_schema["bg-info"],
-            border_color=color_schema["border-info"],
-            text_color=color_schema["text-info"],
-        ),
-        multilinetext_success=WidgetStyle(
-            bg_color=color_schema["bg-success"],
-            border_color=color_schema["border-success"],
-            text_color=color_schema["text-success"],
-        ),
-        multilinetext_warning=WidgetStyle(
-            bg_color=color_schema["bg-warning"],
-            border_color=color_schema["border-warning"],
-            text_color=color_schema["text-warning"],
-        ),
-        multilinetext_danger=WidgetStyle(
-            bg_color=color_schema["bg-danger"],
-            border_color=color_schema["border-danger"],
-            text_color=color_schema["text-danger"],
-        ),
-        input_normal=WidgetStyle(
-            bg_color=color_schema["bg-primary"],
-            border_color=color_schema["border-primary"],
-            text_color=color_schema["text-primary"],
-        ),
-        input_info=WidgetStyle(
-            bg_color=color_schema["bg-info"],
-            border_color=color_schema["border-info"],
-            text_color=color_schema["text-info"],
-        ),
-        input_success=WidgetStyle(
-            bg_color=color_schema["bg-success"],
-            border_color=color_schema["border-success"],
-            text_color=color_schema["text-success"],
-        ),
-        input_warning=WidgetStyle(
-            bg_color=color_schema["bg-warning"],
-            border_color=color_schema["border-warning"],
-            text_color=color_schema["text-warning"],
-        ),
-        input_danger=WidgetStyle(
-            bg_color=color_schema["bg-danger"],
-            border_color=color_schema["border-danger"],
-            text_color=color_schema["text-danger"],
-        ),
-        button_normal=WidgetStyle(
-            bg_color=color_schema["bg-tertiary"],
-            border_color=color_schema["border-primary"],
-            text_color=color_schema["text-primary"],
-        ),
-        button_normal_hover=WidgetStyle(
-            bg_color=color_schema["bg-overlay"],
-            border_color=color_schema["border-primary"],
-            text_color=color_schema["text-primary"],
-        ),
-        button_normal_pushed=WidgetStyle(
-            bg_color=color_schema["bg-pushed"],
-            border_color=color_schema["border-secondary"],
-            text_color=color_schema["text-primary"],
-        ),
-        switch_normal=WidgetStyle(
-            bg_color=color_schema["bg-tertiary"],
-            text_color=color_schema["fg"],
-        ),
-        switch_normal_selected=WidgetStyle(
-            bg_color=color_schema["bg-selected"],
-            text_color=color_schema["fg"],
         ),
         layout=WidgetStyle(
             bg_color=color_schema["bg-primary"],
@@ -1127,6 +1041,114 @@ def _get_theme() -> Theme:
         scrollbox=WidgetStyle(
             bg_color=color_schema["border-secondary"],
         ),
+        text={
+            "normal": WidgetStyle(
+                bg_color=color_schema["bg-primary"],
+                border_color=color_schema["bg-primary"],
+                text_color=color_schema["text-primary"],
+            ),
+            "info": WidgetStyle(
+                bg_color=color_schema["bg-info"],
+                border_color=color_schema["border-info"],
+                text_color=color_schema["text-info"],
+            ),
+            "success": WidgetStyle(
+                bg_color=color_schema["bg-success"],
+                border_color=color_schema["border-success"],
+                text_color=color_schema["text-success"],
+            ),
+            "warning": WidgetStyle(
+                bg_color=color_schema["bg-warning"],
+                border_color=color_schema["border-warning"],
+                text_color=color_schema["text-warning"],
+            ),
+            "danger": WidgetStyle(
+                bg_color=color_schema["bg-danger"],
+                border_color=color_schema["border-danger"],
+                text_color=color_schema["text-danger"],
+            ),
+        },
+        multilinetext={
+            "normal": WidgetStyle(
+                bg_color=color_schema["bg-primary"],
+                border_color=color_schema["bg-primary"],
+                text_color=color_schema["text-primary"],
+            ),
+            "info": WidgetStyle(
+                bg_color=color_schema["bg-info"],
+                border_color=color_schema["border-info"],
+                text_color=color_schema["text-info"],
+            ),
+            "success": WidgetStyle(
+                bg_color=color_schema["bg-success"],
+                border_color=color_schema["border-success"],
+                text_color=color_schema["text-success"],
+            ),
+            "warning": WidgetStyle(
+                bg_color=color_schema["bg-warning"],
+                border_color=color_schema["border-warning"],
+                text_color=color_schema["text-warning"],
+            ),
+            "danger": WidgetStyle(
+                bg_color=color_schema["bg-danger"],
+                border_color=color_schema["border-danger"],
+                text_color=color_schema["text-danger"],
+            ),
+        },
+        input={
+            "normal": WidgetStyle(
+                bg_color=color_schema["bg-primary"],
+                border_color=color_schema["border-primary"],
+                text_color=color_schema["text-primary"],
+            ),
+            "info": WidgetStyle(
+                bg_color=color_schema["bg-info"],
+                border_color=color_schema["border-info"],
+                text_color=color_schema["text-info"],
+            ),
+            "success": WidgetStyle(
+                bg_color=color_schema["bg-success"],
+                border_color=color_schema["border-success"],
+                text_color=color_schema["text-success"],
+            ),
+            "warning": WidgetStyle(
+                bg_color=color_schema["bg-warning"],
+                border_color=color_schema["border-warning"],
+                text_color=color_schema["text-warning"],
+            ),
+            "danger": WidgetStyle(
+                bg_color=color_schema["bg-danger"],
+                border_color=color_schema["border-danger"],
+                text_color=color_schema["text-danger"],
+            ),
+        },
+        button={
+            "normal": WidgetStyle(
+                bg_color=color_schema["bg-tertiary"],
+                border_color=color_schema["border-primary"],
+                text_color=color_schema["text-primary"],
+            ),
+            "normal_hover": WidgetStyle(
+                bg_color=color_schema["bg-overlay"],
+                border_color=color_schema["border-primary"],
+                text_color=color_schema["text-primary"],
+            ),
+            "normal_pushed": WidgetStyle(
+                bg_color=color_schema["bg-pushed"],
+                border_color=color_schema["border-secondary"],
+                text_color=color_schema["text-primary"],
+            ),
+        },
+        switch={
+            "normal": WidgetStyle(
+                bg_color=color_schema["bg-tertiary"],
+                text_color=color_schema["fg"],
+            ),
+            "normal_selected": WidgetStyle(
+                bg_color=color_schema["bg-selected"],
+                text_color=color_schema["fg"],
+            ),
+        },
     )
 
 
@@ -1187,6 +1209,10 @@ class Text(Widget):
         else:
             state = State(str(text))
 
+        self._kind = kind
+        self._font_size = font_size
+        self._align = align
+
         super().__init__(
             state=state,
             size=Size(0, 0),
@@ -1195,17 +1221,18 @@ class Text(Widget):
             size_policy=SizePolicy.EXPANDING,
         )
 
-        self._align = align
-        self._rect_style, self._text_style = self.get_styles(
-            kind, AppearanceState.NORMAL
+    def _on_update_widget_styles(self) -> None:
+        self._rect_style, self._text_style = self._get_painter_styles(
+            self._kind, AppearanceState.NORMAL
         )
-        if font_size is not None:
+        if self._font_size is not None:
             self._text_style = replace_font_size(
-                self._text_style, font_size, FontSizePolicy.FIXED
+                self._text_style, self._font_size, FontSizePolicy.FIXED
             )
 
     def redraw(self, p: Painter, _: bool) -> None:
         state: State = cast(State, self._state)
+
         p.style(self._rect_style)
         size = self.get_size()
         rect = Rect(origin=Point(0, 0), size=size)
@@ -1286,6 +1313,11 @@ class MultilineText(Widget):
         else:
             state = State(text)
 
+        self._kind = kind
+        self._font_size = font_size
+        self._padding = padding
+        self._line_spacing = line_spacing
+
         super().__init__(
             state=state,
             size=Size(0, 0),
@@ -1294,19 +1326,17 @@ class MultilineText(Widget):
             size_policy=SizePolicy.CONTENT,
         )
 
-        self._rect_style, self._text_style = self.get_styles(
-            kind, AppearanceState.NORMAL
+    def _on_update_widget_styles(self) -> None:
+        self._rect_style, self._text_style = self._get_painter_styles(
+            self._kind, AppearanceState.NORMAL
         )
         self._text_style = replace_font_size(
-            self._text_style, font_size, FontSizePolicy.FIXED
+            self._text_style, self._font_size, FontSizePolicy.FIXED
         )
 
-        self.padding = padding
-        self.line_spacing = line_spacing
-
     def redraw(self, p: Painter, _: bool) -> None:
-        padding = self.padding
-        line_spacing = self.line_spacing
+        padding = self._padding
+        line_spacing = self._line_spacing
 
         state: SimpleValue[str] = cast(SimpleValue[str], self._state)
 
@@ -1324,8 +1354,8 @@ class MultilineText(Widget):
         y += padding
 
     def measure(self, p: Painter) -> Size:
-        padding = self.padding
-        line_spacing = self.line_spacing
+        padding = self._padding
+        line_spacing = self._line_spacing
 
         state: SimpleValue[str] = cast(SimpleValue[str], self._state)
         w, h = 0, 0
@@ -1407,6 +1437,16 @@ class Button(Widget):
         align: TextAlign = TextAlign.CENTER,
         font_size: int | None = None,
     ):
+        self._on_click = lambda _: ...
+        self._align = align
+        self._kind = Kind.NORMAL
+        self._appearance_state = AppearanceState.NORMAL
+        if font_size is None:
+            self._font_size = 0
+            self._font_size_policy = FontSizePolicy.EXPANDING
+        else:
+            self._font_size = font_size
+            self._font_size_policy = FontSizePolicy.FIXED
         super().__init__(
             state=ButtonState(text),
             size=Size(0, 0),
@@ -1414,25 +1454,22 @@ class Button(Widget):
             pos_policy=None,
             size_policy=SizePolicy.EXPANDING,
         )
-        self._on_click = lambda _: ...
-        self._align = align
-        kind = Kind.NORMAL
-        self._style, self._text_style = self.get_styles(kind, AppearanceState.NORMAL)
-        self._kind = kind
-        self._pushed_style, self._pushed_text_style = self.get_styles(
-            kind, AppearanceState.PUSHED
+
+    def _on_update_widget_styles(self) -> None:
+        self._style, self._text_style = self._get_painter_styles(
+            self._kind, self._appearance_state
         )
-        self._font_size = 0
-        self._font_size_policy = FontSizePolicy.EXPANDING
-        if font_size is not None:
+        self._pushed_style, self._pushed_text_style = self._get_painter_styles(
+            self._kind, AppearanceState.PUSHED
+        )
+
+        if self._font_size != 0:
             self._text_style = replace_font_size(
-                self._text_style, font_size, FontSizePolicy.FIXED
+                self._text_style, self._font_size, FontSizePolicy.FIXED
             )
             self._pushed_text_style = replace_font_size(
-                self._pushed_text_style, font_size, FontSizePolicy.FIXED
+                self._pushed_text_style, self._font_size, FontSizePolicy.FIXED
             )
-            self._font_size = font_size
-            self._font_size_policy = FontSizePolicy.FIXED
 
     def mouse_down(self, ev: MouseEvent) -> None:
         state: ButtonState = cast(ButtonState, self._state)
@@ -1444,7 +1481,7 @@ class Button(Widget):
         self._on_click(ev)
 
     def mouse_over(self) -> None:
-        self._style, self._text_style = self.get_styles(
+        self._style, self._text_style = self._get_painter_styles(
             self._kind, AppearanceState.HOVER
         )
         self._text_style = replace_font_size(
@@ -1453,7 +1490,7 @@ class Button(Widget):
         self.update()
 
     def mouse_out(self) -> None:
-        self._style, self._text_style = self.get_styles(
+        self._style, self._text_style = self._get_painter_styles(
             self._kind, AppearanceState.NORMAL
         )
         self._text_style = replace_font_size(
@@ -1554,6 +1591,7 @@ class Button(Widget):
 
 class Switch(Widget):
     def __init__(self, selected: bool | SimpleValue[bool]):
+        self._kind = Kind.NORMAL
         super().__init__(
             state=selected if isinstance(selected, SimpleValue) else State(selected),
             size=Size(0, 0),
@@ -1561,14 +1599,18 @@ class Switch(Widget):
             pos_policy=None,
             size_policy=SizePolicy.EXPANDING,
         )
-        kind = Kind.NORMAL
-        self._bg_style, self._fg_style = self.get_styles(kind, AppearanceState.NORMAL)
-        self._kind = kind
-        self._selected_bg_style, _ = self.get_styles(kind, AppearanceState.SELECTED)
 
     def mouse_up(self, ev: MouseEvent) -> None:
         state = cast(SimpleValue[bool], self._state)
         state.set(not state.value())
+
+    def _on_update_widget_styles(self) -> None:
+        self._bg_style, self._fg_style = self._get_painter_styles(
+            self._kind, AppearanceState.NORMAL
+        )
+        self._selected_bg_style, _ = self._get_painter_styles(
+            self._kind, AppearanceState.SELECTED
+        )
 
     def redraw(self, p: Painter, _: bool) -> None:
         self._draw_background(p)
@@ -1616,6 +1658,8 @@ class Image(Widget):
         else:
             state = State(file_path)
 
+        self._use_cache = use_cache
+
         super().__init__(
             state=state,
             size=Size(0, 0),
@@ -1623,8 +1667,6 @@ class Image(Widget):
             pos_policy=None,
             size_policy=SizePolicy.CONTENT,
         )
-
-        self._use_cache = use_cache
 
     def redraw(self, p: Painter, _: bool) -> None:
         state: SimpleValue[str] = cast(SimpleValue[str], self._state)
@@ -1642,6 +1684,8 @@ class NetImage(Widget):
         else:
             state = State(url)
 
+        self._use_cache = use_cache
+
         super().__init__(
             state=state,
             size=Size(0, 0),
@@ -1649,8 +1693,6 @@ class NetImage(Widget):
             pos_policy=None,
             size_policy=SizePolicy.CONTENT,
         )
-
-        self._use_cache = use_cache
 
     def redraw(self, p: Painter, _: bool) -> None:
         state: SimpleValue[str] = cast(SimpleValue[str], self._state)

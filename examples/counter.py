@@ -1,4 +1,12 @@
-from cattt.core import App, Button, Column, Component, Row, State, Text
+from cattt.core import (
+    App,
+    Button,
+    Column,
+    Component,
+    Row,
+    State,
+    Text,
+)
 from cattt.frame import Frame
 
 
