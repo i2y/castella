@@ -493,12 +493,22 @@ class Widget(ABC):
 
     def bg_color(self, rgb: str):  # -> Self:
         return self.change_style(
-            Kind.NORMAL, AppearanceState.NORMAL, replace(self._get_widget_style(Kind.NORMAL, AppearanceState.NORMAL), bg_color=rgb)
+            Kind.NORMAL,
+            AppearanceState.NORMAL,
+            replace(
+                self._get_widget_style(Kind.NORMAL, AppearanceState.NORMAL),
+                bg_color=rgb,
+            ),
         )
 
     def text_color(self, rgb: str):  # -> Self:
         return self.change_style(
-             Kind.NORMAL, AppearanceState.NORMAL, replace(self._get_widget_style(Kind.NORMAL, AppearanceState.NORMAL), text_color=rgb)
+            Kind.NORMAL,
+            AppearanceState.NORMAL,
+            replace(
+                self._get_widget_style(Kind.NORMAL, AppearanceState.NORMAL),
+                text_color=rgb,
+            ),
         )
 
     def fg_color(self, rgb: str):  # -> Self:
@@ -506,7 +516,12 @@ class Widget(ABC):
 
     def border_color(self, rgb: str):  # -> Self:
         return self.change_style(
-             Kind.NORMAL, AppearanceState.NORMAL, replace(self._get_widget_style(Kind.NORMAL, AppearanceState.NORMAL), border_color=rgb)
+            Kind.NORMAL,
+            AppearanceState.NORMAL,
+            replace(
+                self._get_widget_style(Kind.NORMAL, AppearanceState.NORMAL),
+                border_color=rgb,
+            ),
         )
 
     def _on_update_widget_styles(self) -> None:
