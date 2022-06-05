@@ -1,4 +1,5 @@
 import functools
+import re
 import sys
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
@@ -1390,7 +1391,6 @@ class MultilineText(Widget):
     def _get_lines(self, p: Painter) -> Generator[str, None, None]:
         state: SimpleValue[str] = cast(SimpleValue[str], self._state)
         text = state.value()
-        import re
 
         if self._wrap and self._size_policy is not SizePolicy.CONTENT:
             # for now, support only lanuages like English..
@@ -1399,7 +1399,7 @@ class MultilineText(Widget):
             for line in text.splitlines():
                 retval_words = []
                 words_width = 0
-                for word in re.split("(?<= )", line):
+                for word in re.split(r"(?<=\s)", line):
                     word_width = p.measure_text(word)
                     words_width += word_width
                     if words_width > line_width:
