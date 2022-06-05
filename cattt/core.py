@@ -1328,7 +1328,6 @@ class Text(Widget):
         return s
 
 
-# only content policy and fixed font size
 class MultilineText(Widget):
     def __init__(
         self,
@@ -1337,6 +1336,7 @@ class MultilineText(Widget):
         padding: int = 8,
         line_spacing: int = 4,
         kind: Kind = Kind.NORMAL,
+        wrap: bool = False,  # only works if the size policy is not SizePolicy.CONTENT
     ):
         if isinstance(text, SimpleValue):
             state = text
@@ -1346,7 +1346,11 @@ class MultilineText(Widget):
         self._kind = kind
         self._font_size = font_size
         self._padding = padding
+        self._border_width = (
+            1  # currently this is fixed value, probably this will become variable.
+        )
         self._line_spacing = line_spacing
+        self._wrap = wrap
 
         super().__init__(
             state=state,
@@ -1368,7 +1372,7 @@ class MultilineText(Widget):
         padding = self._padding
         line_spacing = self._line_spacing
 
-        state: SimpleValue[str] = cast(SimpleValue[str], self._state)
+        # state: SimpleValue[str] = cast(SimpleValue[str], self._state)
 
         p.style(self._rect_style)
         rect = Rect(origin=Point(0, 0), size=self.get_size())
@@ -1378,13 +1382,39 @@ class MultilineText(Widget):
         p.style(self._text_style)
         h = self._text_style.font.size
         y = h + line_spacing
-        for line in state.value().splitlines():
+        for line in self._get_lines(p):
             p.fill_text(line, Point(padding, y), None)
             y += h + line_spacing
         y += padding
 
+    def _get_lines(self, p: Painter) -> Generator[str, None, None]:
+        state: SimpleValue[str] = cast(SimpleValue[str], self._state)
+        text = state.value()
+        import re
+
+        if self._wrap and self._size_policy is not SizePolicy.CONTENT:
+            # for now, support only lanuages like English..
+            # later a little, I will add other languages support.
+            line_width = self._size.width - (self._padding + self._border_width) * 2
+            for line in text.splitlines():
+                retval_words = []
+                words_width = 0
+                for word in re.split("(?<= )", line):
+                    word_width = p.measure_text(word)
+                    words_width += word_width
+                    if words_width > line_width:
+                        yield "".join(retval_words)
+                        retval_words = [word]
+                        words_width = word_width
+                    else:
+                        retval_words.append(word)
+                yield "".join(retval_words)
+        else:
+            yield from text.splitlines()
+
     def measure(self, p: Painter) -> Size:
         padding = self._padding
+        border_width = self._border_width
         line_spacing = self._line_spacing
 
         state: SimpleValue[str] = cast(SimpleValue[str], self._state)
@@ -1392,8 +1422,12 @@ class MultilineText(Widget):
         lines = state.value().splitlines()
         p.save()
         p.style(self._text_style)
-        w = max(p.measure_text(line) for line in lines) + padding * 2
-        h = (self._text_style.font.size + line_spacing) * len(lines) + padding
+        w = max(p.measure_text(line) for line in lines) + (padding + border_width) * 2
+        h = (
+            (self._text_style.font.size + line_spacing) * len(lines)
+            + padding
+            + border_width * 2
+        )
         p.restore()
         return Size(w, h)
 
@@ -2466,6 +2500,18 @@ class Box(Layout):
         self._scroll_box_x = None
         self._scroll_y = 0
         self._scroll_box_y = None
+
+    def add(self, w: Widget) -> None:
+        if len(self._children) > 0:
+            raise RuntimeError("Box cannot have more than 1 child widget")
+        if (
+            self._size_policy is SizePolicy.EXPANDING
+            and w._size_policy is SizePolicy.EXPANDING
+        ):
+            raise RuntimeError(
+                "Adding an expanding policy child to an expanding policy box doesn't make sense."
+            )
+        super().add(w)
 
     def redraw(self, p: Painter, completely: bool) -> None:
         self_size = self._size
