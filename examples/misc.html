@@ -80,7 +80,7 @@ App(
     Frame(title="Misc"),
     Row(
         Column(
-            Counter(c).flex(4),
+            Counter(c).flex(2),
             Text("hoge", kind=Kind.INFO),
             Text("hoge", kind=Kind.SUCCESS),
             Text("hoge", kind=Kind.WARNING),
@@ -89,9 +89,9 @@ App(
                 font_size=10,
                 kind=Kind.DANGER,
                 wrap=True,
-            ).size_policy(SizePolicy.EXPANDING),
+            ).size_policy(SizePolicy.EXPANDING).flex(2),
             Row(Switch(True).fg_color("#FF0000").fixed_width(50), Switch(False)).fixed_height(25),
-            Box(AsyncNetImage(url=TENT_IMG).fixed_size(500, 300)).flex(4),
+            Box(AsyncNetImage(url=TENT_IMG).fixed_size(500, 300)).flex(2),
             Row(NumList(c), Box(NumpyImage(array).fixed_size(400, 200))),
             Input("fafa"),
         ).spacing(4)
