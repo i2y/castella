@@ -23,4 +23,4 @@ class Clock(Component):
         return Text(self._state)
 
 
-App(Frame("Counter", 600, 200), Clock()).run()
+App(Frame("Clock", 600, 200), Clock()).run()
