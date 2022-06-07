@@ -188,7 +188,7 @@ class Frame:
                     self._callback_on_mouse_wheel(
                         core.WheelEvent(
                             core.Point(x.value, y.value),
-                            -event.wheel.x * 20,
+                            +event.wheel.x * 20,
                             -event.wheel.y * 20,
                         )
                     )
