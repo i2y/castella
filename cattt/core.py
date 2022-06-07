@@ -2987,7 +2987,7 @@ class App:
 
     def redraw(self, p: Painter, completely: bool) -> None:
         p.style(self._style)
-        p.fill_rect(Rect(origin=Point(0, 0), size=self._frame.get_size()))
+        p.fill_rect(Rect(origin=Point(0, 0), size=self._frame.get_size() + Size(1, 1)))
         for i in range(len(self._layers)):
             l = self._layers[i]
             pos = self._layerPositions[i]
