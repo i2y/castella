@@ -76,10 +76,14 @@ class Circle:
 
 class SizePolicy(Enum):
     FIXED = auto()
-    FIXED_HEIGHT = auto()
-    FIXED_WIDTH = auto()
     EXPANDING = auto()
     CONTENT = auto()
+
+
+@dataclass(slots=True, frozen=True)
+class NewSizePolicy:
+    width: SizePolicy
+    height: SizePolicy
 
 
 class PositionPolicy(Enum):
@@ -446,11 +450,12 @@ class SimpleValue(Observable, Protocol[V]):
 class Widget(ABC):
     def __init__(
         self,
-        state: Optional[Observable],
+        state: Observable | None,
         pos: Point,
-        pos_policy: Optional[PositionPolicy],
+        pos_policy: PositionPolicy | None,
         size: Size,
-        size_policy: Optional[SizePolicy],
+        width_policy: SizePolicy | None,
+        height_policy: SizePolicy | None,
     ) -> None:
         self._id = id(self)
         self._observable: list[Observable] = []
@@ -460,7 +465,8 @@ class Widget(ABC):
         self._pos = pos
         self._pos_policy = pos_policy
         self._size = size
-        self._size_policy = size_policy
+        self._width_policy = width_policy
+        self._height_policy = height_policy
         self._flex = 1
         self._dirty = True
         self._enable_to_detach = True
@@ -718,8 +724,12 @@ class Widget(ABC):
     def state(self) -> Observable | None:
         return self._state
 
-    def size_policy(self, sp: SizePolicy):  # -> Self:
-        self._size_policy = sp
+    def width_policy(self, sp: SizePolicy):  # -> Self:
+        self._width_policy = sp
+        return self
+
+    def height_policy(self, sp: SizePolicy):  # -> Self:
+        self._height_policy = sp
         return self
 
     def get_flex(self) -> int:
@@ -730,30 +740,10 @@ class Widget(ABC):
         return self
 
     def is_width_expanding(self) -> bool:
-        return (
-            self._size_policy is SizePolicy.FIXED_HEIGHT
-            or self._size_policy is SizePolicy.EXPANDING
-        )
-
-    def is_height_fixed(self) -> bool:
-        return (
-            self._size_policy is SizePolicy.FIXED
-            or self._size_policy is SizePolicy.FIXED_HEIGHT
-            or self._size_policy is SizePolicy.CONTENT
-        )
+        return self._width_policy is SizePolicy.EXPANDING
 
     def is_height_expanding(self) -> bool:
-        return (
-            self._size_policy is SizePolicy.FIXED_WIDTH
-            or self._size_policy is SizePolicy.EXPANDING
-        )
-
-    def is_width_fixed(self) -> bool:
-        return (
-            self._size_policy is SizePolicy.FIXED
-            or self._size_policy is SizePolicy.FIXED_WIDTH
-            or self._size_policy is SizePolicy.CONTENT
-        )
+        return self._height_policy is SizePolicy.EXPANDING
 
     def parent(self, parent: "Widget") -> None:
         self._parent = parent
@@ -769,17 +759,26 @@ class Widget(ABC):
         if self._parent is not None:
             App.get().post_update(self._parent, completely)
 
-    def fixed_height(self, height: float):  # -> Self:
-        return self.size_policy(SizePolicy.FIXED_HEIGHT).height(height)
-
     def fixed_width(self, width: float):  # -> Self:
-        return self.size_policy(SizePolicy.FIXED_WIDTH).width(width)
+        return self.width_policy(SizePolicy.FIXED).width(width)
+
+    def fixed_height(self, height: float):  # -> Self:
+        return self.height_policy(SizePolicy.FIXED).height(height)
 
     def fixed_size(self, width: float, height: float):  # -> Self:
-        return self.size_policy(SizePolicy.FIXED).resize(Size(width, height))
+        return (
+            self.width_policy(SizePolicy.FIXED)
+            .height_policy(SizePolicy.FIXED)
+            .resize(Size(width, height))
+        )
 
-    def fit(self):  # -> Self:
-        return self.size_policy(SizePolicy.EXPANDING)
+    def fit_parent(self):  # -> Self:
+        return self.width_policy(SizePolicy.EXPANDING).height_policy(
+            SizePolicy.EXPANDING
+        )
+
+    def fit_content(self):  # -> Self:
+        return self.width_policy(SizePolicy.CONTENT).height_policy(SizePolicy.CONTENT)
 
 
 T = TypeVar("T")
@@ -1205,7 +1204,8 @@ class Spacer(Widget):
             size=Size(0, 0),
             pos=Point(0, 0),
             pos_policy=None,
-            size_policy=SizePolicy.EXPANDING,
+            width_policy=SizePolicy.EXPANDING,
+            height_policy=SizePolicy.EXPANDING,
         )
 
     def mouse_down(self, _: MouseEvent) -> None:
@@ -1217,10 +1217,15 @@ class Spacer(Widget):
     def redraw(self, _: Painter, completely: bool) -> None:
         pass
 
-    def size_policy(self, sp: SizePolicy):  # -> Self:
+    def width_policy(self, sp: SizePolicy):  # -> Self:
         if sp is SizePolicy.CONTENT:
             raise RuntimeError("Spacer doesn't accept SizePolicy.CONTENT")
-        return super().size_policy(sp)
+        return super().width_policy(sp)
+
+    def height_policy(self, sp: SizePolicy):  # -> Self:
+        if sp is SizePolicy.CONTENT:
+            raise RuntimeError("Spacer doesn't accept SizePolicy.CONTENT")
+        return super().height_policy(sp)
 
 
 def replace_font_size(style: Style, size: float, policy: FontSizePolicy) -> Style:
@@ -1249,7 +1254,8 @@ class Text(Widget):
             size=Size(0, 0),
             pos=Point(0, 0),
             pos_policy=None,
-            size_policy=SizePolicy.EXPANDING,
+            width_policy=SizePolicy.EXPANDING,
+            height_policy=SizePolicy.EXPANDING,
         )
 
     def _on_update_widget_styles(self) -> None:
@@ -1310,7 +1316,7 @@ class Text(Widget):
             max_width=width,
         )
 
-    def size_policy(self, sp: SizePolicy):  # -> Self:
+    def width_policy(self, sp: SizePolicy):  # -> Self:
         if (
             sp is SizePolicy.CONTENT
             and self._text_style.font.size_policy is not FontSizePolicy.FIXED
@@ -1318,7 +1324,17 @@ class Text(Widget):
             raise RuntimeError(
                 "Text doesn't accept SizePolicy.CONTENT because the font size policy is not FIXED"
             )
-        return super().size_policy(sp)
+        return super().width_policy(sp)
+
+    def height_policy(self, sp: SizePolicy):  # -> Self:
+        if (
+            sp is SizePolicy.CONTENT
+            and self._text_style.font.size_policy is not FontSizePolicy.FIXED
+        ):
+            raise RuntimeError(
+                "Text doesn't accept SizePolicy.CONTENT because the font size policy is not FIXED"
+            )
+        return super().height_policy(sp)
 
     def measure(self, p: Painter) -> Size:
         p.save()
@@ -1347,9 +1363,7 @@ class MultilineText(Widget):
         self._kind = kind
         self._font_size = font_size
         self._padding = padding
-        self._border_width = (
-            1  # currently this is fixed value, probably this will become variable.
-        )
+        self._border_width = 1  # currently this is fixed value, probably this will become variable later.
         self._line_spacing = line_spacing
         self._wrap = wrap
 
@@ -1358,7 +1372,8 @@ class MultilineText(Widget):
             size=Size(0, 0),
             pos=Point(0, 0),
             pos_policy=None,
-            size_policy=SizePolicy.CONTENT,
+            width_policy=SizePolicy.EXPANDING,
+            height_policy=SizePolicy.CONTENT,
         )
 
     def _on_update_widget_styles(self) -> None:
@@ -1382,17 +1397,19 @@ class MultilineText(Widget):
 
         p.style(self._text_style)
         h = self._text_style.font.size
-        y = h + line_spacing
+        y = h + padding
         for line in self._get_lines(p):
             p.fill_text(line, Point(padding, y), None)
             y += h + line_spacing
-        y += padding
 
     def _get_lines(self, p: Painter) -> Generator[str, None, None]:
         state: SimpleValue[str] = cast(SimpleValue[str], self._state)
         text = state.value()
 
-        if self._wrap and self._size_policy is not SizePolicy.CONTENT:
+        if self._size.width == 0:
+            yield from []
+
+        if self._wrap and self._width_policy is not SizePolicy.CONTENT:
             # for now, support only lanuages like English..
             # later a little, I will add other languages support.
             line_width = self._size.width - (self._padding + self._border_width) * 2
@@ -1417,15 +1434,15 @@ class MultilineText(Widget):
         border_width = self._border_width
         line_spacing = self._line_spacing
 
-        state: SimpleValue[str] = cast(SimpleValue[str], self._state)
         w, h = 0, 0
-        lines = state.value().splitlines()
         p.save()
         p.style(self._text_style)
+        lines = list(self._get_lines(p))
         w = max(p.measure_text(line) for line in lines) + (padding + border_width) * 2
         h = (
-            (self._text_style.font.size + line_spacing) * len(lines)
-            + padding
+            self._text_style.font.size * len(lines)
+            + line_spacing * (len(lines) - 1)
+            + padding * 2
             + border_width * 2
         )
         p.restore()
@@ -1516,7 +1533,8 @@ class Button(Widget):
             size=Size(0, 0),
             pos=Point(0, 0),
             pos_policy=None,
-            size_policy=SizePolicy.EXPANDING,
+            width_policy=SizePolicy.EXPANDING,
+            height_policy=SizePolicy.EXPANDING,
         )
 
     def _on_update_widget_styles(self) -> None:
@@ -1631,7 +1649,7 @@ class Button(Widget):
             max_width=width - 2 * self._style.padding,
         )
 
-    def size_policy(self, sp: SizePolicy):  # -> Self:
+    def width_policy(self, sp: SizePolicy):  # -> Self:
         if (
             sp is SizePolicy.CONTENT
             and self._text_style.font.size_policy is not FontSizePolicy.FIXED
@@ -1639,7 +1657,17 @@ class Button(Widget):
             raise RuntimeError(
                 "The button doesn't accept SizePolicy.CONTENT because the font size policy is not FIXED"
             )
-        return super().size_policy(sp)
+        return super().width_policy(sp)
+
+    def height_policy(self, sp: SizePolicy):  # -> Self:
+        if (
+            sp is SizePolicy.CONTENT
+            and self._text_style.font.size_policy is not FontSizePolicy.FIXED
+        ):
+            raise RuntimeError(
+                "The button doesn't accept SizePolicy.CONTENT because the font size policy is not FIXED"
+            )
+        return super().height_policy(sp)
 
     def measure(self, p: Painter) -> Size:
         p.save()
@@ -1662,7 +1690,8 @@ class Switch(Widget):
             size=Size(0, 0),
             pos=Point(0, 0),
             pos_policy=None,
-            size_policy=SizePolicy.EXPANDING,
+            width_policy=SizePolicy.EXPANDING,
+            height_policy=SizePolicy.EXPANDING,
         )
 
     def mouse_up(self, ev: MouseEvent) -> None:
@@ -1712,10 +1741,15 @@ class Switch(Widget):
             knob = Circle(center=Point(r, r), radius=inner_r)
         p.fill_circle(knob)
 
-    def size_policy(self, sp: SizePolicy):  # -> Self:
+    def width_policy(self, sp: SizePolicy):  # -> Self:
         if sp is SizePolicy.CONTENT:
             raise RuntimeError("The switch doesn't accept SizePolicy.CONTENT")
-        return super().size_policy(sp)
+        return super().width_policy(sp)
+
+    def height_policy(self, sp: SizePolicy):  # -> Self:
+        if sp is SizePolicy.CONTENT:
+            raise RuntimeError("The switch doesn't accept SizePolicy.CONTENT")
+        return super().height_policy(sp)
 
     def on_change(self, callback: Callable[[bool], None]):  # -> Self:
         self._callback = callback
@@ -1736,7 +1770,8 @@ class Image(Widget):
             size=Size(0, 0),
             pos=Point(0, 0),
             pos_policy=None,
-            size_policy=SizePolicy.CONTENT,
+            width_policy=SizePolicy.CONTENT,
+            height_policy=SizePolicy.CONTENT,
         )
 
     def redraw(self, p: Painter, _: bool) -> None:
@@ -1762,7 +1797,8 @@ class NetImage(Widget):
             size=Size(0, 0),
             pos=Point(0, 0),
             pos_policy=None,
-            size_policy=SizePolicy.CONTENT,
+            width_policy=SizePolicy.CONTENT,
+            height_policy=SizePolicy.CONTENT,
         )
 
     def redraw(self, p: Painter, _: bool) -> None:
@@ -1788,7 +1824,8 @@ class AsyncNetImage(Widget):
             size=Size(0, 0),
             pos=Point(0, 0),
             pos_policy=None,
-            size_policy=SizePolicy.FIXED,
+            width_policy=SizePolicy.FIXED,
+            height_policy=SizePolicy.FIXED,
         )
 
     def redraw(self, p: Painter, _: bool) -> None:
@@ -1805,10 +1842,15 @@ class AsyncNetImage(Widget):
         else:
             self.ask_parent_to_render(True)
 
-    def size_policy(self, sp: SizePolicy):  # -> Self:
+    def width_policy(self, sp: SizePolicy):  # -> Self:
         if sp is SizePolicy.CONTENT:
             raise RuntimeError("AsyncNetImage doesn't accept SizePolicy.CONTENT")
-        return super().size_policy(sp)
+        return super().width_policy(sp)
+
+    def height_policy(self, sp: SizePolicy):  # -> Self:
+        if sp is SizePolicy.CONTENT:
+            raise RuntimeError("AsyncNetImage doesn't accept SizePolicy.CONTENT")
+        return super().height_policy(sp)
 
 
 if "pyodide" in sys.modules:
@@ -1825,7 +1867,8 @@ if "pyodide" in sys.modules:
                 size=Size(0, 0),
                 pos=Point(0, 0),
                 pos_policy=None,
-                size_policy=SizePolicy.FIXED,
+                width_policy=SizePolicy.FIXED,
+                height_policy=SizePolicy.FIXED,
             )
 
         def redraw(self, p: Painter, _: bool) -> None:
@@ -1843,10 +1886,15 @@ if "pyodide" in sys.modules:
             else:
                 self.ask_parent_to_render(True)
 
-        def size_policy(self, sp: SizePolicy):
+        def width_policy(self, sp: SizePolicy):
             if sp is SizePolicy.CONTENT:
                 raise RuntimeError("NumpyImage doesn't accept SizePolicy.CONTENT")
-            return super().size_policy(sp)
+            return super().width_policy(sp)
+
+        def height_policy(self, sp: SizePolicy):
+            if sp is SizePolicy.CONTENT:
+                raise RuntimeError("NumpyImage doesn't accept SizePolicy.CONTENT")
+            return super().height_policy(sp)
 
 else:
 
@@ -1862,7 +1910,8 @@ else:
                 size=Size(0, 0),
                 pos=Point(0, 0),
                 pos_policy=None,
-                size_policy=SizePolicy.CONTENT,
+                width_policy=SizePolicy.CONTENT,
+                height_policy=SizePolicy.CONTENT,
             )
 
         def redraw(self, p: Painter, _: bool) -> None:
@@ -1899,8 +1948,8 @@ class Layout(Widget, ABC):
         yield from self._children
 
     def add(self, w: Widget) -> None:
-        if self._size_policy is SizePolicy.CONTENT and (
-            self.is_height_expanding() or self.is_width_expanding()
+        if (self._width_policy is SizePolicy.CONTENT and w.is_width_expanding()) or (
+            self._height_policy is SizePolicy.CONTENT and w.is_height_expanding()
         ):
             raise RuntimeError(
                 "Layout with CONTENT size policy cannot have an size expandable child widget"
@@ -1983,18 +2032,34 @@ class Layout(Widget, ABC):
                 p.restore()
                 c.dirty(False)
 
-    def size_policy(self, sp: SizePolicy):  # -> Self:
-        if sp is SizePolicy.CONTENT and self.has_size_expandable_children():
+    def width_policy(self, sp: SizePolicy):  # -> Self:
+        if sp is SizePolicy.CONTENT and self.has_width_expandable_children():
             raise RuntimeError(
                 "Layout with CONTENT size policy cannot have an size expandable child widget"
             )
 
-        self._size_policy = sp
+        self._width_policy = sp
         return self
 
-    def has_size_expandable_children(self) -> bool:
+    def height_policy(self, sp: SizePolicy):  # -> Self:
+        if sp is SizePolicy.CONTENT and self.has_height_expandable_children():
+            raise RuntimeError(
+                "Layout with CONTENT size policy cannot have an size expandable child widget"
+            )
+
+        self._height_policy = sp
+        return self
+
+    def has_width_expandable_children(self) -> bool:
         for c in self._children:
-            if c.is_width_expanding() or c.is_height_expanding():
+            if c.is_width_expanding():
+                return True
+
+        return False
+
+    def has_height_expandable_children(self) -> bool:
+        for c in self._children:
+            if c.is_height_expanding():
                 return True
 
         return False
@@ -2018,7 +2083,8 @@ class Column(Layout):
             pos=Point(0, 0),
             pos_policy=None,
             size=Size(0, 0),
-            size_policy=SizePolicy.EXPANDING,
+            height_policy=SizePolicy.EXPANDING,
+            width_policy=SizePolicy.EXPANDING,
         )
         self._spacing = 0
         self._scroll_y = 0
@@ -2048,7 +2114,7 @@ class Column(Layout):
 
     def spacing(self, size: int):  # -> Self:
         self._spacing = size
-        self._spacer = Spacer().size_policy(SizePolicy.FIXED_HEIGHT).height(size)
+        self._spacer = Spacer().fixed_height(size)
         return self
 
     def redraw(self, p: Painter, completely: bool) -> None:
@@ -2059,6 +2125,7 @@ class Column(Layout):
             self._under_dragging = False
             return super().redraw(p, completely)
 
+        self._resize_children(p)
         content_height = self.content_height()
         if content_height <= self.get_height():
             self._scroll_box = None
@@ -2203,14 +2270,14 @@ class Column(Layout):
         total_flex = 0
 
         for c in self.get_children():
-            if c._size_policy is SizePolicy.CONTENT:
-                c.resize(c.measure(p))
+            if c._height_policy is SizePolicy.CONTENT:
+                c.height(c.measure(p).height)
 
-            if c.is_height_fixed():
-                remaining_height = remaining_height - c.get_height()
-            else:
+            if c.is_height_expanding():
                 remaining_children.append(c)
                 total_flex = total_flex + c.get_flex()
+            else:
+                remaining_height = remaining_height - c.get_height()
 
         fraction = (
             remaining_height % total_flex
@@ -2228,6 +2295,8 @@ class Column(Layout):
         for c in self.get_children():
             if c.is_width_expanding():
                 c.width(self.get_width())
+            elif c._width_policy is SizePolicy.CONTENT:
+                c.width(c.measure(p).width)
 
     def _move_children(self) -> None:
         acc_y = self.get_pos().y
@@ -2252,7 +2321,8 @@ class Row(Layout):
             pos=Point(0, 0),
             pos_policy=None,
             size=Size(0, 0),
-            size_policy=SizePolicy.EXPANDING,
+            width_policy=SizePolicy.EXPANDING,
+            height_policy=SizePolicy.EXPANDING,
         )
         self._spacing = 0
         self._scroll_x = 0
@@ -2282,7 +2352,7 @@ class Row(Layout):
 
     def spacing(self, size: int):  # -> Self:
         self._spacing = size
-        self._spacer = Spacer().size_policy(SizePolicy.FIXED_WIDTH).width(size)
+        self._spacer = Spacer().fixed_width(size)
         return self
 
     def redraw(self, p: Painter, completely: bool) -> None:
@@ -2293,9 +2363,7 @@ class Row(Layout):
             self._under_dragging = False
             return super().redraw(p, completely)
 
-        for c in self.get_children():
-            if c._size_policy is SizePolicy.CONTENT:
-                c.resize(c.measure(p))
+        self._resize_children(p)
         content_width = self.content_width()
         if content_width <= self.get_width():
             self._scroll_box = None
@@ -2440,14 +2508,14 @@ class Row(Layout):
         total_flex = 0
 
         for c in self.get_children():
-            if c._size_policy is SizePolicy.CONTENT:
-                c.resize(c.measure(p))
+            if c._width_policy is SizePolicy.CONTENT:
+                c.width(c.measure(p).width)
 
-            if c.is_width_fixed():
-                remaining_width = remaining_width - c.get_width()
-            else:
+            if c.is_width_expanding():
                 remaining_children.append(c)
                 total_flex = total_flex + c.get_flex()
+            else:
+                remaining_width = remaining_width - c.get_width()
 
         fraction = (
             remaining_width % total_flex
@@ -2465,6 +2533,8 @@ class Row(Layout):
         for c in self.get_children():
             if c.is_height_expanding():
                 c.height(self.get_height())
+            if c._height_policy is SizePolicy.CONTENT:
+                c.height(c.measure(p).height)
 
     def _move_children(self) -> None:
         acc_x = self.get_pos().x
@@ -2489,7 +2559,8 @@ class Box(Layout):
             pos=Point(0, 0),
             pos_policy=None,
             size=Size(0, 0),
-            size_policy=SizePolicy.EXPANDING,
+            width_policy=SizePolicy.EXPANDING,
+            height_policy=SizePolicy.EXPANDING,
         )
         self.add(child)
         self._child = child
@@ -2504,13 +2575,6 @@ class Box(Layout):
     def add(self, w: Widget) -> None:
         if len(self._children) > 0:
             raise RuntimeError("Box cannot have more than 1 child widget")
-        if (
-            self._size_policy is SizePolicy.EXPANDING
-            and w._size_policy is SizePolicy.EXPANDING
-        ):
-            raise RuntimeError(
-                "Adding an expanding policy child to an expanding policy box doesn't make sense."
-            )
         super().add(w)
 
     def redraw(self, p: Painter, completely: bool) -> None:
@@ -2520,11 +2584,9 @@ class Box(Layout):
         if self_width == 0 or self_height == 0:
             return
 
-        for c in self.get_children():
-            if c._size_policy is SizePolicy.CONTENT:
-                c.resize(c.measure(p))
+        c = self._child
+        self._resize_children(p)
         content_width, content_height = self.content_size()
-
         x_scroll_bar_height = 0
         y_scroll_bar_width = 0
 
@@ -2537,13 +2599,15 @@ class Box(Layout):
         if content_width > self_width - y_scroll_bar_width:
             x_scroll_bar_height = SCROLL_BAR_SIZE
 
-        if x_scroll_bar_height == 0:
+        if c._width_policy is SizePolicy.EXPANDING or x_scroll_bar_height == 0:
             self._scroll_x = 0
             self._scroll_box_x = None
+            x_scroll_bar_height = 0
 
-        if y_scroll_bar_width == 0:
+        if c._height_policy is SizePolicy.EXPANDING or y_scroll_bar_width == 0:
             self._scroll_y = 0
             self._scroll_box_y = None
+            y_scroll_bar_width = 0
 
         p.save()
         p.style(self._style)
@@ -2769,36 +2833,24 @@ class Box(Layout):
         if len(self._children) == 0:
             return
 
-        remaining_width = self.get_width()
-        remaining_children: list[Widget] = []
-        total_flex = 0
+        c = self._child
+        if c._width_policy is SizePolicy.EXPANDING:
+            c.width(self.get_width())
 
-        for c in self.get_children():
-            if c._size_policy is SizePolicy.CONTENT:
-                c.resize(c.measure(p))
+        if c._height_policy is SizePolicy.EXPANDING:
+            c.height(self.get_height())
 
-            if c.is_width_fixed():
-                remaining_width = remaining_width - c.get_width()
-            else:
-                remaining_children.append(c)
-                total_flex = total_flex + c.get_flex()
+        if c._width_policy is SizePolicy.CONTENT:
+            c.width(c.measure(p).width)
 
-        fraction = (
-            remaining_width % total_flex
-            if remaining_width > 0 and total_flex > 0
-            else 0
-        )
-        for rc in remaining_children:
-            flex = rc.get_flex()
-            width = (remaining_width * flex) / total_flex
-            if fraction > 0:
-                width += flex
-                fraction -= flex
-            rc.width(int(width))
+        if c._height_policy is SizePolicy.CONTENT:
+            c.height(c.measure(p).height)
 
-        for c in self.get_children():
-            if c.is_height_expanding():
-                c.height(self.get_height())
+        if c.is_width_expanding():
+            c.width(self.get_width())
+
+        if c.is_height_expanding():
+            c.height(self.get_height())
 
     def _move_children(self) -> None:
         acc_x = self.get_pos().x
@@ -2815,7 +2867,8 @@ class Component(Layout, ABC):
             pos=Point(0, 0),
             pos_policy=None,
             size=Size(0, 0),
-            size_policy=SizePolicy.EXPANDING,
+            width_policy=SizePolicy.EXPANDING,
+            height_policy=SizePolicy.EXPANDING,
         )
         self._child = None
 
@@ -3007,14 +3060,15 @@ class App:
 
         frame_size = self._frame.get_size()
         latest_size = w.get_size()
-        size_policy = w._size_policy
+        width_policy = w._width_policy
+        height_policy = w._height_policy
 
-        if size_policy in (SizePolicy.EXPANDING, SizePolicy.FIXED_WIDTH, None):
+        if height_policy in (SizePolicy.EXPANDING, None):
             height = frame_size.height
         else:
             height = latest_size.height
 
-        if size_policy in (SizePolicy.EXPANDING, SizePolicy.FIXED_HEIGHT, None):
+        if width_policy in (SizePolicy.EXPANDING, None):
             width = frame_size.width
         else:
             width = latest_size.width

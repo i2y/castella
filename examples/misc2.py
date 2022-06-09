@@ -16,6 +16,7 @@ from cattt.core import (
     Box,
     Image,
     NumpyImage,
+    SizePolicy,
 )
 from cattt.frame import Frame
 
@@ -62,13 +63,11 @@ App(
             Text("hoge", kind=Kind.WARNING),
             Box(
                 MultilineText(
-                    """Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna
-aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis
-aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
-occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.""",
+                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
                     font_size=20,
                     kind=Kind.DANGER,
-                )
+                    wrap=True,
+                ),
             ),
             Row(Switch(True).fixed_width(50), Switch(False)).fixed_height(25),
             Box(Image(TENT_IMG).fixed_size(500, 300)).flex(4),

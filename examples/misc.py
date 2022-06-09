@@ -54,7 +54,7 @@ App(
         Box(
             Row(
                 Image(file_path="camp_tent_sankaku.png"), NetImage(url=DOME_TENT_IMG)
-            ).size_policy(SizePolicy.CONTENT)
+            ).fit_content()
         ),
         NumList(c),
         Input("fafa"),
