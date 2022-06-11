@@ -21,7 +21,8 @@ $ cd cattt
 $ pip install .[glfw]
 ```
 
-If GLFW is not already installed in your environment, please install it as well.
+#### If you want to install another GLFW shared library
+GLFW shared library itself would be installed with the above command, but if you'd like to install another GFLW shared library, you can do it as well.
 
 For Windows/Mac/Linux, you can download and use precompiled version from [this page](https://www.glfw.org/download.html). Please follow its instructions to install.
 
@@ -62,7 +63,9 @@ $ cd cattt
 $ pip install .[sdl]
 ```
 
-If SDL2 is not already installed in your environment, please install it as well.
+#### If you want to install another SDL2 shared library
+SDL2 shared library itself would be installed with the above command, but if you'd like to install another SDL2 shared library, you can do it as well.
+
 You can download and use precompiled version from [this page](https://www.libsdl.org/download-2.0.php).
 
 After downloading and storing it, please set the installed folder path to the environment variable `PYSDL2_DLL_PATH`.

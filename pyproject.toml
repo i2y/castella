@@ -25,10 +25,11 @@ PySDL2 = { version = "^0.9.11", optional = true }
 zengl = { version = "^1.2.2", optional = true }
 glfw = "^2.5.3"
 glcontext = "^2.3.6"
+pysdl2-dll = "^2.0.20"
 
 [tool.poetry.extras]
 glfw = ["glfw", "PyOpenGL", "skia-python", "darkdetect"]
-sdl = ["PySDL2", "glcontext", "zengl", "skia-python", "darkdetect"]
+sdl = ["PySDL2", "pysdl2-dll", "glcontext", "zengl", "skia-python", "darkdetect"]
 
 [tool.poetry.dev-dependencies]
 mkdocs-material = "^8.2.15"

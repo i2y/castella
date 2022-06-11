@@ -250,6 +250,14 @@ optional = true
 python-versions = "*"
 
 [[package]]
+name = "pysdl2-dll"
+version = "2.0.20"
+description = "Pre-built SDL2 binaries for PySDL2"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "python-dateutil"
 version = "2.8.2"
 description = "Extensions to the standard Python datetime module"
@@ -340,7 +348,7 @@ sdl = ["PySDL2", "glcontext", "zengl", "skia-python", "darkdetect"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "cea153c8d4686d3cba2950399e1ee798cd82e46a32e83341a06eb65dd8a2c48a"
+content-hash = "19bd4019171fe99eba21e70f2bc2dae0b88eab5d15697fa05d151bf5678b79e1"
 
 [metadata.files]
 click = [
@@ -533,6 +541,16 @@ pyparsing = [
 pysdl2 = [
     {file = "PySDL2-0.9.11-py3-none-any.whl", hash = "sha256:ff9878c3c64f26c384ba59360f784be7ec3ae5d5fbc7abae3c05a69a2ad6299b"},
     {file = "PySDL2-0.9.11.tar.gz", hash = "sha256:93e51057d39fd583b80001d42b21d5a3f71e30d489d85924d944b2c7350e2da6"},
+]
+pysdl2-dll = [
+    {file = "pysdl2-dll-2.0.20.tar.gz", hash = "sha256:903f3845498f90fc8a9d2294891e8e74e37a066d66e3954cdf2e64d78850e90a"},
+    {file = "pysdl2_dll-2.0.20-py2.py3-none-macosx_10_6_x86_64.whl", hash = "sha256:6cb9e4266621aa42ef4fdcd40b1889b9c151878c8d6550b1c9d91e388679c5f7"},
+    {file = "pysdl2_dll-2.0.20-py2.py3-none-manylinux2014_i686.whl", hash = "sha256:cb487662740cc1700e6dd57b14aa9e368d2341fb28805dfd3c3632fd00119426"},
+    {file = "pysdl2_dll-2.0.20-py2.py3-none-manylinux2014_x86_64.whl", hash = "sha256:e0585d4f6a13fbb12969bb5c0303d5a0a3717371f86a6cb46d4dc523ec0db6d5"},
+    {file = "pysdl2_dll-2.0.20-py2.py3-none-manylinux_2_24_aarch64.whl", hash = "sha256:9c9cb769b4375564146a7cbfffc5632a964b27a72be465883a4329d9be3a82af"},
+    {file = "pysdl2_dll-2.0.20-py2.py3-none-manylinux_2_24_x86_64.whl", hash = "sha256:3e728ee1c4574b7c3dc61eed355c9c7c36c74b33f03c5f38fce3644b0d768267"},
+    {file = "pysdl2_dll-2.0.20-py2.py3-none-win32.whl", hash = "sha256:918d39f6d24785fb2d77fe62192ad89fc9ae26ec7abfb5839c7eb2b55f0fd81d"},
+    {file = "pysdl2_dll-2.0.20-py2.py3-none-win_amd64.whl", hash = "sha256:e99c7ac7d1ee164bf176c07682231eb067d356551ef9db5d657f132ebaa6448a"},
 ]
 python-dateutil = [
     {file = "python-dateutil-2.8.2.tar.gz", hash = "sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86"},
