@@ -8,7 +8,6 @@ from cattt.core import (
     Input,
     NetImage,
     Row,
-    SizePolicy,
     Spacer,
     State,
     StatefulComponent,
