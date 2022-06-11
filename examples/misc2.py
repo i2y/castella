@@ -1,22 +1,20 @@
 import numpy as np
-
 from cattt.core import (
     App,
-    Row,
-    Column,
-    Kind,
-    Button,
-    Text,
-    MultilineText,
-    State,
-    Component,
-    Switch,
-    StatefulComponent,
-    Input,
     Box,
+    Button,
+    Column,
+    Component,
     Image,
+    Input,
+    Kind,
+    MultilineText,
     NumpyImage,
-    SizePolicy,
+    Row,
+    State,
+    StatefulComponent,
+    Switch,
+    Text,
 )
 from cattt.frame import Frame
 
