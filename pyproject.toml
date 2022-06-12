@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cattt"
-version = "0.1.3"
+version = "0.1.4"
 description = "Cattt is a pure Python cross-platform UI framework"
 authors = ["Yasushi Itoh <i2y@icloud.com>"]
 license = "MIT"
