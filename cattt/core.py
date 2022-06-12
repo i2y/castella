@@ -4,7 +4,7 @@ import sys
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from copy import deepcopy
-from dataclasses import dataclass, fields, replace
+from dataclasses import dataclass, replace
 from enum import Enum, IntEnum, auto
 from typing import (
     Any,
@@ -894,16 +894,19 @@ class InputState(ObservableBase):
         self.notify()
 
     def value(self) -> str:
-        if self._editing:
-            return self._text[: self._caret] + "|" + self._text[self._caret :]
-        else:
-            return self._text
+        return self._text
 
     def raw_value(self) -> str:
         return self._text
 
     def __str__(self) -> str:
         return self.value()
+
+    def get_caret_pos(self) -> int:
+        return self._caret
+
+    def is_in_editing(self) -> bool:
+        return self._editing
 
     def start_editing(self) -> None:
         if self._editing:
@@ -937,7 +940,7 @@ class InputState(ObservableBase):
     def delete_next(self) -> None:
         if not self._editing:
             return
-        if len(self._text[self._caret + 1 :]) == 0:
+        if len(self._text[self._caret :]) == 0:
             return
         self._text = self._text[: self._caret] + self._text[self._caret + 1 :]
         self.notify()
@@ -1428,6 +1431,70 @@ class Input(Text):
             super().__init__(InputState(text), Kind.NORMAL, align, font_size)
         self._callback = lambda v: ...
 
+    def redraw(self, p: Painter, _: bool) -> None:
+        state: InputState = cast(InputState, self._state)
+
+        p.style(self._rect_style)
+        size = self.get_size()
+        rect = Rect(origin=Point(0, 0), size=size)
+        p.fill_rect(rect)
+        p.stroke_rect(rect)
+
+        width = size.width
+        height = size.height
+        font_family, font_size = determine_font(
+            width,
+            height,
+            self._text_style,
+            str(state),
+        )
+        p.style(
+            replace(
+                self._text_style,
+                font=Font(
+                    font_family,
+                    font_size,
+                ),
+            ),
+        )
+
+        cap_height = p.get_font_metrics().cap_height
+        if self._align is TextAlign.CENTER:
+            pos = Point(
+                width / 2 - p.measure_text(str(state)) / 2,
+                height / 2 + cap_height / 2,
+            )
+        elif self._align is TextAlign.RIGHT:
+            pos = Point(
+                width - p.measure_text(str(state)) - self._rect_style.padding,
+                height / 2 + cap_height / 2,
+            )
+        else:
+            pos = Point(
+                self._rect_style.padding,
+                height / 2 + cap_height / 2,
+            )
+
+        p.fill_text(
+            text=str(state),
+            pos=pos,
+            max_width=width,
+        )
+
+        if state.is_in_editing():
+            # fill_rect caret using get_caret_pos etc.
+            caret_pos_x = p.measure_text(str(state)[: state.get_caret_pos()])
+            p.style(Style(FillStyle(color="#AAAAAA")))
+            p.fill_rect(
+                Rect(
+                    Point(
+                        pos.x + caret_pos_x,
+                        pos.y - cap_height - (font_size - cap_height) / 2,
+                    ),
+                    Size(5, font_size),
+                )
+            )
+
     def focused(self) -> None:
         state = cast(InputState, self._state)
         state.start_editing()
@@ -1464,8 +1531,9 @@ def determine_font(
 ) -> tuple[str, int]:
     size_of_text = len(text)
     if size_of_text == 0:
-        return style.font.family, style.font.size
-    elif style.font.size_policy == FontSizePolicy.EXPANDING:
+        size_of_text = 1  # to compute the height of caret
+
+    if style.font.size_policy == FontSizePolicy.EXPANDING:
         return style.font.family, max(
             min(
                 int(height - 2 * style.padding),
