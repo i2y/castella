@@ -1,3 +1,6 @@
+## Prerequisite
+Cattt requires the version of Python >= `3.10`.
+
 ## For Desktop
 Cattt for Desktop depends on either GLFW or SDL2, so the installation method of Cattt differs slightly depending on which one is used. I recommend using GLFW since Cattt with GLFW currently performs better.
 

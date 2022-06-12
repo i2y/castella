@@ -11,7 +11,7 @@ The primary final goal of Cattt is to provide features for Python programmers ea
 - The core part as a UI framework of Cattt is written in only Python. It's not a wrapper for existing something written in other programing languages.
 - Cattt allows human to define UI declaratively in Python.
 - Cattt provides hot-reloading or hot-restarting on development.
-- Dark mode is supported. If the runtime environment is in dark mode, Cattt app's UI appearance will automatically be styled in dark mode. ~~The default color scheme for light and dark mode might be very like the one of GitHub.~~ (I deleted this sentence because it changed a bit)
+- Dark mode is supported. If the runtime environment is in dark mode, Cattt app's UI appearance will automatically be styled in dark mode.
 - Cattt utilizes GPU via dependent libraries.
 
 ## Dependencies
