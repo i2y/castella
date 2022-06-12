@@ -226,5 +226,7 @@ def convert_to_key_code(keysym: int) -> core.KeyCode:
         return core.KeyCode.PAGE_UP
     elif keysym == sdl.SDLK_PAGEDOWN:
         return core.KeyCode.PAGE_DOWN
+    elif keysym == sdl.SDLK_DELETE:
+        return core.KeyCode.DELETE
     else:
         return core.KeyCode.UNKNOWN

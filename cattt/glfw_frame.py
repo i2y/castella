@@ -200,6 +200,8 @@ def convert_to_key_code(glfw_key_code: int) -> core.KeyCode:
         return core.KeyCode.PAGE_UP
     elif glfw_key_code == glfw.KEY_PAGE_DOWN:
         return core.KeyCode.PAGE_DOWN
+    elif glfw_key_code == glfw.KEY_DELETE:
+        return core.KeyCode.DELETE
     else:
         return core.KeyCode.UNKNOWN
 

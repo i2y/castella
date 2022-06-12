@@ -285,6 +285,7 @@ class KeyCode(Enum):
     DOWN = auto()
     PAGE_UP = auto()
     PAGE_DOWN = auto()
+    DELETE = auto()
     UNKNOWN = auto()
 
 
@@ -1515,6 +1516,9 @@ class Input(Text):
         state = cast(InputState, self._state)
         if ev.key is KeyCode.BACKSPACE:
             state.delete_prev()
+            self._callback(state.raw_value())
+        elif ev.key is KeyCode.DELETE:
+            state.delete_next()
             self._callback(state.raw_value())
         elif ev.key is KeyCode.LEFT:
             state.move_to_prev()

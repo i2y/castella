@@ -193,5 +193,7 @@ def convert_to_key_code(code: int) -> core.KeyCode:
         return core.KeyCode.PAGE_UP
     elif code == 34:
         return core.KeyCode.PAGE_DOWN
+    elif code == 46:
+        return core.KeyCode.DELETE
     else:
         return core.KeyCode.UNKNOWN
