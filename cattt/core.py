@@ -749,6 +749,12 @@ class Widget(ABC):
     def fit_content(self):  # -> Self:
         return self.width_policy(SizePolicy.CONTENT).height_policy(SizePolicy.CONTENT)
 
+    def fit_content_width(self):  # -> Self:
+        return self.width_policy(SizePolicy.CONTENT)
+
+    def fit_content_height(self):  # -> Self:
+        return self.height_policy(SizePolicy.CONTENT)
+
 
 T = TypeVar("T")
 
