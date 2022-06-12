@@ -176,34 +176,6 @@ class TextAlign(Enum):
     RIGHT = auto()
 
 
-@dataclass(slots=True, frozen=True)
-class ParagraphStyle:
-    text_style: TextStyle
-    text_align: TextAlign
-
-
-class Paragraph(Protocol):
-    def layout(self, width: float) -> None:
-        ...
-
-    def get_height(self) -> float:
-        ...
-
-    def get_max_width(self) -> float:
-        ...
-
-
-class ParagraphBuilder(Protocol):
-    def __init__(self, style: ParagraphStyle):
-        ...
-
-    def add_text(self, text: str) -> None:
-        ...
-
-    def build(self) -> Paragraph:
-        ...
-
-
 class Painter(Protocol):
     def clear_all(self) -> None:
         ...
@@ -236,10 +208,6 @@ class Painter(Protocol):
         ...
 
     def get_font_metrics(self) -> FontMetrics:
-        ...
-
-    # High level API
-    def draw_paragraph(self, paragraph: Paragraph, pos: Point) -> None:
         ...
 
     def draw_image(self, file_path: str, rect: Rect, use_cache: bool = True) -> None:

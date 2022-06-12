@@ -151,9 +151,6 @@ class Painter:
     ) -> None:
         ...
 
-    def draw_paragraph(self, paragraph: core.Paragraph, pos: core.Point) -> None:
-        raise NotImplementedError()
-
     def draw_image(
         self, file_path: str, rect: core.Rect, use_cache: bool = True
     ) -> None:

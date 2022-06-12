@@ -125,10 +125,6 @@ class Painter:
     ) -> None:
         ...
 
-    def draw_paragraph(self, paragraph: core.Paragraph, pos: core.Point) -> None:
-        # self._canvas.drawParagraph(paragraph.to_ck_paragraph(), pos.x, pos.y)
-        ...
-
     def draw_image(
         self, file_path: str, rect: core.Rect, use_cache: bool = True
     ) -> None:
