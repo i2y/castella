@@ -423,8 +423,8 @@ class Widget(ABC):
         pos: Point,
         pos_policy: PositionPolicy | None,
         size: Size,
-        width_policy: SizePolicy | None,
-        height_policy: SizePolicy | None,
+        width_policy: SizePolicy = SizePolicy.EXPANDING,
+        height_policy: SizePolicy = SizePolicy.EXPANDING,
     ) -> None:
         self._id = id(self)
         self._observable: list[Observable] = []
@@ -693,9 +693,15 @@ class Widget(ABC):
     def state(self) -> Observable | None:
         return self._state
 
+    def get_width_policy(self) -> SizePolicy:
+        return self._width_policy
+
     def width_policy(self, sp: SizePolicy):  # -> Self:
         self._width_policy = sp
         return self
+
+    def get_height_policy(self) -> SizePolicy:
+        return self._height_policy
 
     def height_policy(self, sp: SizePolicy):  # -> Self:
         self._height_policy = sp
@@ -707,12 +713,6 @@ class Widget(ABC):
     def flex(self, flex: int):  # -> Self:
         self._flex = flex
         return self
-
-    def is_width_expanding(self) -> bool:
-        return self._width_policy is SizePolicy.EXPANDING
-
-    def is_height_expanding(self) -> bool:
-        return self._height_policy is SizePolicy.EXPANDING
 
     def parent(self, parent: "Widget") -> None:
         self._parent = parent
@@ -1992,8 +1992,12 @@ class Layout(Widget, ABC):
         yield from self._children
 
     def add(self, w: Widget) -> None:
-        if (self._width_policy is SizePolicy.CONTENT and w.is_width_expanding()) or (
-            self._height_policy is SizePolicy.CONTENT and w.is_height_expanding()
+        if (
+            self._width_policy is SizePolicy.CONTENT
+            and w.get_width_policy() is SizePolicy.EXPANDING
+        ) or (
+            self._height_policy is SizePolicy.CONTENT
+            and w.get_height_policy() is SizePolicy.EXPANDING
         ):
             raise RuntimeError(
                 "Layout with CONTENT size policy cannot have an size expandable child widget"
@@ -2096,14 +2100,14 @@ class Layout(Widget, ABC):
 
     def has_width_expandable_children(self) -> bool:
         for c in self._children:
-            if c.is_width_expanding():
+            if c.get_width_policy() is SizePolicy.EXPANDING:
                 return True
 
         return False
 
     def has_height_expandable_children(self) -> bool:
         for c in self._children:
-            if c.is_height_expanding():
+            if c.get_height_policy() is SizePolicy.EXPANDING:
                 return True
 
         return False
@@ -2140,7 +2144,7 @@ class Column(Layout):
             self.add(c)
 
     def add(self, w: Widget) -> None:
-        if self._scrollable and w.is_height_expanding():
+        if self._scrollable and w.get_height_policy() is SizePolicy.EXPANDING:
             raise RuntimeError(
                 "Scrollable Column cannot have an hight expandable child widget"
             )
@@ -2314,10 +2318,11 @@ class Column(Layout):
         total_flex = 0
 
         for c in self.get_children():
-            if c._height_policy is SizePolicy.CONTENT:
+            hp = c.get_height_policy()
+            if hp is SizePolicy.CONTENT:
                 c.height(c.measure(p).height)
 
-            if c.is_height_expanding():
+            if hp is SizePolicy.EXPANDING:
                 remaining_children.append(c)
                 total_flex = total_flex + c.get_flex()
             else:
@@ -2337,10 +2342,11 @@ class Column(Layout):
             rc.height(int(height))
 
         for c in self.get_children():
-            if c.is_width_expanding():
-                c.width(self.get_width())
-            elif c._width_policy is SizePolicy.CONTENT:
-                c.width(c.measure(p).width)
+            match c.get_width_policy():
+                case SizePolicy.EXPANDING:
+                    c.width(self.get_width())
+                case SizePolicy.CONTENT:
+                    c.width(c.measure(p).width)
 
     def _move_children(self) -> None:
         acc_y = self.get_pos().y
@@ -2378,7 +2384,7 @@ class Row(Layout):
             self.add(c)
 
     def add(self, w: Widget) -> None:
-        if self._scrollable and w.is_width_expanding():
+        if self._scrollable and w.get_width_policy() is SizePolicy.EXPANDING:
             raise RuntimeError(
                 "Scrollable Row cannot have an width expandable child widget"
             )
@@ -2552,10 +2558,11 @@ class Row(Layout):
         total_flex = 0
 
         for c in self.get_children():
-            if c._width_policy is SizePolicy.CONTENT:
+            wp = c.get_width_policy()
+            if wp is SizePolicy.CONTENT:
                 c.width(c.measure(p).width)
 
-            if c.is_width_expanding():
+            if wp is SizePolicy.EXPANDING:
                 remaining_children.append(c)
                 total_flex = total_flex + c.get_flex()
             else:
@@ -2575,10 +2582,11 @@ class Row(Layout):
             rc.width(int(width))
 
         for c in self.get_children():
-            if c.is_height_expanding():
-                c.height(self.get_height())
-            if c._height_policy is SizePolicy.CONTENT:
-                c.height(c.measure(p).height)
+            match c.get_height_policy():
+                case SizePolicy.EXPANDING:
+                    c.height(self.get_height())
+                case SizePolicy.CONTENT:
+                    c.height(c.measure(p).height)
 
     def _move_children(self) -> None:
         acc_x = self.get_pos().x
@@ -2643,12 +2651,12 @@ class Box(Layout):
         if content_width > self_width - y_scroll_bar_width:
             x_scroll_bar_height = SCROLL_BAR_SIZE
 
-        if c._width_policy is SizePolicy.EXPANDING or x_scroll_bar_height == 0:
+        if c.get_width_policy() is SizePolicy.EXPANDING or x_scroll_bar_height == 0:
             self._scroll_x = 0
             self._scroll_box_x = None
             x_scroll_bar_height = 0
 
-        if c._height_policy is SizePolicy.EXPANDING or y_scroll_bar_width == 0:
+        if c.get_height_policy() is SizePolicy.EXPANDING or y_scroll_bar_width == 0:
             self._scroll_y = 0
             self._scroll_box_y = None
             y_scroll_bar_width = 0
@@ -2882,23 +2890,17 @@ class Box(Layout):
             return
 
         c = self._child
-        if c._width_policy is SizePolicy.EXPANDING:
-            c.width(self.get_width())
+        match c.get_width_policy():
+            case SizePolicy.CONTENT:
+                c.width(c.measure(p).width)
+            case SizePolicy.EXPANDING:
+                c.width(self.get_width())
 
-        if c._height_policy is SizePolicy.EXPANDING:
-            c.height(self.get_height())
-
-        if c._width_policy is SizePolicy.CONTENT:
-            c.width(c.measure(p).width)
-
-        if c._height_policy is SizePolicy.CONTENT:
-            c.height(c.measure(p).height)
-
-        if c.is_width_expanding():
-            c.width(self.get_width())
-
-        if c.is_height_expanding():
-            c.height(self.get_height())
+        match c.get_height_policy():
+            case SizePolicy.CONTENT:
+                c.height(c.measure(p).height)
+            case SizePolicy.EXPANDING:
+                c.height(self.get_height())
 
     def _move_children(self) -> None:
         acc_x = self.get_pos().x
@@ -3108,15 +3110,15 @@ class App:
 
         frame_size = self._frame.get_size()
         latest_size = w.get_size()
-        width_policy = w._width_policy
-        height_policy = w._height_policy
+        width_policy = w.get_width_policy()
+        height_policy = w.get_height_policy()
 
-        if height_policy in (SizePolicy.EXPANDING, None):
+        if height_policy is SizePolicy.EXPANDING:
             height = frame_size.height
         else:
             height = latest_size.height
 
-        if width_policy in (SizePolicy.EXPANDING, None):
+        if width_policy is SizePolicy.EXPANDING:
             width = frame_size.width
         else:
             width = latest_size.width
