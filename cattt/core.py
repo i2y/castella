@@ -59,8 +59,8 @@ class Rect:
     size: Size
 
     def contain(self, p: Point) -> bool:
-        return (p.x >= self.origin.x and p.x <= self.origin.x + self.size.width) and (
-            p.y >= self.origin.y and p.y <= self.origin.y + self.size.height
+        return (self.origin.x <= p.x <= self.origin.x + self.size.width) and (
+            self.origin.y <= p.y <= self.origin.y + self.size.height
         )
 
 
@@ -1639,7 +1639,7 @@ class Button(Widget):
 
     def get_label(self) -> str:
         state: ButtonState = cast(ButtonState, self._state)
-        return state._text
+        return state.get_text()
 
     def redraw(self, p: Painter, _: bool) -> None:
         state: ButtonState = cast(ButtonState, self._state)
