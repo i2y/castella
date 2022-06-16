@@ -371,7 +371,10 @@ class Observable(Protocol):
 
 
 class UpdateListener:
+    __slots__ = ["_observable", "_callback"]
+
     def __init__(self, callback: Callable[[], None]):
+        self._observable = None
         self._callback = callback
 
     def on_attach(self, o: "ObservableBase"):
@@ -544,8 +547,8 @@ class Widget(ABC):
         return None, None
 
     def contain(self, p: Point) -> bool:
-        return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
-            p.y > self._pos.y and p.y < self._pos.y + self._size.height
+        return (self._pos.x < p.x < self._pos.x + self._size.width) and (
+            self._pos.y < p.y < self._pos.y + self._size.height
         )
 
     def on_attach(self, o: Observable) -> None:
@@ -887,6 +890,12 @@ class ButtonState(ObservableBase):
     def pushed(self, flag: bool) -> None:
         self._pushed = flag
         self.notify()
+
+    def is_pushed(self) -> bool:
+        return self._pushed
+
+    def get_text(self) -> str:
+        return self._text
 
 
 class InputState(ObservableBase):
@@ -1386,7 +1395,7 @@ class MultilineText(Widget):
             yield from []
 
         if self._wrap and self._width_policy is not SizePolicy.CONTENT:
-            # for now, support only lanuages like English..
+            # for now, support only languages like English.
             # later a little, I will add other languages support.
             line_width = self._size.width - (self._padding + self._border_width) * 2
             for line in text.splitlines():
@@ -1636,7 +1645,7 @@ class Button(Widget):
         state: ButtonState = cast(ButtonState, self._state)
 
         rect = Rect(origin=Point(0, 0), size=self.get_size())
-        if state._pushed:
+        if state.is_pushed():
             p.style(self._pushed_style)
             p.fill_rect(rect)
             p.stroke_rect(rect)
@@ -1658,7 +1667,7 @@ class Button(Widget):
                     self._font_size_policy,
                 ),
             ),
-            state._text,
+            state.get_text(),
         )
         p.style(
             replace(
@@ -1673,12 +1682,12 @@ class Button(Widget):
 
         if self._align is TextAlign.CENTER:
             pos = Point(
-                width / 2 - p.measure_text(str(state._text)) / 2,
+                width / 2 - p.measure_text(str(state.get_text())) / 2,
                 height / 2 + p.get_font_metrics().cap_height / 2,
             )
         elif self._align is TextAlign.RIGHT:
             pos = Point(
-                width - p.measure_text(str(state._text)) - self._style.padding,
+                width - p.measure_text(str(state.get_text())) - self._style.padding,
                 height / 2 + p.get_font_metrics().cap_height / 2,
             )
         else:
@@ -1688,7 +1697,7 @@ class Button(Widget):
             )
 
         p.fill_text(
-            text=state._text,
+            text=state.get_text(),
             pos=pos,
             max_width=width - 2 * self._style.padding,
         )
@@ -2055,8 +2064,8 @@ class Layout(Widget, ABC):
         return p + Point(0, 0)
 
     def contain_in_content_area(self, p: Point) -> bool:
-        return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
-            p.y > self._pos.y and p.y < self._pos.y + self._size.height
+        return (self._pos.x < p.x < self._pos.x + self._size.width) and (
+            self._pos.y < p.y < self._pos.y + self._size.height
         )
 
     def redraw(self, p: Painter, completely: bool) -> None:
@@ -2134,6 +2143,7 @@ class Column(Layout):
             height_policy=SizePolicy.EXPANDING,
             width_policy=SizePolicy.EXPANDING,
         )
+        self._spacer = None
         self._spacing = 0
         self._scroll_y = 0
         self._scrollable = scrollable
@@ -2151,7 +2161,7 @@ class Column(Layout):
         super().add(w)
 
     def get_children(self) -> Generator[Widget, None, None]:
-        if self._spacing < 1:
+        if self._spacer is None:
             yield from self._children
             return
 
@@ -2295,14 +2305,13 @@ class Column(Layout):
     def contain_in_content_area(self, p: Point) -> bool:
         if self._scrollable and self.content_height() > self.get_height():
             return (
-                p.x > self._pos.x
-                and p.x < self._pos.x + self._size.width - SCROLL_BAR_SIZE
-            ) and (p.y > self._pos.y and p.y < self._pos.y + self._size.height)
+                self._pos.x < p.x < self._pos.x + self._size.width - SCROLL_BAR_SIZE
+            ) and (self._pos.y < p.y < self._pos.y + self._size.height)
         return self.contain_in_my_area(p)
 
     def contain_in_my_area(self, p: Point) -> bool:
-        return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
-            p.y > self._pos.y and p.y < self._pos.y + self._size.height
+        return (self._pos.x < p.x < self._pos.x + self._size.width) and (
+            self._pos.y < p.y < self._pos.y + self._size.height
         )
 
     def _relocate_children(self, p: Painter) -> None:
@@ -2374,6 +2383,7 @@ class Row(Layout):
             width_policy=SizePolicy.EXPANDING,
             height_policy=SizePolicy.EXPANDING,
         )
+        self._spacer = None
         self._spacing = 0
         self._scroll_x = 0
         self._scrollable = scrollable
@@ -2391,7 +2401,7 @@ class Row(Layout):
         super().add(w)
 
     def get_children(self) -> Generator[Widget, None, None]:
-        if self._spacing < 1:
+        if self._spacer is None:
             yield from self._children
             return
 
@@ -2534,15 +2544,14 @@ class Row(Layout):
 
     def contain_in_content_area(self, p: Point) -> bool:
         if self._scrollable and self.content_width() > self.get_width():
-            return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
-                p.y > self._pos.y
-                and p.y < self._pos.y + self._size.height - SCROLL_BAR_SIZE
+            return (self._pos.x < p.x < self._pos.x + self._size.width) and (
+                self._pos.y < p.y < self._pos.y + self._size.height - SCROLL_BAR_SIZE
             )
         return self.contain_in_my_area(p)
 
     def contain_in_my_area(self, p: Point) -> bool:
-        return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
-            p.y > self._pos.y and p.y < self._pos.y + self._size.height
+        return (self._pos.x < p.x < self._pos.x + self._size.width) and (
+            self._pos.y < p.y < self._pos.y + self._size.height
         )
 
     def _relocate_children(self, p: Painter) -> None:
@@ -2863,22 +2872,22 @@ class Box(Layout):
     def contain_in_content_area(self, p: Point) -> bool:
         w, h = self.content_size()
         return (
-            p.x > self._pos.x
-            and p.x
+            self._pos.x
+            < p.x
             < self._pos.x
             + self._size.width
             - (0 if self._scroll_box_y is None else SCROLL_BAR_SIZE)
         ) and (
-            p.y > self._pos.y
-            and p.y
+            self._pos.y
+            < p.y
             < self._pos.y
             + self._size.height
             - (0 if self._scroll_box_x is None else SCROLL_BAR_SIZE)
         )
 
     def contain_in_my_area(self, p: Point) -> bool:
-        return (p.x > self._pos.x and p.x < self._pos.x + self._size.width) and (
-            p.y > self._pos.y and p.y < self._pos.y + self._size.height
+        return (self._pos.x < p.x < self._pos.x + self._size.width) and (
+            self._pos.y < p.y < self._pos.y + self._size.height
         )
 
     def _relocate_children(self, p: Painter) -> None:
@@ -2963,7 +2972,7 @@ class Component(Layout, ABC):
         return self._child.measure(p)
 
 
-class StatefulComponent(Component):
+class StatefulComponent(Component, ABC):
     def __init__(self, state: Observable):
         super().__init__()
         self.model(state)
@@ -2984,6 +2993,9 @@ class App:
         return cls._instance
 
     def __init__(self, frame: Frame, widget: Widget):
+        self._mouse_overed_layer = None
+        self._prev_rel_pos = None
+        self._prev_abs_pos = None
         self._frame = frame
         self._downed: Optional[Widget] = None
         self._focused: Optional[Widget] = None
