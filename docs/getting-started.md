@@ -13,6 +13,11 @@ You can install Hippos from PyPI with the following command.
 $ pip install hippos[glfw]
 ```
 
+**Notice**: The package cannot currently be installed with the above command because registration of the package to PyPI with the name `hippos` failed. Please install using the old package name `cattt`.
+```
+$ pip install cattt[glfw]
+```
+
 Instead using PyPI, to install the latest Hippos source code from GitHub, you can execute the following command.
 ```
 $ pip install "git+https://github.com/i2y/hippos.git"[glfw]
