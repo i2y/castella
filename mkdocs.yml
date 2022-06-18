@@ -1,7 +1,7 @@
-site_name: Cattt
+site_name: Hippos
 theme:
   name: material
-  language: 'en'
+  language: "en"
   features:
     - navigation.tabs
     - content.code.annotate
@@ -19,27 +19,27 @@ theme:
         icon: material/toggle-switch
         name: switch to light mode
   font:
-    text: 'Roboto'
-    code: 'Roboto Mono'
-copyright: 'Copyright © 2022 Yasushi Itoh'
-repo_url: https://github.com/i2y/cattt/
+    text: "Roboto"
+    code: "Roboto Mono"
+copyright: "Copyright © 2022 Yasushi Itoh"
+repo_url: https://github.com/i2y/hippos/
 nav:
   - Home: index.md
   - Getting started:
-    - Installation: getting-started.md
-    - Hello World: hello-world.md
-    - Layout: layout.md
-    - State: state.md
-    - Component: component.md
-    - Stateful Component: stateful-component.md
-    - Widgets: widgets.md
-    - Chart: chart.md
-    - Hot restarting: hot-restarting.md
-    - Hot reloading: hot-reloading.md
+      - Installation: getting-started.md
+      - Hello World: hello-world.md
+      - Layout: layout.md
+      - State: state.md
+      - Component: component.md
+      - Stateful Component: stateful-component.md
+      - Widgets: widgets.md
+      - Chart: chart.md
+      - Hot restarting: hot-restarting.md
+      - Hot reloading: hot-reloading.md
   - Packaging: packaging.md
   - License: license.md
 plugins:
-    - mkdocs-video
+  - mkdocs-video
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true

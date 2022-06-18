@@ -1,5 +1,5 @@
-from cattt.core import App, Column, Row, Text
-from cattt.frame import Frame
+from hippos.core import App, Column, Row, Text
+from hippos.frame import Frame
 
 App(
     Frame("Layouts", 800, 600),

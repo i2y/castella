@@ -1,27 +1,27 @@
 ## Prerequisite
-Cattt requires the version of Python >= `3.10`.
+Hippos requires the version of Python >= `3.10`.
 
 ## For Desktop
-Cattt for Desktop depends on either GLFW or SDL2, so the installation method of Cattt differs slightly depending on which one is used. I recommend using GLFW since Cattt with GLFW currently performs better.
+Hippos for Desktop depends on either GLFW or SDL2, so the installation method of Hippos differs slightly depending on which one is used. I recommend using GLFW since Hippos with GLFW currently performs better.
 
-In any case, Cattt installation is usually completed with a single `pip install`.
+In any case, Hippos installation is usually completed with a single `pip install`.
 
-### In case of using Cattt with GLFW
+### In case of using Hippos with GLFW
 
-You can install Cattt from PyPI with the following command.
+You can install Hippos from PyPI with the following command.
 ```
-$ pip install cattt[glfw]
+$ pip install hippos[glfw]
 ```
 
-Instead using PyPI, to install the latest Cattt source code from GitHub, you can execute the following command.
+Instead using PyPI, to install the latest Hippos source code from GitHub, you can execute the following command.
 ```
-$ pip install "git+https://github.com/i2y/cattt.git"[glfw]
+$ pip install "git+https://github.com/i2y/hippos.git"[glfw]
 ```
 
 If you run the above command in PowerShell on Windows it may fail. In that case, please clone the git repository as follows and then do `pip install .[glfw]`.
 ```
-$ git clone git+https://github.com/i2y/cattt.git
-$ cd cattt
+$ git clone git+https://github.com/i2y/hippos.git
+$ cd hippos
 $ pip install .[glfw]
 ```
 
@@ -49,21 +49,21 @@ $ sudo yum install -y libglfw3-dev
 ```
 
 
-### In case of using Cattt with SDL2
-You can install Cattt from PyPI with the following command.
+### In case of using Hippos with SDL2
+You can install Hippos from PyPI with the following command.
 ```
-$ pip install cattt[sdl]
+$ pip install hippos[sdl]
 ```
 
-Instead using PyPI, to install the latest Cattt source code from GitHub, you can execute the following command.
+Instead using PyPI, to install the latest Hippos source code from GitHub, you can execute the following command.
 ```
-$ pip install "git+https://github.com/i2y/cattt.git"[sdl]
+$ pip install "git+https://github.com/i2y/hippos.git"[sdl]
 ```
 
 If you run the above command in PowerShell on Windows it may fail. In that case, please clone the git repository as follows and then do `pip install .[sdl]`.
 ```
-$ git clone git+https://github.com/i2y/cattt.git
-$ cd cattt
+$ git clone git+https://github.com/i2y/hippos.git
+$ cd hippos
 $ pip install .[sdl]
 ```
 
@@ -76,19 +76,19 @@ After downloading and storing it, please set the installed folder path to the en
 (For more information on how PySDL2 finds SDL2 DLL, see [this page](https://pysdl2.readthedocs.io/en/rel_0_9_7/integration.html).)
 
 ### Confirmation of successful installation
-If the installation was successful, then [hello_world.py](https://github.com/i2y/cattt/blob/main/examples/hello_world.py), [calc.py](https://github.com/i2y/cattt/blob/main/examples/calc.py), etc. under [the examples folder](https://github.com/i2y/cattt/tree/main/examples) will work.
+If the installation was successful, then [hello_world.py](https://github.com/i2y/hippos/blob/main/examples/hello_world.py), [calc.py](https://github.com/i2y/hippos/blob/main/examples/calc.py), etc. under [the examples folder](https://github.com/i2y/hippos/tree/main/examples) will work.
 
 
 ## For Web Browsers
 Sorry, we have not yet established a clean and easy way to do this.
-Here, for now, we will explain how to use Cattt in your PyScript app.
+Here, for now, we will explain how to use Hippos in your PyScript app.
 
 For more information on how to write a PyScript app, please refer to [the official documentation](https://pyscript.net/).
 
-For now, to use Cattt on an html page, you need to do something as the following.
+For now, to use Hippos on an html page, you need to do something as the following.
 
 - Load the pyscript JS file canvaskit JS file and initialize it properly in your html
-- Specify all Cattt modules to be used in the html page with py-env tag.
+- Specify all Hippos modules to be used in the html page with py-env tag.
 - Serve the html page and modules with any web server.
 
 A tiny example of the above procedure is shown below.
@@ -99,11 +99,11 @@ A tiny example of the above procedure is shown below.
 $ mkdir counter
 ```
 
-##### 2. Clone Cattt repository
+##### 2. Clone Hippos repository
 
 ```sh
 $ cd counter
-$ git clone git@github.com:i2y/cattt.git
+$ git clone git@github.com:i2y/hippos.git
 ```
 
 ##### 3. Implement your app
@@ -123,11 +123,11 @@ Please create `counter.html` file with the following content in your app folder.
 <py-env>
     - numpy
     - paths:
-        - cattt/cattt/color.py
-        - cattt/cattt/core.py
-        - cattt/cattt/web_frame.py
-        - cattt/cattt/frame.py
-        - cattt/cattt/canvaskit_painter.py
+        - hippos/hippos/color.py
+        - hippos/hippos/core.py
+        - hippos/hippos/web_frame.py
+        - hippos/hippos/frame.py
+        - hippos/hippos/canvaskit_painter.py
 </py-env>
 <py-script>
 from core import App, Column, Row, Button, Text, State, Component, SizePolicy

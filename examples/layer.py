@@ -1,5 +1,5 @@
-from cattt.core import App, Button, Column, PositionPolicy, Row, Spacer, Text
-from cattt.frame import Frame
+from hippos.core import App, Button, Column, PositionPolicy, Row, Spacer, Text
+from hippos.frame import Frame
 
 App(
     Frame("Demo", width=600, height=400),

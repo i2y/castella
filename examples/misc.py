@@ -1,4 +1,4 @@
-from cattt.core import (
+from hippos.core import (
     App,
     Box,
     Button,
@@ -13,7 +13,7 @@ from cattt.core import (
     StatefulComponent,
     Text,
 )
-from cattt.frame import Frame
+from hippos.frame import Frame
 
 
 class Counter(Component):
@@ -41,7 +41,9 @@ class NumList(StatefulComponent):
         )
 
 
-DOME_TENT_IMG = "https://github.com/i2y/cattt/blob/main/examples/camp_tent.png?raw=true"
+DOME_TENT_IMG = (
+    "https://github.com/i2y/hippos/blob/main/examples/camp_tent.png?raw=true"
+)
 
 c: State[int] = State(0)
 

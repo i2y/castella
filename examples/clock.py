@@ -2,8 +2,8 @@ import threading
 import time
 from datetime import datetime
 
-from cattt.core import App, Component, State, Text
-from cattt.frame import Frame
+from hippos.core import App, Component, State, Text
+from hippos.frame import Frame
 
 
 class Clock(Component):

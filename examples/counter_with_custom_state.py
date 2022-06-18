@@ -1,5 +1,5 @@
-from cattt.core import App, Button, Column, Component, Row, State, Text
-from cattt.frame import Frame
+from hippos.core import App, Button, Column, Component, Row, State, Text
+from hippos.frame import Frame
 
 
 class Count(State[int]):

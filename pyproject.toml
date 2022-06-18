@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "cattt"
-version = "0.1.4"
-description = "Cattt is a pure Python cross-platform UI framework"
+name = "hippos"
+version = "0.1.5"
+description = "Hippos is a pure Python cross-platform UI framework"
 authors = ["Yasushi Itoh <i2y@icloud.com>"]
 license = "MIT"
 classifiers = [
@@ -11,10 +11,10 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-homepage = "https://github.com/i2y/cattt"
-repository = "https://github.com/i2y/cattt"
+homepage = "https://github.com/i2y/hippos"
+repository = "https://github.com/i2y/hippos"
 readme = "README.md"
-documentation = "https://i2y.github.io/cattt"
+documentation = "https://i2y.github.io/hippos"
 
 [tool.poetry.dependencies]
 python = "^3.10"

@@ -1,5 +1,5 @@
 import numpy as np
-from cattt.core import (
+from hippos.core import (
     App,
     Box,
     Button,
@@ -16,7 +16,7 @@ from cattt.core import (
     Switch,
     Text,
 )
-from cattt.frame import Frame
+from hippos.frame import Frame
 
 array = np.zeros((200, 400, 4), dtype=np.uint8)
 array[:, :, 3] = 255

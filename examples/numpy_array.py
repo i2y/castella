@@ -1,5 +1,5 @@
-from cattt.core import App, Button, Column, Row, NumpyImage
-from cattt.frame import Frame
+from hippos.core import App, Button, Column, Row, NumpyImage
+from hippos.frame import Frame
 
 import numpy as np
 import matplotlib.pyplot as plt

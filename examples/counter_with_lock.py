@@ -1,4 +1,4 @@
-from cattt.core import (
+from hippos.core import (
     App,
     Button,
     Column,
@@ -10,7 +10,7 @@ from cattt.core import (
     Text,
     TextAlign,
 )
-from cattt.frame import Frame
+from hippos.frame import Frame
 
 
 is_locked = State(False)

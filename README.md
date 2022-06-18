@@ -1,30 +1,30 @@
-# :cat: Cattt
-Cattt (kˈæt) is a pure Python cross-platform UI framework.
+# Hippos🦛
+Hippos is a pure Python cross-platform UI framework.
 
-[Documentation Site](https://i2y.github.io/cattt)
+[Documentation Site](https://i2y.github.io/hippos)
 
 ## Goals
-The primary final goal of Cattt is to provide features for Python programmers easy to create a GUI application for several OS platforms and web browsers in a single most same code as possible as. The second goal is to provide a UI framework that Python programmers can easily understand, modify, and extend as needed.
+The primary final goal of Hippos is to provide features for Python programmers easy to create a GUI application for several OS platforms and web browsers in a single most same code as possible as. The second goal is to provide a UI framework that Python programmers can easily understand, modify, and extend as needed.
 (Stated on May 25, 2022: This goal is the final goal. Currently this framework is in the super early stage, so this goal is far away. I hope to get much closer to the goal in a few months or a year by improving the implementation or documentation a little bit every day as much as possible.)
 
 ## Features
-- The core part as a UI framework of Cattt is written in only Python. It's not a wrapper for existing something written in other programing languages.
-- Cattt allows human to define UI declaratively in Python.
-- Cattt provides hot-reloading or hot-restarting on development.
-- Dark mode is supported. If the runtime environment is in dark mode, Cattt app's UI appearance will automatically be styled in dark mode.
-- Cattt utilizes GPU via dependent libraries.
+- The core part as a UI framework of Hippos is written in only Python. It's not a wrapper for existing something written in other programing languages.
+- Hippos allows human to define UI declaratively in Python.
+- Hippos provides hot-reloading or hot-restarting on development.
+- Dark mode is supported. If the runtime environment is in dark mode, Hippos app's UI appearance will automatically be styled in dark mode.
+- Hippos utilizes GPU via dependent libraries.
 
 ## Dependencies
-- For desktop platforms, Cattt is standing on existing excellent python bindings for window management library (GLFW or SDL2) and 2D graphics library (Skia).
-- For web browsers, Cattt is standing on awesome Pyodide/PyScript and CanvasKit (Wasm version of Skia).
+- For desktop platforms, Hippos is standing on existing excellent python bindings for window management library (GLFW or SDL2) and 2D graphics library (Skia).
+- For web browsers, Hippos is standing on awesome Pyodide/PyScript and CanvasKit (Wasm version of Skia).
 
 ## Installation
-https://i2y.github.io/cattt/getting-started/
+https://i2y.github.io/hippos/getting-started/
 
-## An example of code using Cattt
+## An example of code using Hippos
 ```python
-from cattt.core import App, Button, Column, Component, Row, State, Text
-from cattt.frame import Frame
+from hippos.core import App, Button, Column, Component, Row, State, Text
+from hippos.frame import Frame
 
 
 class Counter(Component):
@@ -56,7 +56,7 @@ https://user-images.githubusercontent.com/6240399/171010621-8c0068d2-eb90-4332-8
 You can see some other examples in [examples](examples) directory.
 
 ## Supported Platforms
-Currently, Cattt theoretically should support not-too-old versions of the following platforms.
+Currently, Hippos theoretically should support not-too-old versions of the following platforms.
 
 - Windows 10/11
 - Mac OS X

@@ -16,5 +16,5 @@ else:
             Frame = sdl_frame.Frame
         except:
             raise RuntimeError(
-                "Could you please run `pip install cattt[sdl]` or `pip install cattt[glfw]`?"
+                "Could you please run `pip install hippos[sdl]` or `pip install hippos[glfw]`?"
             )

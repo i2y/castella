@@ -34,7 +34,7 @@ class Frame:
     PIXEL_DEPTH = 32
     PIXEL_PITCH_FACTOR = 4
 
-    def __init__(self, title: str = "cattt", width: float = 500, height: float = 500):
+    def __init__(self, title: str = "hippos", width: float = 500, height: float = 500):
         sdl.SDL_Init(sdl.SDL_INIT_EVENTS)
         self._rgba_masks = rgba_masks()
         window = sdl.SDL_CreateWindow(

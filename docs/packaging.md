@@ -1,1 +1,1 @@
-# Packaging a app made with cattt
+# Packaging a app made with hippos

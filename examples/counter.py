@@ -1,4 +1,4 @@
-from cattt.core import (
+from hippos.core import (
     App,
     Button,
     Column,
@@ -7,7 +7,7 @@ from cattt.core import (
     State,
     Text,
 )
-from cattt.frame import Frame
+from hippos.frame import Frame
 
 
 class Counter(Component):

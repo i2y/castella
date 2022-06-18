@@ -12,7 +12,7 @@ from . import skia_painter as painter
 
 
 class Frame:
-    def __init__(self, title: str = "cattt", width: float = 500, height: float = 500):
+    def __init__(self, title: str = "hippos", width: float = 500, height: float = 500):
         if not glfw.init():
             raise RuntimeError("glfw.init() failed")
 

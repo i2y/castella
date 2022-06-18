@@ -1,7 +1,7 @@
 from typing import Callable
 
-from cattt.core import App, Column, Component, Input, InputState, Row, Text, TextAlign
-from cattt.frame import Frame
+from hippos.core import App, Column, Component, Input, InputState, Row, Text, TextAlign
+from hippos.frame import Frame
 
 
 class TempConv(Component):

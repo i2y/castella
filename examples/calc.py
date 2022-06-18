@@ -1,4 +1,4 @@
-from cattt.core import (
+from hippos.core import (
     App,
     Button,
     Column,
@@ -9,7 +9,7 @@ from cattt.core import (
     TextAlign,
     Widget,
 )
-from cattt.frame import Frame
+from hippos.frame import Frame
 
 
 class Calc(Component):

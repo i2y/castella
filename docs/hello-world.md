@@ -12,8 +12,8 @@ For that, you need to use App, Frame and Text.
 The code is as follows.
 
 ```python
-from cattt.core import App, Text
-from cattt.frame import Frame
+from hippos.core import App, Text
+from hippos.frame import Frame
 
 App(Frame("Hello world", 480, 300),　# (1)
     Text("Hello World!")).run()　 # (2)
@@ -28,7 +28,7 @@ You will see a screen similar to the one below with executing this.
 
 This is an screen shot of the result of running the above in dark mode.
 
-In Cattt, each widgets are automatically scaled to fit the size of the parent (in this case, the frame) by default.
+In Hippos, each widgets are automatically scaled to fit the size of the parent (in this case, the frame) by default.
 Also, actual text inside of Text widget is rendered scaled to fit the size of the Text widget by default and is aligned to the center by default.
 
 
