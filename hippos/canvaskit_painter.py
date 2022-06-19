@@ -4,7 +4,7 @@ from js import Image, ImageData, window, document
 import numpy as np
 from pyodide import create_proxy
 
-import core
+from . import core
 
 
 def code2rgb(color_code):  # TODO alpha

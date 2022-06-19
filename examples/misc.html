@@ -12,17 +12,12 @@
 </head>
 <py-env>
     - numpy
-    - paths:
-        - ../hippos/color.py
-        - ../hippos/core.py
-        - ../hippos/web_frame.py
-        - ../hippos/frame.py
-        - ../hippos/canvaskit_painter.py
+    - ../dist/hippos-0.1.5-py3-none-any.whl
 </py-env>
 <py-script>
 import numpy as np
 
-from core import (
+from hippos import (
     App,
     Row,
     Column,
@@ -41,7 +36,7 @@ from core import (
     NumpyImage,
     SizePolicy,
 )
-from frame import Frame
+from hippos.frame import Frame
 
 array = np.zeros((200, 400, 4), dtype=np.uint8)
 array[:, :, 3] = 255

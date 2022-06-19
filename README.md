@@ -22,8 +22,9 @@ The primary final goal of Hippos is to provide features for Python programmers e
 https://i2y.github.io/hippos/getting-started/
 
 ## An example of code using Hippos
+
 ```python
-from hippos.core import App, Button, Column, Component, Row, State, Text
+from hippos import App, Button, Column, Component, Row, State, Text
 from hippos.frame import Frame
 
 

@@ -1,4 +1,4 @@
-from hippos.core import App, Column, SizePolicy, Text
+from hippos import App, Column, SizePolicy, Text
 from hippos.frame import Frame
 
 App(

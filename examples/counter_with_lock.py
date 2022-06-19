@@ -1,4 +1,4 @@
-from hippos.core import (
+from hippos import (
     App,
     Button,
     Column,
@@ -11,7 +11,6 @@ from hippos.core import (
     TextAlign,
 )
 from hippos.frame import Frame
-
 
 is_locked = State(False)
 

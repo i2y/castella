@@ -127,16 +127,11 @@ Please create `counter.html` file with the following content in your app folder.
 </head>
 <py-env>
     - numpy
-    - paths:
-        - hippos/hippos/color.py
-        - hippos/hippos/core.py
-        - hippos/hippos/web_frame.py
-        - hippos/hippos/frame.py
-        - hippos/hippos/canvaskit_painter.py
+    - ./hippos/dist/hippos-0.1.5-py3-none-any.whl
 </py-env>
 <py-script>
-from core import App, Column, Row, Button, Text, State, Component, SizePolicy
-from frame import Frame
+from hippos import App, Column, Row, Button, Text, State, Component, SizePolicy
+from hippos.frame import Frame
 
 
 class Counter(Component):
@@ -147,7 +142,10 @@ class Counter(Component):
     def view(self):
         return Column(
             Text(self._count),
-            Row(Button("Up").on_click(self.up), Button("Down").on_click(self.down)),
+            Row(
+                Button("Up", font_size=50).on_click(self.up),
+                Button("Down", font_size=50).on_click(self.down),
+            ),
         )
 
     def up(self, _):
@@ -156,7 +154,8 @@ class Counter(Component):
     def down(self, _):
         self._count -= 1
 
-App(Frame("Counter"), Counter()).run()
+
+App(Frame("Counter", 800, 600), Counter()).run()
 </py-script>
 </html>
 ```
@@ -171,3 +170,4 @@ Please open [http://127.0.0.1:3000/counter.html](http://127.0.0.1:3000/counter.h
 Or, you can use live preview your app with Visual Studio Code or something like that.
 
 ![type:video](./videos/counter.mp4)
+(TODO: This video needs to be updated because `cattt` was renamed to `hippos` and also the package structure was changed.)

@@ -1,4 +1,4 @@
-from hippos.core import App, Button, Column, PositionPolicy, Row, Spacer, Text
+from hippos import App, Button, Column, PositionPolicy, Row, Spacer, Text
 from hippos.frame import Frame
 
 App(

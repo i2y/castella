@@ -12,16 +12,11 @@
 </head>
 <py-env>
     - numpy
-    - paths:
-        - ../hippos/color.py
-        - ../hippos/core.py
-        - ../hippos/web_frame.py
-        - ../hippos/frame.py
-        - ../hippos/canvaskit_painter.py
+    - ../dist/hippos-0.1.5-py3-none-any.whl
 </py-env>
 <py-script>
-from core import App, Column, Row, Button, Text, State, Component, SizePolicy
-from frame import Frame
+from hippos import App, Column, Row, Button, Text, State, Component, SizePolicy
+from hippos.frame import Frame
 
 
 class Counter(Component):

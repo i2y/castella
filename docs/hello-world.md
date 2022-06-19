@@ -12,11 +12,11 @@ For that, you need to use App, Frame and Text.
 The code is as follows.
 
 ```python
-from hippos.core import App, Text
+from hippos import App, Text
 from hippos.frame import Frame
 
-App(Frame("Hello world", 480, 300),　# (1)
-    Text("Hello World!")).run()　 # (2)
+App(Frame("Hello world", 480, 300),　  # (1)
+Text("Hello World!")).run()　  # (2)
 ```
 
 1.  Set the title of the Frame=Window of this app to "Hello world" and the size to 480 wide and 300 high.

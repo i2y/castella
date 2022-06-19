@@ -2,7 +2,7 @@ import threading
 import time
 from datetime import datetime
 
-from hippos.core import App, Component, State, Text
+from hippos import App, Component, State, Text
 from hippos.frame import Frame
 
 

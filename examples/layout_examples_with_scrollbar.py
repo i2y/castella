@@ -1,4 +1,4 @@
-from hippos.core import App, Box, Column, Row, Text
+from hippos import App, Box, Column, Row, Text
 from hippos.frame import Frame
 
 App(

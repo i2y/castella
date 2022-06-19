@@ -1,4 +1,4 @@
-from hippos.core import App, Button, Column, Component, Row, State, Text
+from hippos import App, Button, Column, Component, Row, State, Text
 from hippos.frame import Frame
 
 

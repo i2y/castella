@@ -1,11 +1,9 @@
-from hippos.core import App, Button, Column, Row, NumpyImage
-from hippos.frame import Frame
-
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+from hippos import App, Button, Column, NumpyImage, Row
+from hippos.frame import Frame
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
-
 
 # I copied and pasted matplotlib part from https://note.com/tukkidney/n/nf6f8af2ec281
 array = np.zeros((640, 640, 4), dtype=np.uint8)

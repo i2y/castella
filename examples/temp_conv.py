@@ -1,6 +1,6 @@
 from typing import Callable
 
-from hippos.core import App, Column, Component, Input, InputState, Row, Text, TextAlign
+from hippos import App, Column, Component, Input, InputState, Row, Text, TextAlign
 from hippos.frame import Frame
 
 

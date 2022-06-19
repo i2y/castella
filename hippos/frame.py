@@ -1,7 +1,7 @@
 import sys
 
 if "pyodide" in sys.modules:
-    import web_frame
+    from . import web_frame
 
     Frame = web_frame.Frame
 else:

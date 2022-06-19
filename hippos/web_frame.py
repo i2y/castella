@@ -3,8 +3,8 @@ from typing import Callable, cast
 from js import Object, document, window
 from pyodide import create_proxy, to_js
 
-import core
-from canvaskit_painter import Painter
+from . import core
+from .canvaskit_painter import Painter
 
 
 class Frame:

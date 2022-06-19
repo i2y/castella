@@ -1,4 +1,4 @@
-from hippos.core import (
+from hippos import (
     App,
     Box,
     Button,
