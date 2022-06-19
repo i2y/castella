@@ -13,11 +13,6 @@ You can install Castella from PyPI with the following command.
 $ pip install castella[glfw]
 ```
 
-**Notice**: The package cannot currently be installed with the above command because registration of the package to PyPI with the name `castella` failed. Please install using the old package name `cattt`.
-```
-$ pip install cattt[glfw]
-```
-
 Instead using PyPI, to install the latest Castella source code from GitHub, you can execute the following command.
 ```
 $ pip install "git+https://github.com/i2y/castella.git"[glfw]
