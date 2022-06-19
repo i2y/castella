@@ -1,6 +1,6 @@
 from typing import Callable, cast
 
-from hippos.core import (
+from castella.core import (
     AppearanceState,
     Circle,
     Kind,

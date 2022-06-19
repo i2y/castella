@@ -1,4 +1,4 @@
-from hippos import (
+from castella import (
     App,
     Column,
     Kind,
@@ -10,7 +10,7 @@ from hippos import (
     Text,
     TextAlign,
 )
-from hippos.frame import Frame
+from castella.frame import Frame
 
 
 class ExampleUsingGenerator(StatefulComponent):

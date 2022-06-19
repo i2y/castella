@@ -1,32 +1,32 @@
 ## Prerequisite
-Hippos requires the version of Python >= `3.10`.
+Castella requires the version of Python >= `3.10`.
 
 ## For Desktop
-Hippos for Desktop depends on either GLFW or SDL2, so the installation method of Hippos differs slightly depending on which one is used. I recommend using GLFW since Hippos with GLFW currently performs better.
+Castella for Desktop depends on either GLFW or SDL2, so the installation method of Castella differs slightly depending on which one is used. I recommend using GLFW since Castella with GLFW currently performs better.
 
-In any case, Hippos installation is usually completed with a single `pip install`.
+In any case, Castella installation is usually completed with a single `pip install`.
 
-### In case of using Hippos with GLFW
+### In case of using Castella with GLFW
 
-You can install Hippos from PyPI with the following command.
+You can install Castella from PyPI with the following command.
 ```
-$ pip install hippos[glfw]
+$ pip install castella[glfw]
 ```
 
-**Notice**: The package cannot currently be installed with the above command because registration of the package to PyPI with the name `hippos` failed. Please install using the old package name `cattt`.
+**Notice**: The package cannot currently be installed with the above command because registration of the package to PyPI with the name `castella` failed. Please install using the old package name `cattt`.
 ```
 $ pip install cattt[glfw]
 ```
 
-Instead using PyPI, to install the latest Hippos source code from GitHub, you can execute the following command.
+Instead using PyPI, to install the latest Castella source code from GitHub, you can execute the following command.
 ```
-$ pip install "git+https://github.com/i2y/hippos.git"[glfw]
+$ pip install "git+https://github.com/i2y/castella.git"[glfw]
 ```
 
 If you run the above command in PowerShell on Windows it may fail. In that case, please clone the git repository as follows and then do `pip install .[glfw]`.
 ```
-$ git clone git+https://github.com/i2y/hippos.git
-$ cd hippos
+$ git clone git+https://github.com/i2y/castella.git
+$ cd castella
 $ pip install .[glfw]
 ```
 
@@ -54,21 +54,21 @@ $ sudo yum install -y libglfw3-dev
 ```
 
 
-### In case of using Hippos with SDL2
-You can install Hippos from PyPI with the following command.
+### In case of using Castella with SDL2
+You can install Castella from PyPI with the following command.
 ```
-$ pip install hippos[sdl]
+$ pip install castella[sdl]
 ```
 
-Instead using PyPI, to install the latest Hippos source code from GitHub, you can execute the following command.
+Instead using PyPI, to install the latest Castella source code from GitHub, you can execute the following command.
 ```
-$ pip install "git+https://github.com/i2y/hippos.git"[sdl]
+$ pip install "git+https://github.com/i2y/castella.git"[sdl]
 ```
 
 If you run the above command in PowerShell on Windows it may fail. In that case, please clone the git repository as follows and then do `pip install .[sdl]`.
 ```
-$ git clone git+https://github.com/i2y/hippos.git
-$ cd hippos
+$ git clone git+https://github.com/i2y/castella.git
+$ cd castella
 $ pip install .[sdl]
 ```
 
@@ -81,19 +81,19 @@ After downloading and storing it, please set the installed folder path to the en
 (For more information on how PySDL2 finds SDL2 DLL, see [this page](https://pysdl2.readthedocs.io/en/rel_0_9_7/integration.html).)
 
 ### Confirmation of successful installation
-If the installation was successful, then [hello_world.py](https://github.com/i2y/hippos/blob/main/examples/hello_world.py), [calc.py](https://github.com/i2y/hippos/blob/main/examples/calc.py), etc. under [the examples folder](https://github.com/i2y/hippos/tree/main/examples) will work.
+If the installation was successful, then [hello_world.py](https://github.com/i2y/castella/blob/main/examples/hello_world.py), [calc.py](https://github.com/i2y/castella/blob/main/examples/calc.py), etc. under [the examples folder](https://github.com/i2y/castella/tree/main/examples) will work.
 
 
 ## For Web Browsers
 Sorry, we have not yet established a clean and easy way to do this.
-Here, for now, we will explain how to use Hippos in your PyScript app.
+Here, for now, we will explain how to use Castella in your PyScript app.
 
 For more information on how to write a PyScript app, please refer to [the official documentation](https://pyscript.net/).
 
-For now, to use Hippos on an html page, you need to do something as the following.
+For now, to use Castella on an html page, you need to do something as the following.
 
 - Load the pyscript JS file canvaskit JS file and initialize it properly in your html
-- Specify all Hippos modules to be used in the html page with py-env tag.
+- Specify all Castella modules to be used in the html page with py-env tag.
 - Serve the html page and modules with any web server.
 
 A tiny example of the above procedure is shown below.
@@ -104,11 +104,11 @@ A tiny example of the above procedure is shown below.
 $ mkdir counter
 ```
 
-##### 2. Clone Hippos repository
+##### 2. Clone Castella repository
 
 ```sh
 $ cd counter
-$ git clone git@github.com:i2y/hippos.git
+$ git clone git@github.com:i2y/castella.git
 ```
 
 ##### 3. Implement your app
@@ -127,11 +127,11 @@ Please create `counter.html` file with the following content in your app folder.
 </head>
 <py-env>
     - numpy
-    - ./hippos/dist/hippos-0.1.5-py3-none-any.whl
+    - ./castella/dist/castella-0.1.5-py3-none-any.whl
 </py-env>
 <py-script>
-from hippos import App, Column, Row, Button, Text, State, Component, SizePolicy
-from hippos.frame import Frame
+from castella import App, Column, Row, Button, Text, State, Component, SizePolicy
+from castella.frame import Frame
 
 
 class Counter(Component):
@@ -170,4 +170,4 @@ Please open [http://127.0.0.1:3000/counter.html](http://127.0.0.1:3000/counter.h
 Or, you can use live preview your app with Visual Studio Code or something like that.
 
 ![type:video](./videos/counter.mp4)
-(TODO: This video needs to be updated because `cattt` was renamed to `hippos` and also the package structure was changed.)
+(TODO: This video needs to be updated because `cattt` was renamed to `castella` and also the package structure was changed.)

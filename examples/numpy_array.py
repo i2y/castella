@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from hippos import App, Button, Column, NumpyImage, Row
-from hippos.frame import Frame
+from castella import App, Button, Column, NumpyImage, Row
+from castella.frame import Frame
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
 

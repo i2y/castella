@@ -1,6 +1,6 @@
 import functools
 
-from hippos.core import (
+from castella.core import (
     SCROLL_BAR_SIZE,
     FillStyle,
     Layout,

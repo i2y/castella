@@ -1,6 +1,6 @@
 from typing import cast
 
-from hippos.core import Painter, Point, SimpleValue, Size, SizePolicy, State, Widget
+from castella.core import Painter, Point, SimpleValue, Size, SizePolicy, State, Widget
 
 
 class AsyncNetImage(Widget):

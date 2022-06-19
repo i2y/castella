@@ -1,7 +1,7 @@
 from dataclasses import replace
 from typing import Callable, cast
 
-from hippos.core import (
+from castella.core import (
     FillStyle,
     Font,
     InputCharEvent,
@@ -18,7 +18,7 @@ from hippos.core import (
     TextAlign,
     determine_font,
 )
-from hippos.text import Text
+from castella.text import Text
 
 
 class InputState(ObservableBase):

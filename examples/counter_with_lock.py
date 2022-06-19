@@ -1,4 +1,4 @@
-from hippos import (
+from castella import (
     App,
     Button,
     Column,
@@ -10,7 +10,7 @@ from hippos import (
     Text,
     TextAlign,
 )
-from hippos.frame import Frame
+from castella.frame import Frame
 
 is_locked = State(False)
 

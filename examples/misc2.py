@@ -1,5 +1,5 @@
 import numpy as np
-from hippos import (
+from castella import (
     App,
     Box,
     Button,
@@ -16,7 +16,7 @@ from hippos import (
     Switch,
     Text,
 )
-from hippos.frame import Frame
+from castella.frame import Frame
 
 array = np.zeros((200, 400, 4), dtype=np.uint8)
 array[:, :, 3] = 255

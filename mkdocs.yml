@@ -1,4 +1,4 @@
-site_name: Hippos
+site_name: Castella
 theme:
   name: material
   language: "en"
@@ -22,7 +22,7 @@ theme:
     text: "Roboto"
     code: "Roboto Mono"
 copyright: "Copyright © 2022 Yasushi Itoh"
-repo_url: https://github.com/i2y/hippos/
+repo_url: https://github.com/i2y/castella/
 nav:
   - Home: index.md
   - Getting started:

@@ -1,7 +1,7 @@
 from typing import Callable
 
-from hippos import App, Column, Component, Input, InputState, Row, Text, TextAlign
-from hippos.frame import Frame
+from castella import App, Column, Component, Input, InputState, Row, Text, TextAlign
+from castella.frame import Frame
 
 
 class TempConv(Component):

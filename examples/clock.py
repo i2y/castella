@@ -2,8 +2,8 @@ import threading
 import time
 from datetime import datetime
 
-from hippos import App, Component, State, Text
-from hippos.frame import Frame
+from castella import App, Component, State, Text
+from castella.frame import Frame
 
 
 class Clock(Component):

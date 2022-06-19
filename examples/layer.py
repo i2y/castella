@@ -1,5 +1,5 @@
-from hippos import App, Button, Column, PositionPolicy, Row, Spacer, Text
-from hippos.frame import Frame
+from castella import App, Button, Column, PositionPolicy, Row, Spacer, Text
+from castella.frame import Frame
 
 App(
     Frame("Demo", width=600, height=400),

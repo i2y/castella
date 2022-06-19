@@ -1,1 +1,1 @@
-# Packaging a app made with hippos
+# Packaging a app made with castella

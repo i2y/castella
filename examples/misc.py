@@ -1,4 +1,4 @@
-from hippos import (
+from castella import (
     App,
     Box,
     Button,
@@ -13,7 +13,7 @@ from hippos import (
     StatefulComponent,
     Text,
 )
-from hippos.frame import Frame
+from castella.frame import Frame
 
 
 class Counter(Component):
@@ -42,7 +42,7 @@ class NumList(StatefulComponent):
 
 
 DOME_TENT_IMG = (
-    "https://github.com/i2y/hippos/blob/main/examples/camp_tent.png?raw=true"
+    "https://github.com/i2y/castella/blob/main/examples/camp_tent.png?raw=true"
 )
 
 c: State[int] = State(0)

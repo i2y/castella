@@ -1,5 +1,5 @@
-from hippos import App, Column, SizePolicy, Text
-from hippos.frame import Frame
+from castella import App, Column, SizePolicy, Text
+from castella.frame import Frame
 
 App(
     Frame("Layouts", 800, 600),

@@ -1,7 +1,7 @@
 from dataclasses import replace
 from typing import Any, Callable, cast
 
-from hippos.core import (
+from castella.core import (
     AppearanceState,
     Font,
     FontSizePolicy,

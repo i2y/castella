@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "hippos"
+name = "castella"
 version = "0.1.5"
-description = "Hippos is a pure Python cross-platform UI framework"
+description = "Castella is a pure Python cross-platform UI framework"
 authors = ["Yasushi Itoh <i2y@icloud.com>"]
 license = "MIT"
 classifiers = [
@@ -11,10 +11,10 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-homepage = "https://github.com/i2y/hippos"
-repository = "https://github.com/i2y/hippos"
+homepage = "https://github.com/i2y/castella"
+repository = "https://github.com/i2y/castella"
 readme = "README.md"
-documentation = "https://i2y.github.io/hippos"
+documentation = "https://i2y.github.io/castella"
 
 [tool.poetry.dependencies]
 python = "^3.10"

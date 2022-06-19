@@ -1,5 +1,5 @@
-from hippos import App, Button, Column, Component, Row, State, Text
-from hippos.frame import Frame
+from castella import App, Button, Column, Component, Row, State, Text
+from castella.frame import Frame
 
 
 class Count(State[int]):

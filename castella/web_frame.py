@@ -14,7 +14,7 @@ class Frame:
 
     def _update_surface_and_painter(self):
         self._surface = window.CK.MakeWebGLCanvasSurface(
-            "hippos-app",
+            "castella-app",
             window.CK.ColorSpace.SRGB,
             to_js(
                 {
@@ -123,7 +123,7 @@ class Frame:
     def run(self) -> None:
         style = document.createElement("style")
         style.innerHTML = """
-        #hippos-app {
+        #castella-app {
             padding: 0px;
             border: 0px;
         }
@@ -138,9 +138,9 @@ class Frame:
         document.body.appendChild(style)
 
         canvas = document.createElement("canvas")
-        canvas.setAttribute("id", "hippos-app")
+        canvas.setAttribute("id", "castella-app")
         document.body.appendChild(canvas)
-        self._canvas = document.getElementById("hippos-app")
+        self._canvas = document.getElementById("castella-app")
 
         init_script = document.createElement("script")
         init_script.innerHTML = """
@@ -148,7 +148,7 @@ class Frame:
             .then((response) => response.arrayBuffer());
 
         const ckLoaded = CanvasKitInit({
-            lohipposeFile: (file) => 'https://unpkg.com/canvaskit-wasm@0.33.0/bin/' + file
+            locastellaeFile: (file) => 'https://unpkg.com/canvaskit-wasm@0.33.0/bin/' + file
         });
         Promise.all([ckLoaded, loadFont]).then(([CanvasKit, robotoData]) => {
             window.CK = CanvasKit;
@@ -160,7 +160,7 @@ class Frame:
 
         window.addEventListener("resize", resize);
         function resize() {
-            let canvas = document.getElementById("hippos-app");
+            let canvas = document.getElementById("castella-app");
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         }
