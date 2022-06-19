@@ -1125,8 +1125,6 @@ class App:
 
     def __init__(self, frame: Frame, widget: Widget):
         self._mouse_overed_layer = None
-        self._prev_rel_pos = None
-        self._prev_abs_pos = None
         self._frame = frame
         self._downed: Optional[Widget] = None
         self._focused: Optional[Widget] = None
