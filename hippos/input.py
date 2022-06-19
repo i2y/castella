@@ -6,10 +6,10 @@ from hippos.core import (
     Font,
     InputCharEvent,
     InputKeyEvent,
-    InputState,
     KeyAction,
     KeyCode,
     Kind,
+    ObservableBase,
     Painter,
     Point,
     Rect,
@@ -19,6 +19,84 @@ from hippos.core import (
     determine_font,
 )
 from hippos.text import Text
+
+
+class InputState(ObservableBase):
+    def __init__(self, text: str):
+        super().__init__()
+        self._text = text
+        self._editing = False
+        self._caret = len(text)
+
+    def set(self, value: str) -> None:
+        self._text = value
+        self.notify()
+
+    def value(self) -> str:
+        return self._text
+
+    def raw_value(self) -> str:
+        return self._text
+
+    def __str__(self) -> str:
+        return self.value()
+
+    def get_caret_pos(self) -> int:
+        return self._caret
+
+    def is_in_editing(self) -> bool:
+        return self._editing
+
+    def start_editing(self) -> None:
+        if self._editing:
+            return
+        self._editing = True
+        self._caret = len(self._text)
+        self.notify()
+
+    def finish_editing(self) -> None:
+        if not self._editing:
+            return
+        self._editing = False
+        self.notify()
+
+    def insert(self, text: str) -> None:
+        if not self._editing:
+            return
+        self._text = self._text[: self._caret] + text + self._text[self._caret :]
+        self._caret += len(text)
+        self.notify()
+
+    def delete_prev(self) -> None:
+        if not self._editing:
+            return
+        if self._caret == 0:
+            return
+        self._text = self._text[: self._caret - 1] + self._text[self._caret :]
+        self._caret -= 1
+        self.notify()
+
+    def delete_next(self) -> None:
+        if not self._editing:
+            return
+        if len(self._text[self._caret :]) == 0:
+            return
+        self._text = self._text[: self._caret] + self._text[self._caret + 1 :]
+        self.notify()
+
+    def move_to_prev(self) -> None:
+        if not self._editing:
+            return
+        if self._caret > 0:
+            self._caret -= 1
+            self.notify()
+
+    def move_to_next(self) -> None:
+        if not self._editing:
+            return
+        if len(self._text) > self._caret:
+            self._caret += 1
+            self.notify()
 
 
 class Input(Text):

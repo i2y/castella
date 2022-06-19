@@ -3,11 +3,11 @@ from typing import Any, Callable, cast
 
 from hippos.core import (
     AppearanceState,
-    ButtonState,
     Font,
     FontSizePolicy,
     Kind,
     MouseEvent,
+    ObservableBase,
     Painter,
     Point,
     Rect,
@@ -19,6 +19,23 @@ from hippos.core import (
     determine_font,
     replace_font_size,
 )
+
+
+class ButtonState(ObservableBase):
+    def __init__(self, text: str) -> None:
+        super().__init__()
+        self._text = text
+        self._pushed = False
+
+    def pushed(self, flag: bool) -> None:
+        self._pushed = flag
+        self.notify()
+
+    def is_pushed(self) -> bool:
+        return self._pushed
+
+    def get_text(self) -> str:
+        return self._text
 
 
 class Button(Widget):
