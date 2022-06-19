@@ -20,9 +20,6 @@ from typing import (
 
 import numpy as np
 
-# if "pyodide" in sys.modules:
-#     import color
-# else:
 from . import color
 
 
