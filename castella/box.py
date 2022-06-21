@@ -88,12 +88,11 @@ class Box(Layout):
         if completely or self.is_dirty():
             p.fill_rect(Rect(origin=Point(0, 0), size=self_size + Size(1, 1)))
 
+        self.correct_scroll_x_y(content_width, content_height)
         p.translate(
             Point(
-                -self._scroll_x * (self_width + y_scroll_bar_width) / self_size.width,
-                -self._scroll_y
-                * (self_height + x_scroll_bar_height)
-                / self_size.height,
+                -self._scroll_x * (self_width + y_scroll_bar_width) / self_width,
+                -self._scroll_y * (self_height + x_scroll_bar_height) / self_height,
             )
         )
         self._size.height -= x_scroll_bar_height
@@ -165,6 +164,23 @@ class Box(Layout):
                 self._scroll_box_y = scroll_box
                 p.fill_rect(scroll_box)
         p.restore()
+
+    def correct_scroll_x_y(self, content_width, content_height):
+        if self._scroll_x > 0:
+            max_scroll_x = (
+                content_width
+                - self.get_width()
+                + (0 if self._scroll_box_y is None else SCROLL_BAR_SIZE)
+            )
+            self._scroll_x = min(self._scroll_x, max_scroll_x)
+
+        if self._scroll_y > 0:
+            max_scroll_y = (
+                content_height
+                - self.get_height()
+                + (0 if self._scroll_box_x is None else SCROLL_BAR_SIZE)
+            )
+            self._scroll_y = min(self._scroll_y, max_scroll_y)
 
     def is_scrollable(self) -> bool:
         return True

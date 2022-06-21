@@ -92,6 +92,8 @@ class Column(Layout):
         p.style(self._style)
         if completely or self.is_dirty():
             p.fill_rect(Rect(origin=Point(0, 0), size=self.get_size() + Size(1, 1)))
+
+        self.correct_scroll_y()
         p.translate(Point(0, -self._scroll_y))
 
         orig_width = self.get_width()
@@ -128,6 +130,11 @@ class Column(Layout):
             self._scroll_box = scroll_box
             p.fill_rect(scroll_box)
         p.restore()
+
+    def correct_scroll_y(self):
+        if self._scroll_y > 0:
+            max_scroll_y = self.content_height() - self.get_height()
+            self._scroll_y = min(self._scroll_y, max_scroll_y)
 
     def is_scrollable(self) -> bool:
         return self._scrollable

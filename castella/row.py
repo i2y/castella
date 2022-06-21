@@ -92,6 +92,8 @@ class Row(Layout):
         p.style(self._style)
         if completely or self.is_dirty():
             p.fill_rect(Rect(origin=Point(0, 0), size=self.get_size() + Size(1, 1)))
+
+        self.correct_scroll_x()
         p.translate(Point(-self._scroll_x, 0))
 
         orig_height = self.get_height()
@@ -128,6 +130,11 @@ class Row(Layout):
             self._scroll_box = scroll_box
             p.fill_rect(scroll_box)
         p.restore()
+
+    def correct_scroll_x(self):
+        if self._scroll_x > 0:
+            max_scroll_x = self.content_width() - self.get_width()
+            self._scroll_x = min(self._scroll_x, max_scroll_x)
 
     def mouse_down(self, ev: MouseEvent) -> None:
         if self._scroll_box is not None:
