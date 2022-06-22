@@ -1,4 +1,4 @@
-import functools
+from dataclasses import astuple
 
 from castella.core import (
     SCROLL_BAR_SIZE,
@@ -59,7 +59,7 @@ class Box(Layout):
             return
 
         c = self._child
-        self._resize_children(p)
+        self._resize_child(p)
         content_width, content_height = self.content_size()
         x_scroll_bar_height = 0
         y_scroll_bar_width = 0
@@ -88,6 +88,14 @@ class Box(Layout):
         if completely or self.is_dirty():
             p.fill_rect(Rect(origin=Point(0, 0), size=self_size + Size(1, 1)))
 
+        self._size.height -= x_scroll_bar_height
+        self._size.width -= y_scroll_bar_width
+        self._relocate_children(p)
+
+        content_width, content_height = self.content_size()
+        self._size.height = self_height
+        self._size.width = self_width
+
         self.correct_scroll_x_y(content_width, content_height)
         p.translate(
             Point(
@@ -95,12 +103,8 @@ class Box(Layout):
                 -self._scroll_y * (self_height + x_scroll_bar_height) / self_height,
             )
         )
-        self._size.height -= x_scroll_bar_height
-        self._size.width -= y_scroll_bar_width
-        self._relocate_children(p)
         self._redraw_children(p, completely)
-        self._size.height = self_height
-        self._size.width = self_width
+
         p.restore()
 
         p.save()
@@ -286,20 +290,12 @@ class Box(Layout):
         return self._child.measure(p)
 
     def content_size(self) -> tuple[float, float]:
-        return functools.reduce(
-            lambda total, child: (
-                total[0] + child.get_width(),
-                total[1] + child.get_height(),
-            ),
-            self.get_children(),
-            (0, 0),
-        )
+        return astuple(self._child.get_size())
 
     def _adjust_pos(self, p: Point) -> Point:
         return p + Point(self._scroll_x, self._scroll_y)
 
     def contain_in_content_area(self, p: Point) -> bool:
-        w, h = self.content_size()
         return (
             self._pos.x
             < p.x
@@ -320,13 +316,12 @@ class Box(Layout):
         )
 
     def _relocate_children(self, p: Painter) -> None:
-        self._resize_children(p)
-        self._move_children()
-
-    def _resize_children(self, p: Painter) -> None:
         if len(self._children) == 0:
             return
+        self._resize_child(p)
+        self._move_child()
 
+    def _resize_child(self, p: Painter) -> None:
         c = self._child
         match c.get_width_policy():
             case SizePolicy.CONTENT:
@@ -340,9 +335,7 @@ class Box(Layout):
             case SizePolicy.EXPANDING:
                 c.height(self.get_height())
 
-    def _move_children(self) -> None:
-        acc_x = self.get_pos().x
-        for c in self.get_children():
-            c.move_x(acc_x)
-            acc_x += c.get_width()
-            c.move_y(self.get_pos().y)
+    def _move_child(self) -> None:
+        c = self._child
+        c.move_x(self.get_pos().x)
+        c.move_y(self.get_pos().y)
