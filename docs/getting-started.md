@@ -1,5 +1,6 @@
 ## Prerequisite
 Castella requires the version of Python >= `3.10`.
+Also, for now, Castella uses "Roboto" as the default font if no font family is specified. So, please install "Roboto" if necessary.
 
 ## For Desktop
 Castella for Desktop depends on either GLFW or SDL2, so the installation method of Castella differs slightly depending on which one is used. I recommend using GLFW since Castella with GLFW currently performs better.
