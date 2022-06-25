@@ -147,9 +147,7 @@ class Frame:
         const loadFont = fetch('https://storage.googleapis.com/skia-cdn/misc/Roboto-Regular.ttf')
             .then((response) => response.arrayBuffer());
 
-        const ckLoaded = CanvasKitInit({
-            locastellaeFile: (file) => 'https://unpkg.com/canvaskit-wasm@0.33.0/bin/' + file
-        });
+        const ckLoaded = CanvasKitInit();
         Promise.all([ckLoaded, loadFont]).then(([CanvasKit, robotoData]) => {
             window.CK = CanvasKit;
             window.fontMgr = CanvasKit.FontMgr.FromData([robotoData]);
