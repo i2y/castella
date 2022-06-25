@@ -136,7 +136,7 @@ class FontSize(IntEnum):
 
 @dataclass(slots=True, frozen=True)
 class Font:
-    family: str = "sans-serif"
+    family: str = "Roboto"
     size: int = FontSize.MEDIUM
     size_policy: FontSizePolicy = FontSizePolicy.EXPANDING
     weight: FontWeight = FontWeight.NORMAL
