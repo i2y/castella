@@ -98,12 +98,12 @@ class Painter:
 
     def measure_text(self, text: str) -> float:
         style = cast(core.Style, self._style)
-        font = skia.Font(None, style.font.size)
+        font = _to_skia_font(style.font)
         return font.measureText(text)
 
     def get_font_metrics(self) -> core.FontMetrics:
         style = cast(core.Style, self._style)
-        font = skia.Font(None, style.font.size)
+        font = _to_skia_font(style.font)
         return core.FontMetrics(cap_height=font.getMetrics().fCapHeight)
 
     def translate(self, pos: core.Point) -> None:
