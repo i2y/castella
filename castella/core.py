@@ -136,7 +136,7 @@ class FontSize(IntEnum):
 
 @dataclass(slots=True, frozen=True)
 class Font:
-    family: str = "Roboto"
+    family: str = "" # expects the system default font is used.
     size: int = FontSize.MEDIUM
     size_policy: FontSizePolicy = FontSizePolicy.EXPANDING
     weight: FontWeight = FontWeight.NORMAL

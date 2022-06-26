@@ -1,6 +1,5 @@
 ## Prerequisite
 Castella requires the version of Python >= `3.10`.
-Also, for now, Castella uses "Roboto" as the default font if no font family is specified. So, please install "Roboto" if necessary.
 
 ## For Desktop
 Castella for Desktop depends on either GLFW or SDL2, so the installation method of Castella differs slightly depending on which one is used. I recommend using GLFW since Castella with GLFW currently performs better.
@@ -28,6 +27,7 @@ $ pip install .[glfw]
 
 #### If you want to install another GLFW shared library
 GLFW shared library itself would be installed with the above command, but if you'd like to install another GFLW shared library, you can do it as well.
+Also, the only `pip install castella[glfw]` may cause glfw-related errors. In that case, please try additionally this installation procedure.
 
 For Windows/Mac/Linux, you can download and use precompiled version from [this page](https://www.glfw.org/download.html). Please follow its instructions to install.
 
