@@ -123,7 +123,7 @@ Please create `counter.html` file with the following content in your app folder.
 </head>
 <py-env>
     - numpy
-    - ./castella/dist/castella-0.1.9-py3-none-any.whl
+    - ./castella/dist/castella-0.1.10-py3-none-any.whl
 </py-env>
 <py-script>
 from castella import App, Column, Row, Button, Text, State, Component, SizePolicy
