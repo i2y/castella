@@ -199,9 +199,9 @@ class Button(Widget):
     def measure(self, p: Painter) -> Size:
         p.save()
         p.style(self._text_style)
-        state: State = cast(State, self._state)
+        state: ButtonState = cast(ButtonState, self._state)
         s = Size(
-            p.measure_text(str(state)) + 2 * self._style.padding,
+            p.measure_text(state.get_text()) + 2 * self._style.padding,
             self._text_style.font.size,
         )
         p.restore()
