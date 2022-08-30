@@ -35,6 +35,7 @@ from castella import (
     AsyncNetImage,
     NumpyImage,
     SizePolicy,
+    CheckBox,
 )
 from castella.frame import Frame
 
@@ -91,6 +92,7 @@ App(
             Box(AsyncNetImage(url=TENT_IMG).fixed_size(500, 300)).flex(2),
             Row(NumList(c), Box(NumpyImage(array).fixed_size(400, 200))),
             Input("fafa"),
+            CheckBox(on_label="ON", off_label="OFF"),
         ).spacing(4)
     ).spacing(8),
 ).run()

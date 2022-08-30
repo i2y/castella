@@ -13,3 +13,4 @@ from .row import Row
 from .spacer import Spacer
 from .switch import Switch
 from .text import Text
+from .checkbox import CheckBox

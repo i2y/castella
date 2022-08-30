@@ -935,6 +935,7 @@ class Theme:
     input: WidgetStyles
     button: WidgetStyles
     switch: WidgetStyles
+    checkbox: WidgetStyles
 
     def get_widget_styles(self, widget: Widget) -> WidgetStyles:
         class_name = widget.__class__.__name__.lower()
@@ -1063,6 +1064,18 @@ def _get_theme() -> Theme:
             "normal_selected": WidgetStyle(
                 bg_color=color_schema["bg-selected"],
                 text_color=color_schema["fg"],
+            ),
+        },
+        checkbox={
+            "normal": WidgetStyle(
+                bg_color=color_schema["bg-tertiary"],
+                text_color=color_schema["fg"],
+                border_color=color_schema["border-primary"]
+            ),
+            "normal_selected": WidgetStyle(
+                bg_color=color_schema["fg"],
+                text_color=color_schema["bg-tertiary"],
+                border_color=color_schema["border-primary"]
             ),
         },
     )
