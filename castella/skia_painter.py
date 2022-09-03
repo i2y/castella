@@ -28,6 +28,8 @@ def _to_skia_rect(rect: core.Rect) -> skia.Rect:
 
 @cache
 def _get_font_face(font_family: str, font_style: skia.FontStyle) -> skia.Typeface:
+    if font_family == "":
+        font_family = core.App.get_default_font_family()
     return skia.Typeface(font_family, font_style)
 
 

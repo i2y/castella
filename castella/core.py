@@ -136,7 +136,7 @@ class FontSize(IntEnum):
 
 @dataclass(slots=True, frozen=True)
 class Font:
-    family: str = "" # expects the system default font is used.
+    family: str = ""  # expects the system default font is used.
     size: int = FontSize.MEDIUM
     size_policy: FontSizePolicy = FontSizePolicy.EXPANDING
     weight: FontWeight = FontWeight.NORMAL
@@ -947,6 +947,7 @@ def _get_theme() -> Theme:
     return Theme(
         app=WidgetStyle(
             bg_color=color_schema["bg-canvas"],
+            text_font=Font(family=""),  # expects system default font family
         ),
         layout=WidgetStyle(
             bg_color=color_schema["bg-primary"],
@@ -1070,12 +1071,12 @@ def _get_theme() -> Theme:
             "normal": WidgetStyle(
                 bg_color=color_schema["bg-tertiary"],
                 text_color=color_schema["fg"],
-                border_color=color_schema["border-primary"]
+                border_color=color_schema["border-primary"],
             ),
             "normal_selected": WidgetStyle(
                 bg_color=color_schema["fg"],
                 text_color=color_schema["bg-tertiary"],
-                border_color=color_schema["border-primary"]
+                border_color=color_schema["border-primary"],
             ),
         },
     )
@@ -1131,6 +1132,8 @@ class UpdateEvent:
 class App:
     _instance: "App"
 
+    _default_font_family = get_theme().app.text_font.family
+
     def __new__(cls, _frame: Frame, _widget: Widget):
         if not hasattr(cls, "_instance"):
             cls._instance = super().__new__(cls)
@@ -1150,6 +1153,15 @@ class App:
     @classmethod
     def get(cls):  # -> Self:
         return cls._instance
+
+    @classmethod
+    def default_font_family(cls, font_family: str):  # -> Self:
+        cls._default_font_family = font_family
+        return cls
+
+    @classmethod
+    def get_default_font_family(cls) -> str:
+        return cls._default_font_family
 
     def push_layer(self, l: Widget, p: PositionPolicy):  # -> Self:
         self._layers.append(l)
