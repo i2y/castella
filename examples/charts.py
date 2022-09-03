@@ -5,14 +5,11 @@ from castella import (
     TextAlign,
     Column,
     Row,
-    BarChart,
-    BarChartState,
-    PieChart,
-    PieChartState,
-    Box,
     Spacer,
     State,
 )
+from castella.bar_chart import BarChart, BarChartState
+from castella.pie_chart import PieChart, PieChartState
 from castella.frame import Frame
 
 
