@@ -3,6 +3,7 @@ from typing import Any, Callable, cast
 
 from castella.core import (
     AppearanceState,
+    Circle,
     Font,
     FontSizePolicy,
     Kind,
@@ -19,9 +20,16 @@ from castella.core import (
 
 
 class CheckBox(Widget):
-    def __init__(self, checked: bool | State[bool] = False, on_label: str = "", off_label: str = ""):
+    def __init__(
+        self,
+        checked: bool | State[bool] = False,
+        on_label: str = "",
+        off_label: str = "",
+        is_circle: bool = False,
+    ):
         self._on_label = on_label
         self._off_label = off_label
+        self._is_circle = is_circle
         self._on_click = lambda _: ...
         self._kind = Kind.NORMAL
         self._appearance_state = AppearanceState.NORMAL
@@ -55,14 +63,28 @@ class CheckBox(Widget):
         state: State[bool] = cast(State[bool], self._state)
 
         size = self.get_size()
-        rect = Rect(origin=Point(0, 0), size=size)
-        p.style(self._style)
-        p.fill_rect(rect)
-        p.stroke_rect(rect)
-        if state.value():
-            inner_rect = Rect(origin=Point(8, 8), size=size - Size(16, 16))
-            p.style(self._checked_style)
-            p.fill_rect(inner_rect)
+        if self._is_circle:
+            center = Point(size.width / 2, size.height / 2)
+            circle = Circle(center=center, radius=size.width / 2)
+            p.style(self._style)
+            p.fill_circle(circle)
+            p.stroke_circle(circle)
+            if state.value():
+                inner_circle = Circle(
+                    center=center,
+                    radius=size.width * 0.6 / 2,
+                )
+                p.style(self._checked_style)
+                p.fill_circle(inner_circle)
+        else:
+            rect = Rect(origin=Point(0, 0), size=size)
+            p.style(self._style)
+            p.fill_rect(rect)
+            p.stroke_rect(rect)
+            if state.value():
+                inner_rect = Rect(origin=Point(size.width * 0.2, size.height * 0.2), size=Size(size.width * 0.6, size.height * 0.6))
+                p.style(self._checked_style)
+                p.fill_rect(inner_rect)
 
         if state.value():
             label = self._on_label

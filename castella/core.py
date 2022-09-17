@@ -1071,12 +1071,10 @@ def _get_theme() -> Theme:
             "normal": WidgetStyle(
                 bg_color=color_schema["bg-tertiary"],
                 text_color=color_schema["fg"],
-                border_color=color_schema["border-primary"],
             ),
             "normal_selected": WidgetStyle(
-                bg_color=color_schema["fg"],
-                text_color=color_schema["bg-tertiary"],
-                border_color=color_schema["border-primary"],
+                bg_color=color_schema["bg-selected"],
+                text_color=color_schema["fg"],
             ),
         },
     )
