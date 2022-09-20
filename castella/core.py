@@ -1162,6 +1162,8 @@ class App:
         return cls._default_font_family
 
     def push_layer(self, l: Widget, p: PositionPolicy):  # -> Self:
+        if len(self._layers) > 0:
+            self.cursor_pos(MouseEvent(Point(-1, -1)))
         self._layers.append(l)
         self._layerPositions.append(p)
         self._frame.post_update(UpdateEvent(self, True))
@@ -1220,7 +1222,9 @@ class App:
         layer = self.peek_layer()[0]
         target, p = layer.dispatch(ev.pos)
         if target is None:
-            return
+            if self._mouse_overed is not None:
+                self._mouse_overed.mouse_out()
+                self._mouse_overed = None
         elif self._downed is None:
             if self._mouse_overed is None:
                 self._mouse_overed = target
@@ -1232,7 +1236,6 @@ class App:
                 self._mouse_overed = target
                 self._mouse_overed_layer = layer
                 target.mouse_over()
-            return
         elif (
             target is self._downed or self._downed.dispatch(ev.pos)[0] is not None
         ) and p is not None:
@@ -1310,6 +1313,14 @@ class App:
         self._frame.on_input_key(self.input_key)
         self._frame.on_redraw(self.redraw)
         self._frame.run()
+
+
+def show_popup(p: Widget):
+    App.get().push_layer(p, PositionPolicy.CENTER)
+
+
+def hide_popup():
+    App.get().pop_layer()
 
 
 class Container(Protocol):
