@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "castella"
-version = "0.1.11"
+version = "0.1.12"
 description = "Castella is a pure Python cross-platform UI framework"
 authors = ["Yasushi Itoh <i2y@icloud.com>"]
 license = "MIT"
