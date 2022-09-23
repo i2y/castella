@@ -212,6 +212,18 @@ class Frame:
                         core.InputCharEvent(event.text.text.decode("utf-8"))
                     )
 
+    def get_clipboard_text(self) -> str:
+        return sdl.SDL_GetClipboardText().decode("utf-8")
+
+    def set_clipboard_text(self, text: str) -> None:
+        sdl.SDL_SetClipboardText(text.encode("utf-8"))
+
+    def async_get_clipboard_text(self, callback: Callable) -> None:
+        raise NotImplementedError("async_get_clipboard_text")
+
+    def async_set_clipboard_text(self, text: str, callback: Callable) -> None:
+        raise NotImplementedError("async_set_clipboard_text")
+
 
 def convert_to_key_code(keysym: int) -> core.KeyCode:
     if keysym == sdl.SDLK_BACKSPACE:

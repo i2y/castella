@@ -186,6 +186,19 @@ class Frame:
             glfw.terminate()
             self.context.abandonContext()
 
+    def get_clipboard_text(self) -> str:
+        return glfw.get_clipboard_string(self.window).decode("utf-8")
+
+    def set_clipboard_text(self, text: str) -> None:
+        glfw.set_clipboard_string(self.window, text)
+
+    def async_get_clipboard_text(self, callback: Callable) -> None:
+        raise NotImplementedError("async_get_clipboard_text")
+
+    def async_set_clipboard_text(self, text: str, callback: Callable) -> None:
+        raise NotImplementedError("async_set_clipboard_text")
+
+
 
 def convert_to_key_code(glfw_key_code: int) -> core.KeyCode:
     if glfw_key_code == glfw.KEY_BACKSPACE:

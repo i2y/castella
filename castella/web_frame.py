@@ -1,6 +1,7 @@
+from asyncio import Future
 from typing import Callable, cast
 
-from js import Object, document, window
+from js import Object, document, window, navigator
 from pyodide import create_proxy, to_js
 
 from . import core
@@ -174,6 +175,18 @@ class Frame:
         self._add_input_char()
         self._add_input_key()
         self._add_redraw()
+
+    def get_clipboard_text(self) -> str:
+        raise NotImplementedError("get_clipboard_text")
+
+    def set_clipboard_text(self, text: str) -> None:
+        raise NotImplementedError("set_clipboard_text")
+
+    def async_get_clipboard_text(self, callback: Callable[[Future[str]], None]) -> None:
+        navigator.clipboard.readText().add_done_callback(callback)
+
+    def async_set_clipboard_text(self, text: str, callback: Callable[[Future], None]) -> None:
+        return navigator.clipboard.writeText(text).add_done_callback(callback)
 
 
 def convert_to_key_code(code: int) -> core.KeyCode:

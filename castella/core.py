@@ -1,5 +1,6 @@
 import sys
 from abc import ABC, abstractmethod
+from asyncio import Future
 from collections.abc import Iterable
 from copy import deepcopy
 from dataclasses import dataclass, replace
@@ -339,6 +340,20 @@ class Frame(Protocol):
         ...
 
     def run(self) -> None:
+        ...
+
+    def get_clipboard_text(self) -> str:
+        ...
+
+    def set_clipboard_text(self, text: str) -> None:
+        ...
+
+    def async_get_clipboard_text(self, callback: Callable[[Future[str]], None]) -> None:
+        ...
+
+    def async_set_clipboard_text(
+        self, text: str, callback: Callable[[Future], None]
+    ) -> None:
         ...
 
 
@@ -1313,6 +1328,24 @@ class App:
         self._frame.on_input_key(self.input_key)
         self._frame.on_redraw(self.redraw)
         self._frame.run()
+
+    # supported platforms: desktop (glfw, sdl2)
+    def get_clipboard_text(self) -> str:
+        return self._frame.get_clipboard_text()
+
+    # supported platforms: desktop (glfw, sdl2)
+    def set_clipboard_text(self, text: str) -> None:
+        self._frame.set_clipboard_text(text)
+
+    # supported platforms: web
+    def async_get_clipboard_text(self, callback: Callable[[Future[str]], None]) -> None:
+        self._frame.async_get_clipboard_text(callback)
+
+    # supported platforms: web
+    def async_set_clipboard_text(
+        self, text: str, callback: Callable[[Future], None]
+    ) -> None:
+        return self._frame.async_set_clipboard_text(text, callback)
 
 
 def show_popup(p: Widget):
