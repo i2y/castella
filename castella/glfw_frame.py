@@ -199,34 +199,35 @@ class Frame:
         raise NotImplementedError("async_set_clipboard_text")
 
 
-
 def convert_to_key_code(glfw_key_code: int) -> core.KeyCode:
-    if glfw_key_code == glfw.KEY_BACKSPACE:
-        return core.KeyCode.BACKSPACE
-    elif glfw_key_code == glfw.KEY_LEFT:
-        return core.KeyCode.LEFT
-    elif glfw_key_code == glfw.KEY_RIGHT:
-        return core.KeyCode.RIGHT
-    elif glfw_key_code == glfw.KEY_UP:
-        return core.KeyCode.UP
-    elif glfw_key_code == glfw.KEY_DOWN:
-        return core.KeyCode.DOWN
-    elif glfw_key_code == glfw.KEY_PAGE_UP:
-        return core.KeyCode.PAGE_UP
-    elif glfw_key_code == glfw.KEY_PAGE_DOWN:
-        return core.KeyCode.PAGE_DOWN
-    elif glfw_key_code == glfw.KEY_DELETE:
-        return core.KeyCode.DELETE
-    else:
-        return core.KeyCode.UNKNOWN
+    match glfw_key_code:
+        case glfw.KEY_BACKSPACE:
+            return core.KeyCode.BACKSPACE
+        case glfw.KEY_LEFT:
+            return core.KeyCode.LEFT
+        case glfw.KEY_RIGHT:
+            return core.KeyCode.RIGHT
+        case glfw.KEY_UP:
+            return core.KeyCode.UP
+        case glfw.KEY_DOWN:
+            return core.KeyCode.DOWN
+        case glfw.KEY_PAGE_UP:
+            return core.KeyCode.PAGE_UP
+        case glfw.KEY_PAGE_DOWN:
+            return core.KeyCode.PAGE_DOWN
+        case glfw.KEY_DELETE:
+            return core.KeyCode.DELETE
+        case _:
+            return core.KeyCode.UNKNOWN
 
 
 def convert_to_key_action(glfw_key_action: int) -> core.KeyAction:
-    if glfw_key_action == glfw.PRESS:
-        return core.KeyAction.PRESS
-    elif glfw_key_action == glfw.RELEASE:
-        return core.KeyAction.RELEASE
-    elif glfw_key_action == glfw.REPEAT:
-        return core.KeyAction.REPEAT
-    else:
-        return core.KeyAction.UNKNOWN
+    match glfw_key_action:
+        case glfw.PRESS:
+            return core.KeyAction.PRESS
+        case glfw.RELEASE:
+            return core.KeyAction.RELEASE
+        case glfw.REPEAT:
+            return core.KeyAction.REPEAT
+        case _:
+            return core.KeyAction.UNKNOWN

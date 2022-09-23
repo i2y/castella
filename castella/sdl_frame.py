@@ -226,21 +226,22 @@ class Frame:
 
 
 def convert_to_key_code(keysym: int) -> core.KeyCode:
-    if keysym == sdl.SDLK_BACKSPACE:
-        return core.KeyCode.BACKSPACE
-    elif keysym == sdl.SDLK_LEFT:
-        return core.KeyCode.LEFT
-    elif keysym == sdl.SDLK_RIGHT:
-        return core.KeyCode.RIGHT
-    elif keysym == sdl.SDLK_UP:
-        return core.KeyCode.UP
-    elif keysym == sdl.SDLK_DOWN:
-        return core.KeyCode.DOWN
-    elif keysym == sdl.SDLK_PAGEUP:
-        return core.KeyCode.PAGE_UP
-    elif keysym == sdl.SDLK_PAGEDOWN:
-        return core.KeyCode.PAGE_DOWN
-    elif keysym == sdl.SDLK_DELETE:
-        return core.KeyCode.DELETE
-    else:
-        return core.KeyCode.UNKNOWN
+    match keysym:
+        case sdl.SDLK_BACKSPACE:
+            return core.KeyCode.BACKSPACE
+        case sdl.SDLK_LEFT:
+            return core.KeyCode.LEFT
+        case sdl.SDLK_RIGHT:
+            return core.KeyCode.RIGHT
+        case sdl.SDLK_UP:
+            return core.KeyCode.UP
+        case sdl.SDLK_DOWN:
+            return core.KeyCode.DOWN
+        case sdl.SDLK_PAGEUP:
+            return core.KeyCode.PAGE_UP
+        case sdl.SDLK_PAGEDOWN:
+            return core.KeyCode.PAGE_DOWN
+        case sdl.SDLK_DELETE:
+            return core.KeyCode.DELETE
+        case _:
+            return core.KeyCode.UNKNOWN

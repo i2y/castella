@@ -185,26 +185,29 @@ class Frame:
     def async_get_clipboard_text(self, callback: Callable[[Future[str]], None]) -> None:
         navigator.clipboard.readText().add_done_callback(callback)
 
-    def async_set_clipboard_text(self, text: str, callback: Callable[[Future], None]) -> None:
+    def async_set_clipboard_text(
+        self, text: str, callback: Callable[[Future], None]
+    ) -> None:
         return navigator.clipboard.writeText(text).add_done_callback(callback)
 
 
 def convert_to_key_code(code: int) -> core.KeyCode:
-    if code == 8:
-        return core.KeyCode.BACKSPACE
-    elif code == 37:
-        return core.KeyCode.LEFT
-    elif code == 39:
-        return core.KeyCode.RIGHT
-    elif code == 38:
-        return core.KeyCode.UP
-    elif code == 40:
-        return core.KeyCode.DOWN
-    elif code == 33:
-        return core.KeyCode.PAGE_UP
-    elif code == 34:
-        return core.KeyCode.PAGE_DOWN
-    elif code == 46:
-        return core.KeyCode.DELETE
-    else:
-        return core.KeyCode.UNKNOWN
+    match code:
+        case 8:
+            return core.KeyCode.BACKSPACE
+        case 37:
+            return core.KeyCode.LEFT
+        case 39:
+            return core.KeyCode.RIGHT
+        case 38:
+            return core.KeyCode.UP
+        case 40:
+            return core.KeyCode.DOWN
+        case 33:
+            return core.KeyCode.PAGE_UP
+        case 34:
+            return core.KeyCode.PAGE_DOWN
+        case 46:
+            return core.KeyCode.DELETE
+        case _:
+            return core.KeyCode.UNKNOWN
