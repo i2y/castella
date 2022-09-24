@@ -41,10 +41,10 @@ class Size:
     width: float
     height: float
 
-    def __add__(self, other):
+    def __add__(self, other: "Size") -> "Size":
         return Size(self.width + other.width, self.height + other.height)
 
-    def __sub__(self, other):
+    def __sub__(self, other: "Size") -> "Size":
         return Size(self.width - other.width, self.height - other.height)
 
 
