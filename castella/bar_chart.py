@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import cast
+from typing import Self, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,7 +27,7 @@ class BarChartState(ObservableBase):
     def get_value(self) -> Sequence[float]:
         return self._value
 
-    def set(self, label: Sequence[str], value: Sequence[float]):  # -> Self:
+    def set(self, label: Sequence[str], value: Sequence[float]) -> Self:
         self._label = label
         self._value = value
         self.notify()

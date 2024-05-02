@@ -17,8 +17,7 @@ App(
     Frame("Demo", width=600, height=400),
     Column(
         Row(Spacer(), Text("Text 1")).fixed_size(300, 100),
-        Button("Button 1")
-        .on_click(
+        Button("Button 1").on_click(
             lambda _: show_popup(
                 Column(
                     MultilineText(
@@ -27,9 +26,7 @@ App(
                         wrap=True,
                         kind=Kind.DANGER,
                     ).fixed_height(200),
-                    Button("Close")
-                    .on_click(lambda _: hide_popup())
-                    .fixed_height(50),
+                    Button("Close").on_click(lambda _: hide_popup()).fixed_height(50),
                 ).fixed_size(300, 250)
             )
         ),

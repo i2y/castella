@@ -1,7 +1,12 @@
 import sys
 from typing import cast
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    import_success = False
+else:
+    import_success = True
 
 from castella.core import (
     Painter,
@@ -14,9 +19,9 @@ from castella.core import (
     Widget,
 )
 
-if "pyodide" in sys.modules:
+if import_success and "pyodide" in sys.modules:
 
-    class NumpyImage(Widget):
+    class NumpyImage(Widget):  # type: ignore
         def __init__(self, array: np.ndarray | SimpleValue[np.ndarray]):
             if isinstance(array, SimpleValue):
                 state = array
@@ -57,7 +62,7 @@ if "pyodide" in sys.modules:
                 raise RuntimeError("NumpyImage doesn't accept SizePolicy.CONTENT")
             return super().height_policy(sp)
 
-else:
+elif import_success:
 
     class NumpyImage(Widget):
         def __init__(self, array: np.ndarray | SimpleValue[np.ndarray]):

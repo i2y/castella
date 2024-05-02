@@ -2,44 +2,31 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-
-    <title>Counter</title>
-    <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+    <meta charset="UTF-8" />
+    <title>Misc</title>
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.4.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.4.1/core.js"></script>
     <script type="text/javascript" src="https://unpkg.com/canvaskit-wasm@0.33.0/bin/canvaskit.js"></script>
-    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
+    <style>
+        canvas {
+           display: block;
+           padding: 0px;
+           margin: 0px;
+           border: none;
+        }
+        body {
+            overflow: hidden;
+            padding: 0px;
+            margin: 0px;
+        }
+    </style>
 </head>
-<py-env>
-    - numpy
-    - ../dist/castella-0.1.12-py3-none-any.whl
-</py-env>
-<py-script>
-from castella import App, Column, Row, Button, Text, State, Component, SizePolicy
-from castella.frame import Frame
-
-
-class Counter(Component):
-    def __init__(self):
-        super().__init__()
-        self._count = State(0)
-
-    def view(self):
-        return Column(
-            Text(self._count),
-            Row(
-                Button("Up", font_size=50).on_click(self.up),
-                Button("Down", font_size=50).on_click(self.down),
-            ),
-        )
-
-    def up(self, _):
-        self._count += 1
-
-    def down(self, _):
-        self._count -= 1
-
-
-App(Frame("Counter", 800, 600), Counter()).run()
-</py-script>
+<body>
+<py-config>
+    {
+    "packages": [ "../dist/castella-0.1.13-py3-none-any.whl" ]
+    }
+</py-config>
+<script type="py" src="counter.py"></script>
+</body>
 </html>

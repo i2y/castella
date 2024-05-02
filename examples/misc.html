@@ -2,19 +2,19 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-
+    <meta charset="UTF-8" />
     <title>Misc</title>
-    <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.4.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.4.1/core.js"></script>
     <script type="text/javascript" src="https://unpkg.com/canvaskit-wasm@0.33.0/bin/canvaskit.js"></script>
-    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
 </head>
-<py-env>
-    - numpy
-    - ../dist/castella-0.1.12-py3-none-any.whl
-</py-env>
-<py-script>
+<body>
+<py-config>
+    {
+    "packages": ["numpy", "../dist/castella-0.1.13-py3-none-any.whl" ]
+    }
+</py-config>
+<script type="py">
 import numpy as np
 
 from castella import (
@@ -96,5 +96,6 @@ App(
         ).spacing(4)
     ).spacing(8),
 ).run()
-</py-script>
+</script>
+</body>
 </html>

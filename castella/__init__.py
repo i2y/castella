@@ -8,7 +8,11 @@ from .image import Image
 from .input import Input, InputState
 from .multiline_text import MultilineText
 from .net_image import NetImage
-from .numpy_image import NumpyImage
+
+try:
+    from .numpy_image import NumpyImage
+except ImportError:
+    pass
 from .row import Row
 from .spacer import Spacer
 from .switch import Switch

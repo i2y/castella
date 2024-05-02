@@ -1,3 +1,4 @@
+from typing import Self
 from castella.core import MouseEvent, Painter, Point, Size, SizePolicy, Widget
 
 
@@ -21,12 +22,12 @@ class Spacer(Widget):
     def redraw(self, _: Painter, completely: bool) -> None:
         pass
 
-    def width_policy(self, sp: SizePolicy):  # -> Self:
+    def width_policy(self, sp: SizePolicy) -> Self:
         if sp is SizePolicy.CONTENT:
             raise RuntimeError("Spacer doesn't accept SizePolicy.CONTENT")
         return super().width_policy(sp)
 
-    def height_policy(self, sp: SizePolicy):  # -> Self:
+    def height_policy(self, sp: SizePolicy) -> Self:
         if sp is SizePolicy.CONTENT:
             raise RuntimeError("Spacer doesn't accept SizePolicy.CONTENT")
         return super().height_policy(sp)

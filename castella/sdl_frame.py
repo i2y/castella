@@ -52,12 +52,11 @@ class Frame:
 
         self._window = window
         self._size = core.Size(width, height)
+        zengl.init(zengl.loader(headless=True))
         self._update_surface_and_painter()
         self._update_event_queue = SimpleQueue()
 
     def _update_surface_and_painter(self) -> None:
-        zengl.context(zengl.loader(headless=True))
-
         info = skia.ImageInfo.MakeN32Premul(self._size.width, self._size.height)
         surface = skia.Surface.MakeRenderTarget(
             skia.GrDirectContext.MakeGL(), skia.Budgeted.kNo, info
@@ -142,10 +141,10 @@ class Frame:
             height,
             self.PIXEL_DEPTH,
             self.PIXEL_PITCH_FACTOR * width,
-            *self._rgba_masks
+            *self._rgba_masks,
         )
 
-        rect = sdl.SDL_Rect(0, 0, width, height)
+        rect = sdl.SDL_Rect(0, 0, int(width), int(height))
         window_surface = sdl.SDL_GetWindowSurface(self._window)
         sdl.SDL_BlitSurface(sdl_surface, rect, window_surface, rect)
         sdl.SDL_UpdateWindowSurface(self._window)

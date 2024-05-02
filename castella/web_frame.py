@@ -1,8 +1,8 @@
 from asyncio import Future
 from typing import Callable, cast
 
-from js import Object, document, window, navigator
-from pyodide import create_proxy, to_js
+from js import Object, document, window, navigator  # type: ignore
+from pyscript.ffi import create_proxy, to_js # type: ignore
 
 from . import core
 from .canvaskit_painter import Painter
@@ -125,8 +125,10 @@ class Frame:
         style = document.createElement("style")
         style.innerHTML = """
         #castella-app {
-            padding: 0px;
-            border: 0px;
+           display: block;
+           padding: 0px;
+           margin: 0px;
+           border: none;
         }
 
         html,
@@ -134,6 +136,7 @@ class Frame:
             min-height: 100vh;
             margin: 0px;
             padding: 0px;
+            overflow: hidden;
         }
         """
         document.body.appendChild(style)

@@ -1,4 +1,5 @@
 from dataclasses import astuple
+from typing import Self
 
 from castella.core import (
     SCROLL_BAR_SIZE,
@@ -257,7 +258,7 @@ class Box(Layout):
                 self.update(True)
             return self
 
-    def scroll_y(self, h: float, y: int):  # -> Self:
+    def scroll_y(self, h: float, y: int) -> Self:
         if y > 0:
             max_scroll_y = (
                 h

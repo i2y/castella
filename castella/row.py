@@ -1,5 +1,5 @@
 import functools
-from typing import Generator
+from typing import Generator, Self
 
 from castella.core import (
     SCROLL_BAR_SIZE,
@@ -65,7 +65,7 @@ class Row(Layout):
             yield c
         yield self._spacer
 
-    def spacing(self, size: int):  # -> Self:
+    def spacing(self, size: int) -> Self:
         self._spacing = size
         self._spacer = Spacer().fixed_width(size)
         return self
@@ -161,7 +161,7 @@ class Row(Layout):
     def has_scrollbar(self, is_direction_x: bool) -> bool:
         return is_direction_x and self._scroll_box is not None
 
-    def scroll_x(self, x: int):  # -> Self:
+    def scroll_x(self, x: int) -> Self:
         if x > 0:
             max_scroll_x = self.content_width() - self.get_width()
             if self._scroll_x == max_scroll_x:

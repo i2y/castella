@@ -13,13 +13,17 @@ from typing import (
     List,
     Optional,
     Protocol,
+    Self,
     TypeAlias,
     TypeVar,
     Union,
     runtime_checkable,
 )
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    pass
 
 from . import color
 
@@ -172,80 +176,61 @@ class TextAlign(Enum):
 
 
 class Painter(Protocol):
-    def clear_all(self) -> None:
-        ...
+    def clear_all(self) -> None: ...
 
-    def fill_rect(self, rect: Rect) -> None:
-        ...
+    def fill_rect(self, rect: Rect) -> None: ...
 
-    def stroke_rect(self, rect: Rect) -> None:
-        ...
+    def stroke_rect(self, rect: Rect) -> None: ...
 
-    def fill_circle(self, circle: Circle) -> None:
-        ...
+    def fill_circle(self, circle: Circle) -> None: ...
 
-    def stroke_circle(self, circle: Circle) -> None:
-        ...
+    def stroke_circle(self, circle: Circle) -> None: ...
 
-    def translate(self, pos: Point) -> None:
-        ...
+    def translate(self, pos: Point) -> None: ...
 
-    def clip(self, rect: Rect) -> None:
-        ...
+    def clip(self, rect: Rect) -> None: ...
 
-    def fill_text(self, text: str, pos: Point, max_width: Optional[float]) -> None:
-        ...
+    def fill_text(self, text: str, pos: Point, max_width: Optional[float]) -> None: ...
 
-    def stroke_text(self, text: str, pos: Point, max_width: Optional[float]) -> None:
-        ...
+    def stroke_text(
+        self, text: str, pos: Point, max_width: Optional[float]
+    ) -> None: ...
 
-    def measure_text(self, text: str) -> float:
-        ...
+    def measure_text(self, text: str) -> float: ...
 
-    def get_font_metrics(self) -> FontMetrics:
-        ...
+    def get_font_metrics(self) -> FontMetrics: ...
 
-    def draw_image(self, file_path: str, rect: Rect, use_cache: bool = True) -> None:
-        ...
+    def draw_image(
+        self, file_path: str, rect: Rect, use_cache: bool = True
+    ) -> None: ...
 
-    def measure_image(self, file_path: str, use_cache: bool = True) -> Size:
-        ...
+    def measure_image(self, file_path: str, use_cache: bool = True) -> Size: ...
 
-    def draw_net_image(self, url: str, rect: Rect, use_cache: bool = True) -> None:
-        ...
+    def draw_net_image(self, url: str, rect: Rect, use_cache: bool = True) -> None: ...
 
-    def measure_net_image(self, url: str, use_cache: bool = True) -> Size:
-        ...
+    def measure_net_image(self, url: str, use_cache: bool = True) -> Size: ...
 
-    def measure_np_array_as_an_image(self, array: np.ndarray) -> Size:
-        ...
+    def measure_np_array_as_an_image(self, array: "np.ndarray") -> Size: ...
 
-    def get_net_image_async(self, name: str, url: str, callback):
-        ...
+    def get_net_image_async(self, name: str, url: str, callback): ...
 
-    def get_numpy_image_async(self, array: np.ndarray, callback):
-        ...
+    def get_numpy_image_async(self, array: "np.ndarray", callback): ...
 
-    def draw_image_object(self, img, x: float, y: float) -> None:
-        ...
+    def draw_image_object(self, img, x: float, y: float) -> None: ...
 
-    def draw_np_array_as_an_image(self, array: np.ndarray, x: float, y: float) -> None:
-        ...
+    def draw_np_array_as_an_image(
+        self, array: "np.ndarray", x: float, y: float
+    ) -> None: ...
 
-    def draw_np_array_as_an_image_rect(self, array: np.ndarray, rect: Rect) -> None:
-        ...
+    def draw_np_array_as_an_image_rect(self, array: "np.ndarray", rect: Rect) -> None: ...
 
-    def save(self) -> None:
-        ...
+    def save(self) -> None: ...
 
-    def restore(self) -> None:
-        ...
+    def restore(self) -> None: ...
 
-    def style(self, style: Style) -> None:
-        ...
+    def style(self, style: Style) -> None: ...
 
-    def flush(self) -> None:
-        ...
+    def flush(self) -> None: ...
 
 
 W = TypeVar("W", bound="Widget")
@@ -253,7 +238,7 @@ W = TypeVar("W", bound="Widget")
 
 @dataclass(slots=True)
 class MouseEvent(Generic[W]):
-    pos: Point = Point(0, 0)
+    pos: Point
     target: Optional[W] = None
 
     def translate(self, p: Point) -> "MouseEvent":
@@ -300,83 +285,61 @@ class InputKeyEvent:
 
 
 class Frame(Protocol):
-    def __init__(self, title: str, width: float = 0, height: float = 0) -> None:
-        ...
+    def __init__(self, title: str, width: float = 0, height: float = 0) -> None: ...
 
-    def on_mouse_down(self, handler: Callable[[MouseEvent], None]) -> None:
-        ...
+    def on_mouse_down(self, handler: Callable[[MouseEvent], None]) -> None: ...
 
-    def on_mouse_up(self, handler: Callable[[MouseEvent], None]) -> None:
-        ...
+    def on_mouse_up(self, handler: Callable[[MouseEvent], None]) -> None: ...
 
-    def on_mouse_wheel(self, handler: Callable[[WheelEvent], None]) -> None:
-        ...
+    def on_mouse_wheel(self, handler: Callable[[WheelEvent], None]) -> None: ...
 
-    def on_cursor_pos(self, handler: Callable[[MouseEvent], None]) -> None:
-        ...
+    def on_cursor_pos(self, handler: Callable[[MouseEvent], None]) -> None: ...
 
-    def on_input_char(self, handler: Callable[[InputCharEvent], None]) -> None:
-        ...
+    def on_input_char(self, handler: Callable[[InputCharEvent], None]) -> None: ...
 
-    def on_input_key(self, handler: Callable[[InputKeyEvent], None]) -> None:
-        ...
+    def on_input_key(self, handler: Callable[[InputKeyEvent], None]) -> None: ...
 
-    def on_redraw(self, handler: Callable[[Painter, bool], None]) -> None:
-        ...
+    def on_redraw(self, handler: Callable[[Painter, bool], None]) -> None: ...
 
-    def get_painter(self) -> Painter:
-        ...
+    def get_painter(self) -> Painter: ...
 
-    def get_size(self) -> Size:
-        ...
+    def get_size(self) -> Size: ...
 
-    def post_update(self, ev: "UpdateEvent") -> None:
-        ...
+    def post_update(self, ev: "UpdateEvent") -> None: ...
 
-    def flush(self) -> None:
-        ...
+    def flush(self) -> None: ...
 
-    def clear(self) -> None:
-        ...
+    def clear(self) -> None: ...
 
-    def run(self) -> None:
-        ...
+    def run(self) -> None: ...
 
-    def get_clipboard_text(self) -> str:
-        ...
+    def get_clipboard_text(self) -> str: ...
 
-    def set_clipboard_text(self, text: str) -> None:
-        ...
+    def set_clipboard_text(self, text: str) -> None: ...
 
-    def async_get_clipboard_text(self, callback: Callable[[Future[str]], None]) -> None:
-        ...
+    def async_get_clipboard_text(
+        self, callback: Callable[[Future[str]], None]
+    ) -> None: ...
 
     def async_set_clipboard_text(
         self, text: str, callback: Callable[[Future], None]
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
 class Observer(Protocol):
-    def on_attach(self, o: "ObservableBase"):
-        ...
+    def on_attach(self, o: "ObservableBase"): ...
 
-    def on_detach(self, o: "ObservableBase"):
-        ...
+    def on_detach(self, o: "ObservableBase"): ...
 
-    def on_notify(self):
-        ...
+    def on_notify(self): ...
 
 
 class Observable(Protocol):
-    def attach(self, observer: Observer) -> None:
-        ...
+    def attach(self, observer: Observer) -> None: ...
 
-    def detach(self, observer: Observer) -> None:
-        ...
+    def detach(self, observer: Observer) -> None: ...
 
-    def notify(self) -> None:
-        ...
+    def notify(self) -> None: ...
 
 
 class UpdateListener:
@@ -421,11 +384,9 @@ V = TypeVar("V")
 
 @runtime_checkable
 class SimpleValue(Observable, Protocol[V]):
-    def set(self, value: V):
-        ...
+    def set(self, value: V): ...
 
-    def value(self) -> V:
-        ...
+    def value(self) -> V: ...
 
 
 class Widget(ABC):
@@ -451,7 +412,7 @@ class Widget(ABC):
         self._flex = 1
         self._dirty = True
         self._enable_to_detach = True
-        self._parent = None
+        self._parent: Self | None = None
         self._widget_styles = get_theme().get_widget_styles(self)
         self._on_update_widget_styles()
 
@@ -472,14 +433,14 @@ class Widget(ABC):
 
     def change_style(
         self, kind: "Kind", state: "AppearanceState", new_style: "WidgetStyle"
-    ):  # -> Self:
+    ) -> Self:
         styles = self._widget_styles
         style_name = f"{kind.value}{state.value}".format(kind, state)
         styles[style_name] = new_style
         self._on_update_widget_styles()
         return self
 
-    def bg_color(self, rgb: str):  # -> Self:
+    def bg_color(self, rgb: str) -> Self:
         return self.change_style(
             Kind.NORMAL,
             AppearanceState.NORMAL,
@@ -489,7 +450,7 @@ class Widget(ABC):
             ),
         )
 
-    def text_color(self, rgb: str):  # -> Self:
+    def text_color(self, rgb: str) -> Self:
         return self.change_style(
             Kind.NORMAL,
             AppearanceState.NORMAL,
@@ -499,10 +460,10 @@ class Widget(ABC):
             ),
         )
 
-    def fg_color(self, rgb: str):  # -> Self:
+    def fg_color(self, rgb: str) -> Self:
         return self.text_color(rgb)
 
-    def border_color(self, rgb: str):  # -> Self:
+    def border_color(self, rgb: str) -> Self:
         return self.change_style(
             Kind.NORMAL,
             AppearanceState.NORMAL,
@@ -512,7 +473,7 @@ class Widget(ABC):
             ),
         )
 
-    def erase_border(self):  # -> Self:
+    def erase_border(self) -> Self:
         return self.border_color(
             self._get_widget_style(Kind.NORMAL, AppearanceState.NORMAL).bg_color
         )
@@ -609,8 +570,7 @@ class Widget(ABC):
         pass
 
     @abstractmethod
-    def redraw(self, p: Painter, completely: bool) -> None:
-        ...
+    def redraw(self, p: Painter, completely: bool) -> None: ...
 
     def is_dirty(self) -> bool:
         return self._dirty
@@ -618,31 +578,31 @@ class Widget(ABC):
     def dirty(self, flag: bool) -> None:
         self._dirty = flag
 
-    def move(self, p: Point):  # -> Self:
+    def move(self, p: Point) -> Self:
         if p != self._pos:
             self._pos = p
             self._dirty = True
         return self
 
-    def move_x(self, x: float):  # -> Self:
+    def move_x(self, x: float) -> Self:
         if x != self._pos.x:
             self._pos.x = x
             self._dirty = True
         return self
 
-    def move_y(self, y: float):  # -> Self:
+    def move_y(self, y: float) -> Self:
         if y != self._pos.y:
             self._pos.y = y
             self._dirty = True
         return self
 
-    def resize(self, s: Size):  # -> Self:
+    def resize(self, s: Size) -> Self:
         if s != self._size:
             self._size = s
             self._dirty = True
         return self
 
-    def width(self, w: float):  # -> Self:
+    def width(self, w: float) -> Self:
         if w != self._size.width:
             self._dirty = True
             self._size.width = w
@@ -651,7 +611,7 @@ class Widget(ABC):
     def get_width(self) -> float:
         return self._size.width
 
-    def height(self, h: float):  # -> Self:
+    def height(self, h: float) -> Self:
         if h != self._size.height:
             self._size.height = h
             self._dirty = True
@@ -663,7 +623,7 @@ class Widget(ABC):
     def get_pos(self) -> Point:
         return self._pos
 
-    def pos(self, pos: Point):  # -> Self:
+    def pos(self, pos: Point) -> Self:
         if pos != self._pos:
             self._pos = pos
             self._dirty = True
@@ -708,31 +668,31 @@ class Widget(ABC):
     def get_width_policy(self) -> SizePolicy:
         return self._width_policy
 
-    def width_policy(self, sp: SizePolicy):  # -> Self:
+    def width_policy(self, sp: SizePolicy) -> Self:
         self._width_policy = sp
         return self
 
     def get_height_policy(self) -> SizePolicy:
         return self._height_policy
 
-    def height_policy(self, sp: SizePolicy):  # -> Self:
+    def height_policy(self, sp: SizePolicy) -> Self:
         self._height_policy = sp
         return self
 
     def get_flex(self) -> int:
         return self._flex
 
-    def flex(self, flex: int):  # -> Self:
+    def flex(self, flex: int) -> Self:
         self._flex = flex
         return self
 
-    def parent(self, parent: "Widget") -> None:
+    def parent(self, parent: Self) -> None:
         self._parent = parent
 
-    def get_parent(self):  # -> Self:
+    def get_parent(self) -> Self | None:
         return self._parent
 
-    def delete_parent(self, parent: "Widget") -> None:
+    def delete_parent(self, parent: Self) -> None:
         if self._parent is parent:
             self._parent = None
 
@@ -740,31 +700,31 @@ class Widget(ABC):
         if self._parent is not None:
             App.get().post_update(self._parent, completely)
 
-    def fixed_width(self, width: float):  # -> Self:
+    def fixed_width(self, width: float) -> Self:
         return self.width_policy(SizePolicy.FIXED).width(width)
 
-    def fixed_height(self, height: float):  # -> Self:
+    def fixed_height(self, height: float) -> Self:
         return self.height_policy(SizePolicy.FIXED).height(height)
 
-    def fixed_size(self, width: float, height: float):  # -> Self:
+    def fixed_size(self, width: float, height: float) -> Self:
         return (
             self.width_policy(SizePolicy.FIXED)
             .height_policy(SizePolicy.FIXED)
             .resize(Size(width, height))
         )
 
-    def fit_parent(self):  # -> Self:
+    def fit_parent(self) -> Self:
         return self.width_policy(SizePolicy.EXPANDING).height_policy(
             SizePolicy.EXPANDING
         )
 
-    def fit_content(self):  # -> Self:
+    def fit_content(self) -> Self:
         return self.width_policy(SizePolicy.CONTENT).height_policy(SizePolicy.CONTENT)
 
-    def fit_content_width(self):  # -> Self:
+    def fit_content_width(self) -> Self:
         return self.width_policy(SizePolicy.CONTENT)
 
-    def fit_content_height(self):  # -> Self:
+    def fit_content_height(self) -> Self:
         return self.height_policy(SizePolicy.CONTENT)
 
 
@@ -789,7 +749,7 @@ class State(ObservableBase, Generic[T]):
     def __str__(self) -> str:
         return str(self._value)
 
-    def __iadd__(self, value):  # -> Self:
+    def __iadd__(self, value) -> Self:
         self._value += value
         self.notify()
         return self
@@ -797,17 +757,17 @@ class State(ObservableBase, Generic[T]):
     def __add__(self, value) -> T:
         return self._value + value
 
-    def __isub__(self, value):  # -> Self:
+    def __isub__(self, value) -> Self:
         self._value -= value
         self.notify()
         return self
 
-    def __imul__(self, value):  # -> Self:
+    def __imul__(self, value) -> Self:
         self._value *= value
         self.notify()
         return self
 
-    def __itruediv__(self, value):  # -> Self:
+    def __itruediv__(self, value) -> Self:
         self._value /= value
         self.notify()
         return self
@@ -818,7 +778,7 @@ class ListState(list, ObservableBase, Generic[T]):
         super().__init__(items)
         ObservableBase.__init__(self)
 
-    def __add__(self, rhs: Iterable[T]):  # -> Self:
+    def __add__(self, rhs: Iterable[T]) -> "ListState":
         return ListState(super().__add__(list(rhs)))
 
     def __delattr__(self, name: str) -> None:
@@ -829,33 +789,33 @@ class ListState(list, ObservableBase, Generic[T]):
         super().__setattr__(name, value)
         self.notify()
 
-    def __iadd__(self, rhs: Iterable[T]):  # -> Self:
+    def __iadd__(self, rhs: Iterable[T]) -> Self:
         super().__iadd__(rhs)
         self.notify()
         return self
 
-    def __imul__(self, rhs: int):  # -> Self:
+    def __imul__(self, rhs: int) -> Self:
         super().__imul__(rhs)
         self.notify()
         return self
 
-    def __mul__(self, rhs: int):  # -> Self:
+    def __mul__(self, rhs: int) -> "ListState":
         return ListState(super().__mul__(rhs))
 
-    def __rmul__(self, lhs: int):  # -> Self:
+    def __rmul__(self, lhs: int) -> "ListState":
         return ListState(super().__rmul__(lhs))
 
-    def __reversed__(self):  # -> Self:
+    def __reversed__(self) -> Self:
         super().__reversed__()
         self.notify()
         return self
 
-    def __setitem__(self, index: int, value: T):  # -> Self:
+    def __setitem__(self, index: int, value: T) -> Self:
         super().__setitem__(index, value)
         self.notify()
         return self
 
-    def __delitem__(self, index: int):  # -> Self:
+    def __delitem__(self, index: int) -> Self:
         super().__delitem__(index)
         self.notify()
         return self
@@ -892,7 +852,7 @@ class ListState(list, ObservableBase, Generic[T]):
 
 def _is_darkmode() -> bool:
     if "pyodide" in sys.modules:
-        import js
+        import js  # type: ignore
 
         return js.window.matchMedia("(prefers-color-scheme: dark)").matches
 
@@ -905,6 +865,7 @@ def _is_darkmode() -> bool:
 
 
 def _get_color_schema() -> dict[str, str]:
+    return color.COLOR_SCHEMA[12]
     if _is_darkmode():
         return color.COLOR_SCHEMA[color.DARK_MODE]
     else:
@@ -1143,7 +1104,7 @@ class UpdateEvent:
 
 
 class App:
-    _instance: "App"
+    _instance: Self
 
     _default_font_family = get_theme().app.text_font.family
 
@@ -1164,11 +1125,11 @@ class App:
         self.push_layer(widget, PositionPolicy.FIXED)
 
     @classmethod
-    def get(cls):  # -> Self:
+    def get(cls) -> Self:
         return cls._instance
 
     @classmethod
-    def default_font_family(cls, font_family: str):  # -> Self:
+    def default_font_family(cls, font_family: str) -> type[Self]:
         cls._default_font_family = font_family
         return cls
 
@@ -1176,7 +1137,7 @@ class App:
     def get_default_font_family(cls) -> str:
         return cls._default_font_family
 
-    def push_layer(self, l: Widget, p: PositionPolicy):  # -> Self:
+    def push_layer(self, l: Widget, p: PositionPolicy) -> Self:
         if len(self._layers) > 0:
             self.cursor_pos(MouseEvent(Point(-1, -1)))
         self._layers.append(l)
@@ -1184,7 +1145,7 @@ class App:
         self._frame.post_update(UpdateEvent(self, True))
         return self
 
-    def pop_layer(self):  # -> Self:
+    def pop_layer(self) -> Self:
         self._layers.pop()
         self._layerPositions.pop()
         self._frame.post_update(UpdateEvent(self, True))
@@ -1357,11 +1318,9 @@ def hide_popup():
 
 
 class Container(Protocol):
-    def get_children(self) -> Generator[Widget, None, None]:
-        ...
+    def get_children(self) -> Generator[Widget, None, None]: ...
 
-    def detach(self) -> None:
-        ...
+    def detach(self) -> None: ...
 
 
 class Layout(Widget, ABC):
@@ -1435,8 +1394,7 @@ class Layout(Widget, ABC):
             return None, None
 
     @abstractmethod
-    def has_scrollbar(self, is_direction_x: bool) -> bool:
-        ...
+    def has_scrollbar(self, is_direction_x: bool) -> bool: ...
 
     def _adjust_pos(self, p: Point) -> Point:
         return p + Point(0, 0)
@@ -1454,8 +1412,7 @@ class Layout(Widget, ABC):
         self._redraw_children(p, completely)
 
     @abstractmethod
-    def _relocate_children(self, p: Painter) -> None:
-        ...
+    def _relocate_children(self, p: Painter) -> None: ...
 
     def _redraw_children(self, p: Painter, completely: bool) -> None:
         for c in self._children:
@@ -1467,7 +1424,7 @@ class Layout(Widget, ABC):
                 p.restore()
                 c.dirty(False)
 
-    def width_policy(self, sp: SizePolicy):  # -> Self:
+    def width_policy(self, sp: SizePolicy) -> Self:
         if sp is SizePolicy.CONTENT and self.has_width_expandable_children():
             raise RuntimeError(
                 "Layout with CONTENT size policy cannot have an size expandable child widget"
@@ -1476,7 +1433,7 @@ class Layout(Widget, ABC):
         self._width_policy = sp
         return self
 
-    def height_policy(self, sp: SizePolicy):  # -> Self:
+    def height_policy(self, sp: SizePolicy) -> Self:
         if sp is SizePolicy.CONTENT and self.has_height_expandable_children():
             raise RuntimeError(
                 "Layout with CONTENT size policy cannot have an size expandable child widget"
@@ -1531,8 +1488,7 @@ class Component(Layout, ABC):
         return False
 
     @abstractmethod
-    def view(self) -> Widget:
-        ...
+    def view(self) -> Widget: ...
 
     def on_notify(self) -> None:
         if self._child is not None:
