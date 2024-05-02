@@ -1,4 +1,4 @@
-from typing import Callable, cast
+from typing import Callable, Self, cast
 
 from castella.core import (
     AppearanceState,
@@ -76,16 +76,16 @@ class Switch(Widget):
             knob = Circle(center=Point(r, r), radius=inner_r)
         p.fill_circle(knob)
 
-    def width_policy(self, sp: SizePolicy):  # -> Self:
+    def width_policy(self, sp: SizePolicy) -> Self:
         if sp is SizePolicy.CONTENT:
             raise RuntimeError("The switch doesn't accept SizePolicy.CONTENT")
         return super().width_policy(sp)
 
-    def height_policy(self, sp: SizePolicy):  # -> Self:
+    def height_policy(self, sp: SizePolicy) -> Self:
         if sp is SizePolicy.CONTENT:
             raise RuntimeError("The switch doesn't accept SizePolicy.CONTENT")
         return super().height_policy(sp)
 
-    def on_change(self, callback: Callable[[bool], None]):  # -> Self:
+    def on_change(self, callback: Callable[[bool], None]) -> Self:
         self._callback = callback
         return self

@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Self, cast
 
 from castella.core import Painter, Point, SimpleValue, Size, SizePolicy, State, Widget
 
@@ -33,12 +33,12 @@ class AsyncNetImage(Widget):
         else:
             self.ask_parent_to_render(True)
 
-    def width_policy(self, sp: SizePolicy):  # -> Self:
+    def width_policy(self, sp: SizePolicy) -> Self:
         if sp is SizePolicy.CONTENT:
             raise RuntimeError("AsyncNetImage doesn't accept SizePolicy.CONTENT")
         return super().width_policy(sp)
 
-    def height_policy(self, sp: SizePolicy):  # -> Self:
+    def height_policy(self, sp: SizePolicy) -> Self:
         if sp is SizePolicy.CONTENT:
             raise RuntimeError("AsyncNetImage doesn't accept SizePolicy.CONTENT")
         return super().height_policy(sp)

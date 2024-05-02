@@ -1,5 +1,5 @@
 from dataclasses import replace
-from typing import Any, Callable, cast
+from typing import Any, Callable, Self, cast
 
 from castella.core import (
     AppearanceState,
@@ -107,7 +107,7 @@ class Button(Widget):
         )
         self.update()
 
-    def on_click(self, callback: Callable[[MouseEvent], Any]):  # -> Self:
+    def on_click(self, callback: Callable[[MouseEvent], Any]) -> Self:
         self._on_click = callback
         return self
 
@@ -176,7 +176,7 @@ class Button(Widget):
             max_width=width - 2 * self._style.padding,
         )
 
-    def width_policy(self, sp: SizePolicy):  # -> Self:
+    def width_policy(self, sp: SizePolicy) -> Self:
         if (
             sp is SizePolicy.CONTENT
             and self._text_style.font.size_policy is not FontSizePolicy.FIXED
@@ -186,7 +186,7 @@ class Button(Widget):
             )
         return super().width_policy(sp)
 
-    def height_policy(self, sp: SizePolicy):  # -> Self:
+    def height_policy(self, sp: SizePolicy) -> Self:
         if (
             sp is SizePolicy.CONTENT
             and self._text_style.font.size_policy is not FontSizePolicy.FIXED

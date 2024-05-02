@@ -1,5 +1,5 @@
 from dataclasses import replace
-from typing import Any, cast
+from typing import Any, Self, cast
 
 from castella.core import (
     AppearanceState,
@@ -104,7 +104,7 @@ class Text(Widget):
             max_width=width,
         )
 
-    def width_policy(self, sp: SizePolicy):  # -> Self:
+    def width_policy(self, sp: SizePolicy) -> Self:
         if (
             sp is SizePolicy.CONTENT
             and self._text_style.font.size_policy is not FontSizePolicy.FIXED
@@ -114,7 +114,7 @@ class Text(Widget):
             )
         return super().width_policy(sp)
 
-    def height_policy(self, sp: SizePolicy):  # -> Self:
+    def height_policy(self, sp: SizePolicy) -> Self:
         if (
             sp is SizePolicy.CONTENT
             and self._text_style.font.size_policy is not FontSizePolicy.FIXED

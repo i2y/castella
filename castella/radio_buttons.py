@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import Self
 
 from castella import (
     CheckBox,
@@ -17,7 +18,7 @@ class RadioButtonsState(ObservableBase):
         self._labels = labels
         self._selected_index = selected_index
 
-    def select(self, index: int):  # -> Self:
+    def select(self, index: int) -> Self:
         self._selected_index = index
         self.notify()
         return self
@@ -50,7 +51,7 @@ class RadioButtons(StatefulComponent):
             )
         return Column(*check_boxes)
 
-    def button_width(self, width: int):  # -> Self:
+    def button_width(self, width: int) -> Self:
         self._button_width = width
         return self
 

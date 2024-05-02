@@ -1,5 +1,5 @@
 from dataclasses import replace
-from typing import Any, Callable, cast
+from typing import Any, Callable, Self, cast
 
 from castella.core import (
     AppearanceState,
@@ -55,7 +55,7 @@ class CheckBox(Widget):
         state.set(not state.value())
         self._on_click(ev)
 
-    def on_click(self, callback: Callable[[MouseEvent], Any]):  # -> Self:
+    def on_click(self, callback: Callable[[MouseEvent], Any]) -> Self:
         self._on_click = callback
         return self
 
@@ -82,7 +82,10 @@ class CheckBox(Widget):
             p.fill_rect(rect)
             p.stroke_rect(rect)
             if state.value():
-                inner_rect = Rect(origin=Point(size.width * 0.2, size.height * 0.2), size=Size(size.width * 0.6, size.height * 0.6))
+                inner_rect = Rect(
+                    origin=Point(size.width * 0.2, size.height * 0.2),
+                    size=Size(size.width * 0.6, size.height * 0.6),
+                )
                 p.style(self._checked_style)
                 p.fill_rect(inner_rect)
 
@@ -130,12 +133,12 @@ class CheckBox(Widget):
             max_width=width - 2 * self._style.padding,
         )
 
-    def width_policy(self, sp: SizePolicy):  # -> Self:
+    def width_policy(self, sp: SizePolicy) -> Self:
         if sp is SizePolicy.CONTENT:
             raise RuntimeError("CheckBox doesn't accept SizePolicy.CONTENT")
         return super().width_policy(sp)
 
-    def height_policy(self, sp: SizePolicy):  # -> Self:
+    def height_policy(self, sp: SizePolicy) -> Self:
         if sp is SizePolicy.CONTENT:
             raise RuntimeError("CheckBox doesn't accept SizePolicy.CONTENT")
         return super().height_policy(sp)

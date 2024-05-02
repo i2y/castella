@@ -150,8 +150,7 @@ class Painter:
 
     def stroke_text(
         self, text: str, pos: core.Point, max_width: Optional[float]
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def draw_image(
         self, file_path: str, rect: core.Rect, use_cache: bool = True

@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import cast
+from typing import Self, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,7 +22,7 @@ class LineChartState(ObservableBase):
     def get_value(self) -> Sequence[float]:
         return self._value
 
-    def set(self, value: Sequence[float]):  # -> Self:
+    def set(self, value: Sequence[float]) -> Self:
         self._value = value
         self.notify()
         return self

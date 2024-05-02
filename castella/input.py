@@ -1,5 +1,5 @@
 from dataclasses import replace
-from typing import Callable, cast
+from typing import Callable, Self, cast
 
 from castella.core import (
     FillStyle,
@@ -205,6 +205,6 @@ class Input(Text):
         elif ev.key is KeyCode.RIGHT:
             state.move_to_next()
 
-    def on_change(self, callback: Callable[[str], None]):  # -> Self:
+    def on_change(self, callback: Callable[[str], None]) -> Self:
         self._callback = callback
         return self

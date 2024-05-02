@@ -1,8 +1,11 @@
 from typing import Optional, cast
 
-from js import Image, ImageData, window, document
-import numpy as np
-from pyodide import create_proxy
+from js import Image, ImageData, window, document  # type: ignore
+try:
+    import numpy as np
+except ImportError:
+    pass
+from pyscript.ffi import create_proxy # type: ignore
 
 from . import core
 
@@ -122,8 +125,7 @@ class Painter:
 
     def stroke_text(
         self, text: str, pos: core.Point, max_width: Optional[float]
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def draw_image(
         self, file_path: str, rect: core.Rect, use_cache: bool = True
@@ -156,15 +158,15 @@ class Painter:
     def measure_net_image(self, url: str, use_cache: bool = True) -> core.Size:
         raise NotImplementedError()
 
-    def measure_np_array_as_an_image(self, array: np.ndarray) -> core.Size:
+    def measure_np_array_as_an_image(self, array: "np.ndarray") -> core.Size:
         height, width, _ = array.shape
         return core.Size(width, height)
 
-    def draw_np_array_as_an_image(self, array: np.ndarray, x: float, y: float) -> None:
+    def draw_np_array_as_an_image(self, array: "np.ndarray", x: float, y: float) -> None:
         raise NotImplementedError()
 
     def draw_np_array_as_an_image_rect(
-        self, array: np.ndarray, rect: core.Rect
+        self, array: "np.ndarray", rect: core.Rect
     ) -> None:
         raise NotImplementedError()
 
