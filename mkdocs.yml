@@ -7,7 +7,7 @@ theme:
   logo: images/sweets_kasutera.png
   favicon: images/sweets_kasutera.png
   features:
-    - navigation.tabs
+    # - navigation.tabs
     - navigation.top
     - navigation.footer
     - content.code.annotate
@@ -37,11 +37,9 @@ nav:
       - Installation: getting-started.md
       - Hello World: hello-world.md
       - Layout: layout.md
-      - State: state.md
-      - Component: component.md
-      - Stateful Component: stateful-component.md
-      - Widgets: widgets.md
-      - Chart: chart.md
+      - Custom Widgets: custom-widgets.md
+      - Built-in Widgets: widgets.md
+      - Style: style.md
       - Hot restarting: hot-restarting.md
       - Hot reloading: hot-reloading.md
   - Packaging: packaging.md

@@ -81,15 +81,14 @@ If the installation was successful, then [hello_world.py](https://github.com/i2y
 
 
 ## For Web Browsers
-Sorry, we have not yet established a clean and easy way to do this.
-Here, for now, we will explain how to use Castella in your PyScript app.
+Here, we are going to explain how to use Castella in your PyScript app.
 
 For more information on how to write a PyScript app, please refer to [the official documentation](https://pyscript.net/).
 
 For now, to use Castella on an html page, you need to do something as the following.
 
-- Load the pyscript JS file canvaskit JS file and initialize it properly in your html
-- Specify all Castella modules to be used in the html page with py-env tag.
+- Load the pyscript JS file and the canvaskit JS file and initialize it properly in your html
+- Specify all Castella modules to be used in the html page in pyscript config file (`pyscript.toml`)
 - Serve the html page and modules with any web server.
 
 A tiny example of the above procedure is shown below.
@@ -108,25 +107,32 @@ $ git clone git@github.com:i2y/castella.git
 ```
 
 ##### 3. Implement your app
-Please create `counter.html` file with the following content in your app folder.
+You need to create `counter.html` file with the following content in your app folder.
 ```html
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-    <title>Counter</title>
-    <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+<head>
+    <meta charset="UTF-8" />
+    <title>Misc</title>
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.4.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.4.1/core.js"></script>
     <script type="text/javascript" src="https://unpkg.com/canvaskit-wasm@0.33.0/bin/canvaskit.js"></script>
-    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
 </head>
-<py-env>
-    - numpy
-    - ./castella/dist/castella-0.1.12-py3-none-any.whl
-</py-env>
-<py-script>
-from castella import App, Column, Row, Button, Text, State, Component, SizePolicy
+<body>
+<script type="py" src="counter.py" config="pyscript.toml"></script>
+</body>
+</html>
+```
+
+Then, you need to write `pyscript.toml` file with the following content in your app folder.
+```toml
+packages = [ "./castella-0.1.13-py3-none-any.whl" ]
+```
+
+Next, off course, you need to create `counter.py` file with the following content in your app folder.
+```python
+from castella import App, Button, Column, Component, Row, State, Text
 from castella.frame import Frame
 
 
@@ -151,19 +157,18 @@ class Counter(Component):
         self._count -= 1
 
 
-App(Frame("Counter", 800, 600), Counter()).run()
-</py-script>
-</html>
+if __name__ == "__main__":
+    App(Frame("Counter", 800, 600), Counter()).run()
 ```
 
+
 ##### 4. Serve your app
-Finally, please serve your app using http server.
+Finally, could please serve your app using http server.
 ```sh
 $ python -m http.server 3000
 ```
-Please open [http://127.0.0.1:3000/counter.html](http://127.0.0.1:3000/counter.html) with any browser.
-
-Or, you can use live preview your app with Visual Studio Code or something like that.
+Now, you can see the UI of counter app at [http://127.0.0.1:3000/counter.html](http://127.0.0.1:3000/counter.html) using any web browser.
+That will be shown as the following.
 
 <style type="text/css">
     div.demo {
@@ -175,60 +180,9 @@ Or, you can use live preview your app with Visual Studio Code or something like 
         height: 300px;
     }
 </style>
-<div class="demo">
-    <iframe width="100%" height="100%" src="../examples/calc.html"></iframe>
-</div>
+
 <div class="demo">
     <iframe width="100%" height="100%" src="../examples/counter.html"></iframe>
 </div>
-<div class="demo">
-    <iframe width="100%" height="100%" src="../examples/misc.html"></iframe>
-</div>
 
-Please create `counter.html` file with the following content in your app folder.
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-
-    <title>Counter</title>
-    <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
-    <script type="text/javascript" src="https://unpkg.com/canvaskit-wasm@0.33.0/bin/canvaskit.js"></script>
-    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
-</head>
-<py-env>
-    - numpy
-    - ./castella/dist/castella-0.1.12-py3-none-any.whl
-</py-env>
-<py-script>
-from castella import App, Column, Row, Button, Text, State, Component, SizePolicy
-from castella.frame import Frame
-
-
-class Counter(Component):
-    def __init__(self):
-        super().__init__()
-        self._count = State(0)
-
-    def view(self):
-        return Column(
-            Text(self._count),
-            Row(
-                Button("Up", font_size=50).on_click(self.up),
-                Button("Down", font_size=50).on_click(self.down),
-            ),
-        )
-
-    def up(self, _):
-        self._count += 1
-
-    def down(self, _):
-        self._count -= 1
-
-
-App(Frame("Counter", 800, 600), Counter()).run()
-</py-script>
-</html>
-```
+The above counter app is emmbeded in an iframe.

@@ -20,6 +20,8 @@ from typing import (
     runtime_checkable,
 )
 
+from pydantic import BaseModel
+
 try:
     import numpy as np
 except ImportError:
@@ -222,7 +224,9 @@ class Painter(Protocol):
         self, array: "np.ndarray", x: float, y: float
     ) -> None: ...
 
-    def draw_np_array_as_an_image_rect(self, array: "np.ndarray", rect: Rect) -> None: ...
+    def draw_np_array_as_an_image_rect(
+        self, array: "np.ndarray", rect: Rect
+    ) -> None: ...
 
     def save(self) -> None: ...
 
@@ -387,6 +391,51 @@ class SimpleValue(Observable, Protocol[V]):
     def set(self, value: V): ...
 
     def value(self) -> V: ...
+
+
+from dataclasses import dataclass, MISSING, make_dataclass, field
+
+from typing import get_type_hints
+
+
+def get_zero_value(type_hint):
+    if type_hint == int:
+        return 0
+    elif type_hint == float:
+        return 0.0
+    elif type_hint == bool:
+        return False
+    elif type_hint == str:
+        return ""
+    elif hasattr(type_hint, "__origin__") and type_hint.__origin__ is list:
+        return []
+    elif hasattr(type_hint, "__origin__") and type_hint.__origin__ is dict:
+        return {}
+    # 他の型のゼロ値を追加可能
+    return None
+
+
+class Model(BaseModel):
+    # class Config:
+    #     arbitrary_types_allowed = True
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        for name in self.__fields__:
+            value = getattr(self, name)
+            if not isinstance(value, State):
+                wrapped_value = State(value)
+                super().__setattr__(name, wrapped_value)
+
+    def __setattr__(self, name, value):
+        if name in self.__fields__:
+            current_value = getattr(self, name, None)
+            if isinstance(current_value, State):
+                current_value.set(value)
+            else:
+                super().__setattr__(name, State(value))
+        else:
+            super().__setattr__(name, value)
 
 
 class Widget(ABC):
@@ -858,18 +907,31 @@ def _is_darkmode() -> bool:
 
     import darkdetect
 
-    if darkdetect.isDark() is True:
+    if darkdetect.isDark():
         return True
     else:
         return False
 
 
 def _get_color_schema() -> dict[str, str]:
-    return color.COLOR_SCHEMA[12]
     if _is_darkmode():
-        return color.COLOR_SCHEMA[color.DARK_MODE]
+        return _dark_color_schema
     else:
-        return color.COLOR_SCHEMA[color.LIGHT_MODE]
+        return _light_color_schema
+
+
+_light_color_schema = color.COLOR_SCHEMA[color.PredefinedSchema.LIGHT.value]
+_dark_color_schema = color.COLOR_SCHEMA[color.PredefinedSchema.DARK.value]
+
+
+def set_light_color_schema(schema: dict[str, str]) -> None:
+    global _light_color_schema
+    _light_color_schema = schema
+
+
+def set_dark_color_schema(schema: dict[str, str]) -> None:
+    global _dark_color_schema
+    _dark_color_schema = schema
 
 
 @dataclass(slots=True, frozen=True)
