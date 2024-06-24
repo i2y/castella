@@ -8,7 +8,6 @@ from castella import (
     Button,
     Text,
     MultilineText,
-    Spacer,
     State,
     Component,
     Switch,
@@ -17,7 +16,6 @@ from castella import (
     Box,
     AsyncNetImage,
     NumpyImage,
-    SizePolicy,
     CheckBox,
 )
 from castella.frame import Frame

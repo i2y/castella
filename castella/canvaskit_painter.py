@@ -1,11 +1,12 @@
 from typing import Optional, cast
 
 from js import Image, ImageData, window, document  # type: ignore
+
 try:
     import numpy as np
 except ImportError:
     pass
-from pyscript.ffi import create_proxy # type: ignore
+from pyscript.ffi import create_proxy  # type: ignore
 
 from . import core
 
@@ -162,7 +163,9 @@ class Painter:
         height, width, _ = array.shape
         return core.Size(width, height)
 
-    def draw_np_array_as_an_image(self, array: "np.ndarray", x: float, y: float) -> None:
+    def draw_np_array_as_an_image(
+        self, array: "np.ndarray", x: float, y: float
+    ) -> None:
         raise NotImplementedError()
 
     def draw_np_array_as_an_image_rect(

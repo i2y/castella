@@ -1,5 +1,17 @@
 # Hello World
 
+<style type="text/css">
+    div.demo {
+        margin: 8px;
+        border: solid 1px #ccc;
+        resize: both;
+        overflow: hidden;
+        width: 300px;
+        height: 300px;
+    }
+</style>
+
+
 ## Example 1
 Here you will create a UI that just displays "Hello World!".
 For that, you need to use App, Frame and Text.
@@ -16,7 +28,7 @@ from castella import App, Text
 from castella.frame import Frame
 
 App(Frame("Hello world", 480, 300),　  # (1)
-Text("Hello World!")).run()　  # (2)
+    Text("Hello World!")).run()　  # (2)
 ```
 
 1.  Set the title of the Frame=Window of this app to "Hello world" and the size to 480 wide and 300 high.
@@ -24,7 +36,9 @@ Text("Hello World!")).run()　  # (2)
 
 You will see a screen similar to the one below with executing this.
 
-![hello_world](images/hello_world.png){ width=300 }
+<div class="demo">
+    <iframe width="100%" height="100%" src="../examples/hello_world.html"></iframe>
+</div>
 
 This is an screen shot of the result of running the above in dark mode.
 
@@ -41,8 +55,9 @@ This is an example of fixing the font size to a specified size, regardless of th
 App(Frame("Hello world", 480, 300),
     Text("Hello World!", font_size=20)).run()
 ```
-
-![hello_world](images/hello_world_fixed_font_size.png){ width=300 }
+<div class="demo">
+    <iframe width="100%" height="100%" src="../examples/hello_world_2.html"></iframe>
+</div>
 
 In addition, here is an example that the alignment of the actual text is left side.
 You can specify that with `align=TextAlign.LEFT`.
@@ -52,7 +67,9 @@ App(Frame("Hello world", 480, 300),
     Text("Hello World!", font_size=20, align=TextAlign.LEFT)).run()
 ```
 
-![hello_world](images/hello_world_fixed_font_size_align_left.png){ width=300 }
+<div class="demo">
+    <iframe width="100%" height="100%" src="../examples/hello_world_2_left.html"></iframe>
+</div>
 
 `TextAlign.RIGHT` can also be specified.
 
@@ -65,7 +82,9 @@ App(Frame("Hello world", 480, 300),
     Text("Hello World!").fixed_size(100, 200)).run()
 ```
 
-![hello_world](images/hello_world_fixed_size.png){ width=300 }
+<div class="demo">
+    <iframe width="100%" height="100%" src="../examples/hello_world_3.html"></iframe>
+</div>
 
 ---
 

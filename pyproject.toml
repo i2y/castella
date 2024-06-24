@@ -16,14 +16,13 @@ readme = "README.md"
 
 requires-python = ">= 3.11"
 
-dependencies = []
-
 [project.optional-dependencies]
 glfw = [
     "glfw>=2.7.0",
     "PyOpenGL>=3.1.7",
     "skia-python>=87.4",
     "darkdetect>=0.5.1",
+    "pydantic>=2.7.4",
 ]
 sdl = [
     "glcontext>=2.5.0",
@@ -32,6 +31,7 @@ sdl = [
     "zengl>=2.4.1",
     "skia-python>=87.4",
     "darkdetect>=0.5.1",
+    "pydantic>=2.7.4",
 ]
 
 [project.urls]
@@ -57,6 +57,8 @@ dev-dependencies = [
     "mkdocs-material>=9.5.20",
     "mkdocs-video>=1.5.0",
     "pymdown-extensions>=10.8.1",
+    "pydantic>=2.7.4",
+    "matplotlib>=3.9.0",
 ]
 
 [build-system]

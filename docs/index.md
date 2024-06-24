@@ -7,9 +7,10 @@ Dart has Flutter and Kotlin has Compose Multiplatform as cross-platform declarat
 The primary final goal of Castella is to provide features for Python programmers easy to create a GUI application for several OS platforms and web browsers in a single most same code as possible as. The second goal is to provide a UI framework that Python programmers can easily understand, modify, and extend as needed.
 
 ## Features
-- The core part as a UI framework of Castella is written in only Python. It's not a wrapper for existing something written in other programing languages.
+- The core part as a UI framework of Castella is written in only Python. It's not a wrapper for existing something (including DOM API) written in other programing languages.
 - Castella allows human to define UI declaratively in Python.
 - Castella provides hot-reloading or hot-restarting on development.
+- UI appearance is same or very similar on all supported platforms because Castella uses Skia as a rendering engine on all supported platforms.
 
 ## Dependencies
 - For desktop platforms, Castella is standing on existing excellent python bindings for window management library (GLFW or SDL2) and 2D graphics library (Skia).
@@ -22,5 +23,3 @@ Currently, Castella theoretically should support not-too-old versions of the fol
 - Mac OS X
 - Linux
 - Web browsers
-
-Unfortunately, however, I could not actually confirm this at all on Linux, as I don't have a Linux machine these days. I want it, though..

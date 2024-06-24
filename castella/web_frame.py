@@ -2,7 +2,7 @@ from asyncio import Future
 from typing import Callable, cast
 
 from js import Object, document, window, navigator  # type: ignore
-from pyscript.ffi import create_proxy, to_js # type: ignore
+from pyscript.ffi import create_proxy, to_js  # type: ignore
 
 from . import core
 from .canvaskit_painter import Painter
@@ -140,11 +140,10 @@ class Frame:
         }
         """
         document.body.appendChild(style)
-
         canvas = document.createElement("canvas")
         canvas.setAttribute("id", "castella-app")
         document.body.appendChild(canvas)
-        self._canvas = document.getElementById("castella-app")
+        self._canvas = canvas
 
         init_script = document.createElement("script")
         init_script.innerHTML = """
