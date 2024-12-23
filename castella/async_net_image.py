@@ -1,6 +1,6 @@
 from typing import Self, cast
 
-from castella.core import Painter, Point, SimpleValue, Size, SizePolicy, State, Widget
+from .core import Painter, Point, SimpleValue, Size, SizePolicy, State, Widget
 
 
 class AsyncNetImage(Widget):

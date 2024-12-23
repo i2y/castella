@@ -1,7 +1,7 @@
 from dataclasses import astuple
 from typing import Self
 
-from castella.core import (
+from .core import (
     SCROLL_BAR_SIZE,
     FillStyle,
     Layout,
@@ -117,12 +117,6 @@ class Box(Layout):
                     size=Size(self_width - y_scroll_bar_width, x_scroll_bar_height),
                 )
             )
-            p.stroke_rect(
-                Rect(
-                    origin=Point(0, self_height - x_scroll_bar_height),
-                    size=Size(self_width - y_scroll_bar_width, x_scroll_bar_height),
-                )
-            )
             p.style(Box._scrollbox_style)
             if content_width != 0 and self_width != 0:
                 scroll_box_width = (
@@ -142,12 +136,6 @@ class Box(Layout):
         if y_scroll_bar_width > 0:
             p.style(Box._scrollbar_style)
             p.fill_rect(
-                Rect(
-                    origin=Point(self_width - y_scroll_bar_width, 0),
-                    size=Size(y_scroll_bar_width, self_height - x_scroll_bar_height),
-                )
-            )
-            p.stroke_rect(
                 Rect(
                     origin=Point(self_width - y_scroll_bar_width, 0),
                     size=Size(y_scroll_bar_width, self_height - x_scroll_bar_height),

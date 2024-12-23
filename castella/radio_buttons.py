@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Self
 
-from castella import (
+from . import (
     CheckBox,
     Column,
     Row,

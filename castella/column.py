@@ -1,7 +1,7 @@
 import functools
 from typing import Generator, Self
 
-from castella.core import (
+from .core import (
     SCROLL_BAR_SIZE,
     FillStyle,
     Layout,
@@ -111,12 +111,12 @@ class Column(Layout):
                 size=Size(scroll_bar_width, self.get_height()),
             )
         )
-        p.stroke_rect(
-            Rect(
-                origin=Point(orig_width - scroll_bar_width, -1),
-                size=Size(scroll_bar_width, self.get_height() + 2),
-            )
-        )
+        # p.stroke_rect(
+        #     Rect(
+        #         origin=Point(orig_width - scroll_bar_width, -1),
+        #         size=Size(scroll_bar_width, self.get_height() + 2),
+        #     )
+        # )
         p.style(Column._scrollbox_style)
         if content_height != 0 and self.get_height() != 0:
             scroll_box_height = self.get_height() * self.get_height() / content_height

@@ -1,7 +1,7 @@
 from dataclasses import replace
 from typing import Any, Callable, Self, cast
 
-from castella.core import (
+from .core import (
     AppearanceState,
     Font,
     FontSizePolicy,
@@ -13,7 +13,6 @@ from castella.core import (
     Rect,
     Size,
     SizePolicy,
-    State,
     TextAlign,
     Widget,
     determine_font,

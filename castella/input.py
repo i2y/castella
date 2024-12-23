@@ -1,7 +1,7 @@
 from dataclasses import replace
 from typing import Callable, Self, cast
 
-from castella.core import (
+from .core import (
     FillStyle,
     Font,
     InputCharEvent,
@@ -18,7 +18,7 @@ from castella.core import (
     TextAlign,
     determine_font,
 )
-from castella.text import Text
+from .text import Text
 
 
 class InputState(ObservableBase):
@@ -152,7 +152,7 @@ class Input(Text):
             )
         else:
             pos = Point(
-                self._rect_style.padding,
+                self._rect_style.padding + 0.1,
                 height / 2 + cap_height / 2,
             )
 

@@ -7,6 +7,7 @@ import numpy as np
 import skia
 
 from . import core
+from .font import FontSlant, FontWeight
 
 
 def _code2rgb(color_code):
@@ -35,12 +36,12 @@ def _get_font_face(font_family: str, font_style: skia.FontStyle) -> skia.Typefac
 
 @cache
 def _to_skia_font(font: core.Font) -> skia.Font:
-    if font.weight is core.FontWeight.NORMAL:
+    if font.weight is FontWeight.NORMAL:
         font_weight = skia.FontStyle.kNormal_Weight
     else:
         font_weight = skia.FontStyle.kBold_Weight
 
-    if font.slant is core.FontSlant.UPRIGHT:
+    if font.slant is FontSlant.UPRIGHT:
         font_slant = skia.FontStyle.kUpright_Slant
     else:
         font_slant = skia.FontStyle.kItalic_Slant
