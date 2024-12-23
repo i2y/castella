@@ -1,5 +1,6 @@
 from typing import Self
-from castella.core import MouseEvent, Painter, Point, Size, SizePolicy, Widget
+
+from .core import MouseEvent, Painter, Point, Size, SizePolicy, Widget
 
 
 class Spacer(Widget):

@@ -5,7 +5,7 @@ from typing import Callable, cast
 
 import glfw
 import skia
-from OpenGL import GL
+from OpenGL import GL, version
 
 from . import core
 from . import skia_painter as painter

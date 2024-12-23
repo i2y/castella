@@ -1,7 +1,7 @@
 from dataclasses import replace
 from typing import Any, Self, cast
 
-from castella.core import (
+from .core import (
     AppearanceState,
     Font,
     FontSizePolicy,
@@ -89,12 +89,12 @@ class Text(Widget):
             )
         elif self._align is TextAlign.RIGHT:
             pos = Point(
-                width - p.measure_text(str(state)) - self._rect_style.padding,
+                width - p.measure_text(str(state)) - (self._rect_style.padding + 0.1),
                 height / 2 + p.get_font_metrics().cap_height / 2,
             )
         else:
             pos = Point(
-                self._rect_style.padding,
+                self._rect_style.padding + 0.1,
                 height / 2 + p.get_font_metrics().cap_height / 2,
             )
 

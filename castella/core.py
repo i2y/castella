@@ -1,10 +1,11 @@
+import os
 import sys
 from abc import ABC, abstractmethod
 from asyncio import Future
 from collections.abc import Iterable
 from copy import deepcopy
 from dataclasses import dataclass, replace
-from enum import Enum, IntEnum, auto
+from enum import Enum, auto
 from typing import (
     Any,
     Callable,
@@ -21,6 +22,9 @@ from typing import (
 )
 
 from pydantic import BaseModel
+
+from .font import EM, Font, FontMetrics, FontSizePolicy
+
 
 try:
     import numpy as np
@@ -64,6 +68,13 @@ class Rect:
             self.origin.y <= p.y <= self.origin.y + self.size.height
         )
 
+    def intersect(self, other: "Rect") -> Optional["Rect"]:
+        x1 = max(self.origin.x, other.origin.x)
+        y1 = max(self.origin.y, other.origin.y)
+        x2 = min(self.origin.x + self.size.width, other.origin.x + other.size.width)
+        y2 = min(self.origin.y + self.size.height, other.origin.y + other.size.height)
+        return Rect(Point(x1, y1), Size(x2 - x1, y2 - y1))
+
 
 @dataclass(slots=True, frozen=True)
 class Circle:
@@ -92,21 +103,6 @@ class PositionPolicy(Enum):
     CENTER = auto()
 
 
-class FontSizePolicy(Enum):
-    FIXED = auto()
-    EXPANDING = auto()
-
-
-class FontWeight(Enum):
-    NORMAL = auto()
-    BOLD = auto()
-
-
-class FontSlant(Enum):
-    UPRIGHT = auto()
-    ITALIC = auto()
-
-
 @dataclass(slots=True, frozen=True)
 class FillStyle:
     color: str = "black"
@@ -129,39 +125,13 @@ class LineStyle:
     cap: LineCap = LineCap.BUTT
 
 
-class FontSize(IntEnum):
-    TWO_X_SMALL = 10
-    X_SMALL = 12
-    SMALL = 14
-    MEDIUM = 16
-    LARGE = 20
-    X_LARGE = 24
-    TWO_X_LARGE = 36
-    THREE_X_LARGE = 48
-    FOUR_X_LARGE = 72
-
-
-@dataclass(slots=True, frozen=True)
-class Font:
-    family: str = ""  # expects the system default font is used.
-    size: int = FontSize.MEDIUM
-    size_policy: FontSizePolicy = FontSizePolicy.EXPANDING
-    weight: FontWeight = FontWeight.NORMAL
-    slant: FontSlant = FontSlant.UPRIGHT
-
-
-@dataclass(slots=True, frozen=True)
-class FontMetrics:
-    cap_height: float
-
-
 @dataclass(slots=True, frozen=True)
 class Style:
     fill: FillStyle = FillStyle()
     stroke: StrokeStyle = StrokeStyle()
     line: LineStyle = LineStyle()
     font: Font = Font()
-    padding: int = 8  # currently this value has the meaning only for Text and Button
+    padding: int = EM  # currently this value has the meaning only for Text and Button
 
 
 @dataclass(slots=True, frozen=True)
@@ -900,6 +870,12 @@ class ListState(list, ObservableBase, Generic[T]):
 
 
 def _is_darkmode() -> bool:
+    if os.getenv("CASTELLA_DARK_MODE") == "true":
+        return True
+
+    if os.getenv("CASTELLA_DARK_MODE") == "false":
+        return False
+
     if "pyodide" in sys.modules:
         import js  # type: ignore
 
@@ -907,10 +883,8 @@ def _is_darkmode() -> bool:
 
     import darkdetect
 
-    if darkdetect.isDark():
-        return True
-    else:
-        return False
+    is_light = darkdetect.isLight()
+    return not (is_light is not None and is_light)
 
 
 def _get_color_schema() -> dict[str, str]:
@@ -1156,7 +1130,7 @@ def determine_font(
         return style.font.family, style.font.size
 
 
-SCROLL_BAR_SIZE = 20
+SCROLL_BAR_SIZE = EM
 
 
 @dataclass(slots=True, frozen=True)

@@ -1,7 +1,7 @@
 import functools
 from typing import Generator, Self
 
-from castella.core import (
+from .core import (
     SCROLL_BAR_SIZE,
     FillStyle,
     Layout,
@@ -17,7 +17,7 @@ from castella.core import (
     Widget,
     get_theme,
 )
-from castella.spacer import Spacer
+from .spacer import Spacer
 
 
 class Row(Layout):
@@ -111,12 +111,12 @@ class Row(Layout):
                 size=Size(self.get_width(), scroll_bar_height),
             )
         )
-        p.stroke_rect(
-            Rect(
-                origin=Point(-1, orig_height - scroll_bar_height),
-                size=Size(self.get_width() + 2, scroll_bar_height),
-            )
-        )
+        # p.stroke_rect(
+        #     Rect(
+        #         origin=Point(-1, orig_height - scroll_bar_height),
+        #         size=Size(self.get_width() + 2, scroll_bar_height),
+        #     )
+        # )
         p.style(Row._scrollbox_style)
         if content_width != 0 and self.get_width() != 0:
             scroll_box_width = self.get_width() * self.get_width() / content_width

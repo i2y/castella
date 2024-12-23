@@ -1,7 +1,7 @@
 import re
 from typing import Generator, cast
 
-from castella.core import (
+from .core import (
     AppearanceState,
     FontSizePolicy,
     Kind,
@@ -69,7 +69,7 @@ class MultilineText(Widget):
         h = self._text_style.font.size
         y = h + padding
         for line in self._get_lines(p):
-            p.fill_text(line, Point(padding, y), None)
+            p.fill_text(line, Point(padding + 0.1, y), None)
             y += h + line_spacing
 
     def _get_lines(self, p: Painter) -> Generator[str, None, None]:
