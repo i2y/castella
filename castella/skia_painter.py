@@ -6,8 +6,8 @@ from typing import Optional, cast
 import numpy as np
 import skia
 
-from . import core
-from .font import FontSlant, FontWeight
+from castella import core
+from castella.font import FontSlant, FontWeight
 
 
 def _code2rgb(color_code):

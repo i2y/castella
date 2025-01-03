@@ -4,7 +4,7 @@ from typing import Self, cast
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .core import (
+from castella.core import (
     Painter,
     Point,
     Size,

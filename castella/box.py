@@ -1,7 +1,7 @@
 from dataclasses import astuple
 from typing import Self
 
-from .core import (
+from castella.core import (
     SCROLL_BAR_SIZE,
     FillStyle,
     Layout,

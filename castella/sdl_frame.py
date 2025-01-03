@@ -8,8 +8,8 @@ import sdl2 as sdl
 import skia
 import zengl
 
-from . import core
-from . import skia_painter as painter
+from castella import core
+from castella import skia_painter as painter
 
 if platform.system() == "Windows":
     import ctypes

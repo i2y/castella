@@ -1,7 +1,7 @@
 import functools
 from typing import Generator, Self
 
-from .core import (
+from castella.core import (
     SCROLL_BAR_SIZE,
     FillStyle,
     Layout,

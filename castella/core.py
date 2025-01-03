@@ -23,7 +23,7 @@ from typing import (
 
 from pydantic import BaseModel
 
-from .font import EM, Font, FontMetrics, FontSizePolicy
+from castella.font import EM, Font, FontMetrics, FontSizePolicy
 
 
 try:
@@ -301,11 +301,11 @@ class Frame(Protocol):
 
 
 class Observer(Protocol):
-    def on_attach(self, o: "ObservableBase"): ...
+    def on_attach(self, o: "ObservableBase") -> None: ...
 
-    def on_detach(self, o: "ObservableBase"): ...
+    def on_detach(self, o: "ObservableBase") -> None: ...
 
-    def on_notify(self): ...
+    def on_notify(self, event: Any = None) -> None: ...
 
 
 class Observable(Protocol):
@@ -313,13 +313,13 @@ class Observable(Protocol):
 
     def detach(self, observer: Observer) -> None: ...
 
-    def notify(self) -> None: ...
+    def notify(self, event: Any = None) -> None: ...
 
 
 class UpdateListener:
     __slots__ = ["_observable", "_callback"]
 
-    def __init__(self, callback: Callable[[], None]):
+    def __init__(self, callback: Callable[[Any], None]):
         self._observable = None
         self._callback = callback
 
@@ -329,8 +329,8 @@ class UpdateListener:
     def on_detach(self, o: "ObservableBase"):
         del self._observable
 
-    def on_notify(self):
-        self._callback()
+    def on_notify(self, event: Any = None):
+        self._callback(event)
 
 
 class ObservableBase(ABC):
@@ -345,9 +345,9 @@ class ObservableBase(ABC):
         self._observers.remove(observer)
         observer.on_detach(self)
 
-    def notify(self) -> None:
+    def notify(self, event: Any = None) -> None:
         for o in self._observers:
-            o.on_notify()
+            o.on_notify(event)
 
     def on_update(self, callback: Callable) -> None:
         self.attach(UpdateListener(callback))
@@ -386,8 +386,8 @@ def get_zero_value(type_hint):
 
 
 class Model(BaseModel):
-    # class Config:
-    #     arbitrary_types_allowed = True
+    class Config:
+        arbitrary_types_allowed = True
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -546,7 +546,7 @@ class Widget(ABC):
     def on_detach(self, o: Observable) -> None:
         self._observable.remove(o)
 
-    def on_notify(self) -> None:
+    def on_notify(self, event: Any = None) -> None:
         self.dirty(True)
         self.update()
 
@@ -664,6 +664,10 @@ class Widget(ABC):
             if parent.is_scrollable() or isinstance(parent, StatefulComponent):
                 root = parent
             parent = parent._parent
+
+        app = App.get()
+        if app is None:
+            return
 
         if root is None:
             App.get().post_update(
@@ -792,7 +796,7 @@ class State(ObservableBase, Generic[T]):
         return self
 
 
-class ListState(list, ObservableBase, Generic[T]):
+class ListState(list, State[T]):
     def __init__(self, items):
         super().__init__(items)
         ObservableBase.__init__(self)
@@ -838,6 +842,13 @@ class ListState(list, ObservableBase, Generic[T]):
         super().__delitem__(index)
         self.notify()
         return self
+
+    def __iter__(self) -> Generator[T, None, None]:
+        for item in super().__iter__():
+            yield item
+
+    def __next__(self) -> T:
+        return next(super().__iter__())
 
     def append(self, value: T) -> None:
         super().append(value)
@@ -941,8 +952,10 @@ class Theme:
     app: WidgetStyle
     scrollbar: WidgetStyle
     scrollbox: WidgetStyle
-    layout: WidgetStyle
+    layout: WidgetStyles
+    row: WidgetStyles
     text: WidgetStyles
+    simpletext: WidgetStyles
     multilinetext: WidgetStyles
     input: WidgetStyles
     button: WidgetStyles
@@ -961,9 +974,18 @@ def _get_theme() -> Theme:
             bg_color=color_schema["bg-canvas"],
             text_font=Font(family=""),  # expects system default font family
         ),
-        layout=WidgetStyle(
-            bg_color=color_schema["bg-primary"],
-        ),
+        layout={
+            "normal": WidgetStyle(
+                bg_color=color_schema["bg-primary"],
+                border_color=color_schema["border-primary"],
+            ),
+        },
+        row={
+            "normal": WidgetStyle(
+                bg_color=color_schema["bg-primary"],
+                border_color=color_schema["border-primary"],
+            ),
+        },
         scrollbar=WidgetStyle(
             bg_color=color_schema["bg-secondary"],
             border_color=color_schema["border-secondary"],
@@ -972,6 +994,33 @@ def _get_theme() -> Theme:
             bg_color=color_schema["border-secondary"],
         ),
         text={
+            "normal": WidgetStyle(
+                bg_color=color_schema["bg-primary"],
+                border_color=color_schema["border-primary"],
+                text_color=color_schema["text-primary"],
+            ),
+            "info": WidgetStyle(
+                bg_color=color_schema["bg-info"],
+                border_color=color_schema["border-info"],
+                text_color=color_schema["text-info"],
+            ),
+            "success": WidgetStyle(
+                bg_color=color_schema["bg-success"],
+                border_color=color_schema["border-success"],
+                text_color=color_schema["text-success"],
+            ),
+            "warning": WidgetStyle(
+                bg_color=color_schema["bg-warning"],
+                border_color=color_schema["border-warning"],
+                text_color=color_schema["text-warning"],
+            ),
+            "danger": WidgetStyle(
+                bg_color=color_schema["bg-danger"],
+                border_color=color_schema["border-danger"],
+                text_color=color_schema["text-danger"],
+            ),
+        },
+        simpletext={
             "normal": WidgetStyle(
                 bg_color=color_schema["bg-primary"],
                 border_color=color_schema["border-primary"],
@@ -1152,9 +1201,9 @@ class App:
     def __init__(self, frame: Frame, widget: Widget):
         self._mouse_overed_layer = None
         self._frame = frame
-        self._downed: Optional[Widget] = None
-        self._focused: Optional[Widget] = None
-        self._mouse_overed: Optional[Widget] = None
+        self._downed: Widget | None = None
+        self._focused: Widget | None = None
+        self._mouse_overed: Widget | None = None
         self._layers: list[Widget] = []
         self._layerPositions: list[PositionPolicy] = []
         self._style = Style(fill=FillStyle(color=get_theme().app.bg_color))
@@ -1268,6 +1317,11 @@ class App:
         self._focused.input_key(ev)
 
     def redraw(self, p: Painter, completely: bool) -> None:
+        # self._downed = None
+        # self._focused = None
+        # self._mouse_overed = None
+        # self._mouse_overed_layer = None
+
         p.style(self._style)
         p.fill_rect(Rect(origin=Point(0, 0), size=self._frame.get_size() + Size(1, 1)))
         for i in range(len(self._layers)):
@@ -1367,7 +1421,7 @@ class Layout(Widget, ABC):
         super().__init__(*args, **kwargs)
         self._children: list[Widget] = []
         if not hasattr(Layout, "_widget_style"):
-            Layout._widget_style = get_theme().layout
+            Layout._widget_style = get_theme().layout["normal"]
             Layout._style = Style(fill=FillStyle(color=Layout._widget_style.bg_color))
 
     def get_children(self) -> Generator[Widget, None, None]:
@@ -1419,7 +1473,6 @@ class Layout(Widget, ABC):
                 target, adjusted_p = c.dispatch_to_scrollable(p, is_direction_x)
                 if target is not None:
                     return target, adjusted_p
-
             if self.has_scrollbar(is_direction_x):
                 return self, p
             else:
@@ -1503,7 +1556,7 @@ class Component(Layout, ABC):
             width_policy=SizePolicy.EXPANDING,
             height_policy=SizePolicy.EXPANDING,
         )
-        self._child = None
+        self._child: Widget | None = None
 
     def _relocate_children(self, p: Painter) -> None:
         self._resize_children(p)
@@ -1526,12 +1579,12 @@ class Component(Layout, ABC):
     @abstractmethod
     def view(self) -> Widget: ...
 
-    def on_notify(self) -> None:
+    def on_notify(self, event: Any = None) -> None:
         if self._child is not None:
             self.remove(self._child)
             self._child.detach()
             self._child = None
-        super().on_notify()
+        super().on_notify(event)
 
     def redraw(self, p: Painter, completely: bool) -> None:
         if self._child is None:

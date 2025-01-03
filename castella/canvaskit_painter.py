@@ -8,7 +8,7 @@ except ImportError:
     pass
 from pyscript.ffi import create_proxy  # type: ignore
 
-from . import core
+from castella import core
 
 
 def code2rgb(color_code):  # TODO alpha

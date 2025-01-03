@@ -1,9 +1,11 @@
 import functools
 from typing import Generator, Self
 
-from .core import (
+from castella.core import (
     SCROLL_BAR_SIZE,
+    AppearanceState,
     FillStyle,
+    Kind,
     Layout,
     MouseEvent,
     Painter,
@@ -17,7 +19,7 @@ from .core import (
     Widget,
     get_theme,
 )
-from .spacer import Spacer
+from castella.spacer import Spacer
 
 
 class Row(Layout):
@@ -265,3 +267,6 @@ class Row(Layout):
             c.move_x(acc_x)
             acc_x += c.get_width()
             c.move_y(self.get_pos().y)
+
+    def _on_update_widget_styles(self) -> None:
+        self._style = self._get_painter_styles(Kind.NORMAL, AppearanceState.NORMAL)[0]

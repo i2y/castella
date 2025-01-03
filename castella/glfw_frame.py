@@ -7,8 +7,8 @@ import glfw
 import skia
 from OpenGL import GL, version
 
-from . import core
-from . import skia_painter as painter
+from castella import core
+from castella import skia_painter as painter
 
 
 class Frame:

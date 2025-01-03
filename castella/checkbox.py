@@ -1,7 +1,7 @@
 from dataclasses import replace
 from typing import Any, Callable, Self, cast
 
-from .core import (
+from castella.core import (
     AppearanceState,
     Circle,
     Font,

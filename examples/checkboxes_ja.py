@@ -1,4 +1,4 @@
-from castella import App, CheckBox, Text, TextAlign, Column, Row, Button
+from castella import App, CheckBox, Text, TextAlign, Column, Row
 from castella.frame import Frame
 
 

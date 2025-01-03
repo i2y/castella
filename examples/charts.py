@@ -8,9 +8,9 @@ from castella import (
     Spacer,
     State,
 )
+from castella.frame import Frame
 from castella.bar_chart import BarChart, BarChartState
 from castella.pie_chart import PieChart, PieChartState
-from castella.frame import Frame
 
 
 bar_chart_state = BarChartState(label=[], value=[])
@@ -20,7 +20,7 @@ foo = State(True)
 bar = State(True)
 
 
-def update_chart_state() -> None:
+def update_chart_state(ev=None) -> None:
     label = []
     value = []
     if foo.value():

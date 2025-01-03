@@ -1,9 +1,16 @@
 from typing import Callable
 
-from castella import App, Column, Component, Input, InputState, Row, Text, TextAlign
-
+from castella import (
+    App,
+    Column,
+    Component,
+    Input,
+    InputState,
+    Row,
+    Text,
+    TextAlign,
+)
 from castella.frame import Frame
-# from castella.rich_frame import RichFrame as Frame
 
 
 class TempConv(Component):

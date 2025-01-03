@@ -1,7 +1,7 @@
 import re
 from typing import Generator, cast
 
-from .core import (
+from castella.core import (
     AppearanceState,
     FontSizePolicy,
     Kind,

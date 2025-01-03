@@ -1,8 +1,8 @@
 from typing import Optional, List, Dict, TypeAlias
 from math import ceil
 
-from .core import Circle, FontMetrics, Point, Rect, Size, Style
-from .font import FontSlant, FontWeight
+from castella.core import Circle, FontMetrics, Point, Rect, Size, Style
+from castella.font import FontSlant, FontWeight
 
 
 FONT_SIZE = 12
@@ -43,7 +43,7 @@ class Canvas:
 
         for i in range(max(0, y0), min(y1, self._height)):
             for j in range(max(0, x0), min(x1, self._width)):
-                self._rows[i][j] = (style, self._rows[i][j][1])
+                self._rows[i][j] = (style, " ")  # self._rows[i][j][1])
 
     def draw_text(
         self,
@@ -80,9 +80,12 @@ class Canvas:
             orig_bg_color = (
                 orig_style.split("bg:")[1].split()[0] if "bg:" in orig_style else None
             )
-            if orig_bg_color is not None:
-                style = f"{style} bg:{orig_bg_color} "
-            self._rows[y][j] = (style, char)
+            if orig_bg_color is None:
+                new_style = style
+            else:
+                new_style = f"bg:{orig_bg_color} {style}"
+
+            self._rows[y][j] = (new_style, char)
 
     def draw_stroke_rect(
         self,
@@ -245,7 +248,7 @@ class PTPainter:
     def clip(self, rect: Optional[Rect]) -> None:
         if rect is not None:
             if self.clip_rect is None:
-                self.clip_rect = rect
+                self.clip_rect = Rect(rect.origin + self.translation, rect.size)
             else:
                 self.clip_rect = self.clip_rect.intersect(
                     Rect(rect.origin + self.translation, rect.size)
@@ -273,7 +276,6 @@ class PTPainter:
 def convert_castella_style_to_pt_style_for_rect(c_style: Style) -> str:
     style_str = ""
     # Background color
-    # print(c_style.stroke.color)
     if c_style.fill.color is not None:
         style_str += f"bg:{c_style.fill.color} "
     #     # c_style.fill.

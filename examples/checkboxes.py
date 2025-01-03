@@ -1,6 +1,7 @@
 from castella import App, CheckBox, Text, TextAlign, Column, Row
 from castella.frame import Frame
 
+
 App(
     Frame("Checkboxes", 480, 300),
     Column(

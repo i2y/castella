@@ -1,6 +1,16 @@
 from typing import Callable
 
-from castella import App, Column, Component, Input, InputState, Row, Text, TextAlign, EM
+from castella import (
+    App,
+    Column,
+    Component,
+    Input,
+    InputState,
+    Row,
+    Text,
+    TextAlign,
+    EM,
+)
 from castella.frame import Frame
 
 

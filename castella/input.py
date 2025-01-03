@@ -1,7 +1,7 @@
 from dataclasses import replace
 from typing import Callable, Self, cast
 
-from .core import (
+from castella.core import (
     FillStyle,
     Font,
     InputCharEvent,
@@ -18,7 +18,7 @@ from .core import (
     TextAlign,
     determine_font,
 )
-from .text import Text
+from castella.text import Text
 
 
 class InputState(ObservableBase):

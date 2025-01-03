@@ -61,9 +61,9 @@ class PieChart(Widget):
         array = np.array(fig.canvas.renderer.buffer_rgba())
         self._np_array = array
 
-    def on_notify(self) -> None:
+    def on_notify(self, ev=None) -> None:
         self._update_image()
-        super().on_notify()
+        super().on_notify(ev)
 
     def redraw(self, p: Painter, _: bool) -> None:
         p.draw_np_array_as_an_image(self._np_array, 0, 0)

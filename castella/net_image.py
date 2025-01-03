@@ -1,6 +1,6 @@
 from typing import cast
 
-from .core import (
+from castella.core import (
     Painter,
     Point,
     Rect,

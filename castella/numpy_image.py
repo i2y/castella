@@ -8,7 +8,7 @@ except ImportError:
 else:
     import_success = True
 
-from .core import (
+from castella.core import (
     Painter,
     Point,
     Rect,

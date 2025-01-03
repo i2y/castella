@@ -1,9 +1,9 @@
 from asyncio import Future
-from typing import Callable
+from queue import Queue
+from typing import Callable, cast
 
 import pyperclip
 from prompt_toolkit import Application
-from prompt_toolkit.clipboard import ClipboardData
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.layout import Layout as PTLayout
@@ -11,7 +11,7 @@ from prompt_toolkit.layout.containers import Window
 from prompt_toolkit.layout.controls import UIContent, UIControl
 from prompt_toolkit.mouse_events import MouseEvent as PTMouseEvent, MouseEventType
 
-from .core import (
+from castella.core import (
     Point,
     Size,
     Painter,
@@ -22,8 +22,11 @@ from .core import (
     UpdateEvent,
     KeyAction,
     KeyCode,
+    Widget,
+    App,
+    Rect,
 )
-from .pt_painter import PTPainter, Canvas, FONT_SIZE
+from castella.pt_painter import PTPainter, Canvas, FONT_SIZE
 
 
 class PTFrame:
@@ -49,6 +52,7 @@ class PTFrame:
             layout=PTLayout(Window(content=PTControl(self))),
             refresh_interval=0.1,
         )
+        self._event_queue = Queue()
 
     def _register_keybindings(self):
         @self.bindings.add("<sigint>")
@@ -112,7 +116,8 @@ class PTFrame:
         return Size(width=self.width, height=self.height)
 
     def post_update(self, ev: UpdateEvent) -> None:
-        pass
+        # self.application.invalidate()
+        self._event_queue.put(ev)
 
     def flush(self) -> None:
         pass
@@ -148,6 +153,15 @@ class PTFrame:
         if self._on_redraw is not None:
             self._on_redraw(self._painter, True)
 
+    def init_canvas(self, width: int, height: int):
+        self.width = width * FONT_SIZE
+        self.height = height * FONT_SIZE
+        self._painter.canvas = Canvas(width, height)
+        self._painter.clear_all()
+
+    def is_resized(self, width: int, height: int) -> bool:
+        return self.width != width * FONT_SIZE or self.height != height * FONT_SIZE
+
 
 def convert_to_key_code(code) -> KeyCode:
     match code:
@@ -177,21 +191,49 @@ class PTControl(UIControl):
     def __init__(self, frame: PTFrame):
         self.frame = frame
 
+    def _post_update(self, ev: UpdateEvent):
+        if ev.target is None:
+            return
+
+        if isinstance(ev.target, App):
+            pos = Point(0, 0)
+            clippedRect = None
+        else:
+            w: Widget = cast(Widget, ev.target)
+            pos = w.get_pos()
+            clippedRect = Rect(Point(0, 0), w.get_size())
+
+        painter = self.frame.get_painter()
+        painter.save()
+        try:
+            painter.translate(pos)
+            if clippedRect is not None:
+                painter.clip(clippedRect)
+            ev.target.redraw(painter, ev.completely)
+            painter.flush()
+        finally:
+            painter.restore()
+
     def create_content(self, width: int, height: int):
-        self.frame.redraw(width, height)
+        if self.frame._painter.canvas is None:
+            self.frame.init_canvas(width, height)
+        elif self.frame.is_resized(width, height):
+            self.frame.redraw(width, height)
+            renderable = self.frame._painter._get_renderable()
+
+            return UIContent(
+                get_line=renderable.__getitem__,  # type: ignore
+                line_count=len(renderable),
+            )
+
+        while not self.frame._event_queue.empty():
+            ev: UpdateEvent = self.frame._event_queue.get_nowait()
+            self._post_update(ev)
         renderable = self.frame._painter._get_renderable()
 
-        fragments = []
-        for line in renderable:
-            lf = []
-            for style, text in line:
-                lf.append((style, text))
-
-            fragments.append(lf)
-
         return UIContent(
-            get_line=fragments.__getitem__,
-            line_count=len(fragments),
+            get_line=renderable.__getitem__,  # type: ignore
+            line_count=len(renderable),
         )
 
     def mouse_handler(self, mouse_event: PTMouseEvent):

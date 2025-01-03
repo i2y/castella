@@ -1,6 +1,6 @@
 from typing import Callable, Self, cast
 
-from .core import (
+from castella.core import (
     AppearanceState,
     Circle,
     Kind,

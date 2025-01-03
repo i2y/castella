@@ -1,7 +1,5 @@
 from castella import App, Box, Text
-
-# from castella.frame import Frame
-from castella.pt_frame import PTFrame as Frame
+from castella.frame import Frame
 
 
 App(

@@ -5,19 +5,15 @@ from castella import (
     Button,
     Column,
     Component,
-    Image,
     Input,
     Kind,
     MultilineText,
-    NumpyImage,
     Row,
     State,
     StatefulComponent,
-    Switch,
     Text,
     EM,
 )
-
 from castella.frame import Frame
 
 array = np.zeros((200, 400, 4), dtype=np.uint8)

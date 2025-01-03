@@ -4,8 +4,8 @@ from typing import Callable, cast
 from js import Object, document, window, navigator  # type: ignore
 from pyscript.ffi import create_proxy, to_js  # type: ignore
 
-from . import core
-from .canvaskit_painter import Painter
+from castella import core
+from castella.canvaskit_painter import Painter
 
 
 class Frame:
