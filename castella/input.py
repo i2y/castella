@@ -2,6 +2,7 @@ from dataclasses import replace
 from typing import Callable, Self, cast
 
 from castella.core import (
+    CaretDrawable,
     FillStyle,
     Font,
     InputCharEvent,
@@ -163,18 +164,15 @@ class Input(Text):
         )
 
         if state.is_in_editing():
-            # fill_rect caret using get_caret_pos etc.
             caret_pos_x = p.measure_text(str(state)[: state.get_caret_pos()])
-            p.style(Style(FillStyle(color="#AAAAAA")))
-            p.fill_rect(
-                Rect(
-                    Point(
-                        pos.x + caret_pos_x,
-                        pos.y - cap_height - (font_size - cap_height) / 2,
-                    ),
-                    Size(5, font_size),
-                )
+            caret_pos = Point(
+                pos.x + caret_pos_x,
+                pos.y - cap_height - (font_size - cap_height) / 2,
             )
+            if isinstance(p, CaretDrawable):
+                p.draw_caret(caret_pos, font_size)
+            else:
+                p.fill_rect(Rect(caret_pos, Size(5, font_size)))
 
     def focused(self) -> None:
         state = cast(InputState, self._state)

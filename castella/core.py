@@ -207,6 +207,11 @@ class Painter(Protocol):
     def flush(self) -> None: ...
 
 
+@runtime_checkable
+class CaretDrawable(Protocol):
+    def draw_caret(self, pos: Point, height: int) -> None: ...
+
+
 W = TypeVar("W", bound="Widget")
 
 

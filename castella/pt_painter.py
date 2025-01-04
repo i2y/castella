@@ -1,8 +1,8 @@
 from typing import Optional, List, Dict, TypeAlias
 from math import ceil
 
-from castella.core import Circle, FontMetrics, Point, Rect, Size, Style
-from castella.font import FontSlant, FontWeight
+from castella.core import Circle, FillStyle, FontMetrics, Point, Rect, Size, Style
+from castella.font import EM, FontSlant, FontWeight
 
 
 FONT_SIZE = 12
@@ -86,6 +86,14 @@ class Canvas:
                 new_style = f"bg:{orig_bg_color} {style}"
 
             self._rows[y][j] = (new_style, char)
+
+    def draw_caret(self, x: int, y: int, height: int = 1):
+        if 0 <= y < self._height and 0 <= x < self._width:
+            self._rows[y][x] = ("reverse", self._rows[y][x][1])
+            hpos = height
+            for i in range(1, hpos):
+                if 0 <= y + i < self._height:
+                    self._rows[y + i][x] = ("reverse", self._rows[y + i][x][1])
 
     def draw_stroke_rect(
         self,
@@ -197,6 +205,15 @@ class PTPainter:
     def stroke_text(self, text: str, pos: Point, max_width: Optional[float]) -> None:
         # for now, stroke_text is the same as fill_text
         return self.fill_text(text, pos, max_width)
+
+    def draw_caret(self, pos: Point, height: int) -> None:
+        pos = pos + self.translation
+        if self.clip_rect and not self.clip_rect.contain(pos):
+            return
+        x = div2(pos.x, FONT_SIZE)
+        y = div(pos.y, LINE_HEIGHT)
+        h = div(height, LINE_HEIGHT)
+        self.canvas.draw_caret(x, y + 1, h)
 
     def measure_image(self, file_path: str, use_cache: bool = True) -> Size:
         raise NotImplementedError
