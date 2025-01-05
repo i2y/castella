@@ -51,8 +51,7 @@ class Counter(Component):
 
 App(Frame("Counter", 800, 600), Counter()).run()
 ```
-
-https://user-images.githubusercontent.com/6240399/171010621-8c0068d2-eb90-4332-8a1b-115291053d42.mp4
+[Watch a very short demo video](docs/videos/demo.mp4)
 
 You can see some other examples in [examples](examples) directory.
 
