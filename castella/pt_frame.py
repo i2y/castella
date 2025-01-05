@@ -234,6 +234,7 @@ class PTControl(UIControl):
         return UIContent(
             get_line=renderable.__getitem__,  # type: ignore
             line_count=len(renderable),
+            show_cursor=False,
         )
 
     def mouse_handler(self, mouse_event: PTMouseEvent):
