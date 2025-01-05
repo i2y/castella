@@ -186,3 +186,23 @@ That will be shown as the following.
 </div>
 
 The above counter app is emmbeded in an iframe.
+
+## For Terminals
+
+You can install Castella from PyPI with the following command.
+```sh
+$ pip install castella[tui]
+```
+
+If you install other platform specific packages, when you want to use Castella with TUI, you need to specify the environment variable `CASTELLA_IS_TERMINAL_MODE` as follows.
+
+```sh
+$ CASTELLA_IS_TERMINAL_MODE=true python your_script.py
+```
+
+If you use PowerShell on Windows, you can set the environment variable as follows.
+```powershell
+$env:CASTELLA_IS_TERMINAL_MODE="true"; python your_script.py
+```
+
+If you don't install any other platform specific packages, you can use Castella with TUI without specifying the environment variable. It will be automatically executed in terminal mode.

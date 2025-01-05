@@ -18,6 +18,7 @@ from castella.core import (
     determine_font,
     replace_font_size,
 )
+from castella.font import EM
 
 
 class ButtonState(ObservableBase):
@@ -42,18 +43,14 @@ class Button(Widget):
         self,
         text: str,
         align: TextAlign = TextAlign.CENTER,
-        font_size: int | None = None,
+        font_size: int = EM,
     ):
         self._on_click = lambda _: ...
         self._align = align
         self._kind = Kind.NORMAL
         self._appearance_state = AppearanceState.NORMAL
-        if font_size is None:
-            self._font_size = 0
-            self._font_size_policy = FontSizePolicy.EXPANDING
-        else:
-            self._font_size = font_size
-            self._font_size_policy = FontSizePolicy.FIXED
+        self._font_size = font_size
+        self._font_size_policy = FontSizePolicy.FIXED
         super().__init__(
             state=ButtonState(text),
             size=Size(0, 0),

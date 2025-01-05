@@ -4,13 +4,11 @@ Castella is a pure Python cross-platform UI framework.
 <img src="https://user-images.githubusercontent.com/6240399/174487936-8484be0e-b2b5-433c-9416-594c0fd57f3a.png" style="height: 1em;"></img> [Documentation Site](https://i2y.github.io/castella) <img src="https://user-images.githubusercontent.com/6240399/174487787-7099167f-a8ad-42e8-9362-c19c84dc81be.png" style="height: 1em;"></img> [Examples](examples) <img src="https://user-images.githubusercontent.com/6240399/174487787-7099167f-a8ad-42e8-9362-c19c84dc81be.png" style="height: 1em;"></img> [Slides](https://speakerdeck.com/i2y/a-cross-platform-pure-python-declarative-ui-framework)
 
 ## Goals
-
-The primary final goal of Castella is to provide features for Python programmers easy to create a GUI application for several OS platforms and web browsers in a single most same code as possible as. The second goal is to provide a UI framework that Python programmers can easily understand, modify, and extend as needed.
-(Stated on May 25, 2022: This goal is the final goal. Currently this framework is in the super early stage, so this goal is far away. I hope to get much closer to the goal in a few months or a year by improving the implementation or documentation a little bit every day as much as possible.)
+The primary final goal of Castella is to provide features for Python programmers easy to create a UI application for several OS platforms and web browsers in a single most same code as possible as. The second goal is to provide a UI framework that Python programmers can easily understand, modify, and extend as needed.
 
 ## Features
-- The core part as a UI framework of Castella is written in only Python. It's not a wrapper for existing something written in other programing languages.
-- Castella allows human to define UI declaratively in Python.
+- The core part as a UI framework of Castella is written in only Python. It's not a wrapper for existing something written in other programing languages. "pure Python cross-platform UI framework" specifies things like the above.
+- Castella allows pythonista to define UI declaratively in Python.
 - Castella provides hot-reloading or hot-restarting on development.
 - Dark mode is supported. If the runtime environment is in dark mode, Castella app's UI appearance will automatically be styled in dark mode.
 - Castella utilizes GPU via dependent libraries.
@@ -18,6 +16,7 @@ The primary final goal of Castella is to provide features for Python programmers
 ## Dependencies
 - For desktop platforms, Castella is standing on existing excellent python bindings for window management library (GLFW or SDL2) and 2D graphics library (Skia).
 - For web browsers, Castella is standing on awesome Pyodide/PyScript and CanvasKit (Wasm version of Skia).
+- For terminals, Castella is standing on prompt_toolkit.
 
 ## Installation
 https://i2y.github.io/castella/getting-started/
@@ -64,6 +63,7 @@ Currently, Castella theoretically should support not-too-old versions of the fol
 - Mac OS X
 - Linux
 - Web browsers
+- Terminals
 
 ## License
 MIT License
