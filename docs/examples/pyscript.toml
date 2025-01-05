@@ -1,1 +1,1 @@
-packages = [ "pydantic", "castella-0.2.2-py3-none-any.whl" ]
+packages = [ "pydantic", "castella-0.2.3-py3-none-any.whl" ]
