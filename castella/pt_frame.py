@@ -1,6 +1,10 @@
+"""Prompt-toolkit based TUI frame implementation."""
+
+from __future__ import annotations
+
 from asyncio import Future
 from queue import Queue
-from typing import Callable, cast
+from typing import TYPE_CHECKING, Callable, Any, cast
 
 import pyperclip
 from prompt_toolkit import Application
@@ -11,38 +15,34 @@ from prompt_toolkit.layout.containers import Window
 from prompt_toolkit.layout.controls import UIContent, UIControl
 from prompt_toolkit.mouse_events import MouseEvent as PTMouseEvent, MouseEventType
 
-from castella.core import (
-    Point,
-    Size,
-    Painter,
-    MouseEvent,
-    WheelEvent,
+from castella.frame.base import BaseFrame
+from castella.models.geometry import Point, Size, Rect
+from castella.models.events import (
     InputCharEvent,
     InputKeyEvent,
-    UpdateEvent,
     KeyAction,
     KeyCode,
-    Widget,
-    App,
-    Rect,
+    MouseEvent,
+    WheelEvent,
 )
 from castella.pt_painter import PTPainter, Canvas, FONT_SIZE
 
+if TYPE_CHECKING:
+    from castella.models.events import UpdateEvent
+    from castella.protocols.painter import BasePainter
 
-class PTFrame:
+
+class PTFrame(BaseFrame):
+    """Prompt-toolkit based TUI frame."""
+
     def __init__(self, title: str, width: float = 0, height: float = 0) -> None:
-        self.title = title
-        self.width = width
-        self.height = height
-        self._on_input_char = None
-        self._on_input_key = None
-        self._on_mouse_down = None
-        self._on_mouse_up = None
-        self._on_mouse_wheel = None
-        self._on_cursor_pos = None
-        self._on_redraw = None
-        self._painter = PTPainter(Canvas(0, 0))
+        # Note: width/height are in logical units (character cells * FONT_SIZE)
+        super().__init__(title, width, height)
+
         self._running = True
+        self._painter = PTPainter(Canvas(0, 0))
+        self._event_queue: Queue[UpdateEvent] = Queue()
+
         self.bindings = KeyBindings()
         self._register_keybindings()
         self.application = Application(
@@ -52,9 +52,8 @@ class PTFrame:
             layout=PTLayout(Window(content=PTControl(self))),
             refresh_interval=0.1,
         )
-        self._event_queue = Queue()
 
-    def _register_keybindings(self):
+    def _register_keybindings(self) -> None:
         @self.bindings.add("<sigint>")
         @self.bindings.add("c-c")
         def _(event):
@@ -73,51 +72,37 @@ class PTFrame:
         @self.bindings.add("end")
         @self.bindings.add("enter")
         def _(event):
-            if self._on_input_key:
-                ev = InputKeyEvent(
-                    key=convert_to_key_code(event.key_sequence[0].key),
-                    scancode=0,
-                    action=KeyAction.PRESS,
-                    mods=0,
-                )
-                self._on_input_key(ev)
+            ev = InputKeyEvent(
+                key=_convert_to_key_code(event.key_sequence[0].key),
+                scancode=0,
+                action=KeyAction.PRESS,
+                mods=0,
+            )
+            self._callback_on_input_key(ev)
 
         @self.bindings.add("<any>")
         def _(event):
-            if self._on_input_char:
-                ev = InputCharEvent(char=event.key_sequence[0].key)
-                self._on_input_char(ev)
+            ev = InputCharEvent(char=event.key_sequence[0].key)
+            self._callback_on_input_char(ev)
 
-    def on_input_char(self, handler: Callable[[InputCharEvent], None]) -> None:
-        self._on_input_char = handler
+    # ========== Abstract Method Implementations ==========
 
-    def on_input_key(self, handler: Callable[[InputKeyEvent], None]) -> None:
-        self._on_input_key = handler
+    def _update_surface_and_painter(self) -> None:
+        """Recreate canvas for current size."""
+        width_chars = int(self._size.width / FONT_SIZE)
+        height_chars = int(self._size.height / FONT_SIZE)
+        self._painter.canvas = Canvas(width_chars, height_chars)
+        self._painter.clear_all()
 
-    def on_mouse_down(self, handler: Callable[[MouseEvent], None]) -> None:
-        self._on_mouse_down = handler
+    def _signal_main_thread(self) -> None:
+        """Not needed for prompt_toolkit - uses its own event loop."""
+        pass
 
-    def on_mouse_up(self, handler: Callable[[MouseEvent], None]) -> None:
-        self._on_mouse_up = handler
-
-    def on_mouse_wheel(self, handler: Callable[[WheelEvent], None]) -> None:
-        self._on_mouse_wheel = handler
-
-    def on_cursor_pos(self, handler: Callable[[MouseEvent], None]) -> None:
-        self._on_cursor_pos = handler
-
-    def on_redraw(self, handler: Callable[[Painter, bool], None]) -> None:
-        self._on_redraw = handler
-
-    def get_painter(self) -> Painter:
+    def get_painter(self) -> "BasePainter":
         return self._painter
 
     def get_size(self) -> Size:
-        return Size(width=self.width, height=self.height)
-
-    def post_update(self, ev: UpdateEvent) -> None:
-        # self.application.invalidate()
-        self._event_queue.put(ev)
+        return self._size
 
     def flush(self) -> None:
         pass
@@ -131,6 +116,14 @@ class PTFrame:
         except KeyboardInterrupt:
             pass
 
+    # ========== Post Update Override ==========
+
+    def post_update(self, ev: "UpdateEvent") -> None:
+        """Queue update event for processing in create_content."""
+        self._event_queue.put(ev)
+
+    # ========== Clipboard ==========
+
     def get_clipboard_text(self) -> str:
         return pyperclip.paste()
 
@@ -141,29 +134,34 @@ class PTFrame:
         raise NotImplementedError
 
     def async_set_clipboard_text(
-        self, text: str, callback: Callable[[Future], None]
+        self, text: str, callback: Callable[[Future[Any]], None]
     ) -> None:
         raise NotImplementedError
 
-    def redraw(self, width: int, height: int):
-        self.width = width * FONT_SIZE
-        self.height = height * FONT_SIZE
+    # ========== TUI-specific Methods ==========
+
+    def redraw(self, width: int, height: int) -> None:
+        """Redraw after resize."""
+        self._size = Size(width=width * FONT_SIZE, height=height * FONT_SIZE)
         self._painter.canvas = Canvas(width, height)
         self._painter.clear_all()
-        if self._on_redraw is not None:
-            self._on_redraw(self._painter, True)
+        self._callback_on_redraw(self._painter, True)
 
-    def init_canvas(self, width: int, height: int):
-        self.width = width * FONT_SIZE
-        self.height = height * FONT_SIZE
+    def init_canvas(self, width: int, height: int) -> None:
+        """Initialize canvas on first render."""
+        self._size = Size(width=width * FONT_SIZE, height=height * FONT_SIZE)
         self._painter.canvas = Canvas(width, height)
         self._painter.clear_all()
 
     def is_resized(self, width: int, height: int) -> bool:
-        return self.width != width * FONT_SIZE or self.height != height * FONT_SIZE
+        """Check if terminal has been resized."""
+        return (
+            self._size.width != width * FONT_SIZE
+            or self._size.height != height * FONT_SIZE
+        )
 
 
-def convert_to_key_code(code) -> KeyCode:
+def _convert_to_key_code(code) -> KeyCode:
     match code:
         case Keys.ControlH:
             return KeyCode.BACKSPACE
@@ -188,33 +186,39 @@ def convert_to_key_code(code) -> KeyCode:
 
 
 class PTControl(UIControl):
+    """Prompt-toolkit UI control for rendering Castella widgets."""
+
     def __init__(self, frame: PTFrame):
         self.frame = frame
 
-    def _post_update(self, ev: UpdateEvent):
+    def _post_update(self, ev: "UpdateEvent") -> None:
+        """Process an update event - uses BaseFrame's implementation."""
         if ev.target is None:
             return
 
+        # Import here to avoid circular dependency
+        from castella.core import App, Widget
+
         if isinstance(ev.target, App):
-            pos = Point(0, 0)
-            clippedRect = None
+            pos = Point(x=0, y=0)
+            clipped_rect = None
         else:
             w: Widget = cast(Widget, ev.target)
             pos = w.get_pos()
-            clippedRect = Rect(Point(0, 0), w.get_size())
+            clipped_rect = Rect(origin=Point(x=0, y=0), size=w.get_size())
 
         painter = self.frame.get_painter()
         painter.save()
         try:
             painter.translate(pos)
-            if clippedRect is not None:
-                painter.clip(clippedRect)
+            if clipped_rect is not None:
+                painter.clip(clipped_rect)
             ev.target.redraw(painter, ev.completely)
             painter.flush()
         finally:
             painter.restore()
 
-    def create_content(self, width: int, height: int):
+    def create_content(self, width: int, height: int) -> UIContent:
         if self.frame._painter.canvas is None:
             self.frame.init_canvas(width, height)
         elif self.frame.is_resized(width, height):
@@ -227,7 +231,7 @@ class PTControl(UIControl):
             )
 
         while not self.frame._event_queue.empty():
-            ev: UpdateEvent = self.frame._event_queue.get_nowait()
+            ev = self.frame._event_queue.get_nowait()
             self._post_update(ev)
         renderable = self.frame._painter._get_renderable()
 
@@ -237,29 +241,24 @@ class PTControl(UIControl):
             show_cursor=False,
         )
 
-    def mouse_handler(self, mouse_event: PTMouseEvent):
+    def mouse_handler(self, mouse_event: PTMouseEvent) -> None:
         pos = Point(
-            mouse_event.position.x * FONT_SIZE, mouse_event.position.y * FONT_SIZE
+            x=mouse_event.position.x * FONT_SIZE,
+            y=mouse_event.position.y * FONT_SIZE,
         )
 
         if mouse_event.event_type == MouseEventType.MOUSE_DOWN:
-            if self.frame._on_mouse_down:
-                ev = MouseEvent(pos=pos)
-                self.frame._on_mouse_down(ev)
+            ev = MouseEvent(pos=pos)
+            self.frame._callback_on_mouse_down(ev)
         elif mouse_event.event_type == MouseEventType.MOUSE_UP:
-            if self.frame._on_mouse_up:
-                ev = MouseEvent(pos=pos)
-                self.frame._on_mouse_up(ev)
+            ev = MouseEvent(pos=pos)
+            self.frame._callback_on_mouse_up(ev)
         elif mouse_event.event_type == MouseEventType.SCROLL_UP:
-            if self.frame._on_mouse_wheel:
-                ev = WheelEvent(x_offset=0, y_offset=-FONT_SIZE, pos=pos)
-                self.frame._on_mouse_wheel(ev)
+            ev = WheelEvent(x_offset=0, y_offset=-FONT_SIZE, pos=pos)
+            self.frame._callback_on_mouse_wheel(ev)
         elif mouse_event.event_type == MouseEventType.SCROLL_DOWN:
-            if self.frame._on_mouse_wheel:
-                ev = WheelEvent(x_offset=0, y_offset=FONT_SIZE, pos=pos)
-                self.frame._on_mouse_wheel(ev)
+            ev = WheelEvent(x_offset=0, y_offset=FONT_SIZE, pos=pos)
+            self.frame._callback_on_mouse_wheel(ev)
         elif mouse_event.event_type == MouseEventType.MOUSE_MOVE:
-            if self.frame._on_cursor_pos:
-                ev = MouseEvent(pos=pos)
-                self.frame._on_cursor_pos(ev)
-        return None
+            ev = MouseEvent(pos=pos)
+            self.frame._callback_on_cursor_pos(ev)

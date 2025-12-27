@@ -1,9 +1,7 @@
-from dataclasses import replace
 from typing import Callable, Self, cast
 
 from castella.core import (
     CaretDrawable,
-    FillStyle,
     Font,
     InputCharEvent,
     InputKeyEvent,
@@ -15,7 +13,6 @@ from castella.core import (
     Point,
     Rect,
     Size,
-    Style,
     TextAlign,
     determine_font,
 )
@@ -118,7 +115,7 @@ class Input(Text):
 
         p.style(self._rect_style)
         size = self.get_size()
-        rect = Rect(origin=Point(0, 0), size=size)
+        rect = Rect(origin=Point(x=0, y=0), size=size)
         p.fill_rect(rect)
         p.stroke_rect(rect)
 
@@ -131,30 +128,26 @@ class Input(Text):
             str(state),
         )
         p.style(
-            replace(
-                self._text_style,
-                font=Font(
-                    font_family,
-                    font_size,
-                ),
+            self._text_style.model_copy(
+                update={"font": Font(family=font_family, size=font_size)}
             ),
         )
 
         cap_height = p.get_font_metrics().cap_height
         if self._align is TextAlign.CENTER:
             pos = Point(
-                width / 2 - p.measure_text(str(state)) / 2,
-                height / 2 + cap_height / 2,
+                x=width / 2 - p.measure_text(str(state)) / 2,
+                y=height / 2 + cap_height / 2,
             )
         elif self._align is TextAlign.RIGHT:
             pos = Point(
-                width - p.measure_text(str(state)) - self._rect_style.padding,
-                height / 2 + cap_height / 2,
+                x=width - p.measure_text(str(state)) - self._rect_style.padding,
+                y=height / 2 + cap_height / 2,
             )
         else:
             pos = Point(
-                self._rect_style.padding + 0.1,
-                height / 2 + cap_height / 2,
+                x=self._rect_style.padding + 0.1,
+                y=height / 2 + cap_height / 2,
             )
 
         p.fill_text(
@@ -166,13 +159,15 @@ class Input(Text):
         if state.is_in_editing():
             caret_pos_x = p.measure_text(str(state)[: state.get_caret_pos()])
             caret_pos = Point(
-                pos.x + caret_pos_x,
-                pos.y - cap_height - (font_size - cap_height) / 2,
+                x=pos.x + caret_pos_x,
+                y=pos.y - cap_height - (font_size - cap_height) / 2,
             )
             if isinstance(p, CaretDrawable):
                 p.draw_caret(caret_pos, font_size)
             else:
-                p.fill_rect(Rect(caret_pos, Size(5, font_size)))
+                p.fill_rect(
+                    Rect(origin=caret_pos, size=Size(width=5, height=font_size))
+                )
 
     def focused(self) -> None:
         state = cast(InputState, self._state)

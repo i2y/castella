@@ -38,8 +38,8 @@ class BarChart(Widget):
     def __init__(self, data: BarChartState):
         super().__init__(
             state=data,
-            size=Size(0, 0),
-            pos=Point(0, 0),
+            size=Size(width=0, height=0),
+            pos=Point(x=0, y=0),
             pos_policy=None,
             width_policy=SizePolicy.CONTENT,
             height_policy=SizePolicy.CONTENT,
@@ -70,7 +70,7 @@ class BarChart(Widget):
 
     def redraw(self, p: Painter, _: bool) -> None:
         p.draw_np_array_as_an_image_rect(
-            self._np_array, Rect(Point(0, 0), self.get_size())
+            self._np_array, Rect(origin=Point(x=0, y=0), size=self.get_size())
         )
 
     def measure(self, p: Painter) -> Size:

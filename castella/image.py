@@ -23,8 +23,8 @@ class Image(Widget):
 
         super().__init__(
             state=state,
-            size=Size(0, 0),
-            pos=Point(0, 0),
+            size=Size(width=0, height=0),
+            pos=Point(x=0, y=0),
             pos_policy=None,
             width_policy=SizePolicy.CONTENT,
             height_policy=SizePolicy.CONTENT,
@@ -32,7 +32,11 @@ class Image(Widget):
 
     def redraw(self, p: Painter, _: bool) -> None:
         state: SimpleValue[str] = cast(SimpleValue[str], self._state)
-        p.draw_image(state.value(), Rect(Point(0, 0), self.get_size()), self._use_cache)
+        p.draw_image(
+            state.value(),
+            Rect(origin=Point(x=0, y=0), size=self.get_size()),
+            self._use_cache,
+        )
 
     def measure(self, p: Painter) -> Size:
         state: SimpleValue[str] = cast(SimpleValue[str], self._state)

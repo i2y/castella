@@ -1,15 +1,28 @@
+"""SDL2-based frame implementation."""
+
+from __future__ import annotations
+
 import platform
-import threading
 from ctypes import byref, c_int
-from queue import SimpleQueue
-from typing import Callable, Final, cast
+from typing import TYPE_CHECKING, Final
 
 import sdl2 as sdl
 import skia
 import zengl
 
-from castella import core
-from castella import skia_painter as painter
+from castella.frame.base import BaseFrame
+from castella.models.geometry import Point, Size
+from castella.models.events import (
+    InputCharEvent,
+    InputKeyEvent,
+    KeyAction,
+    KeyCode,
+    MouseEvent,
+    WheelEvent,
+)
+
+if TYPE_CHECKING:
+    from castella.protocols.painter import BasePainter
 
 if platform.system() == "Windows":
     import ctypes
@@ -18,7 +31,8 @@ if platform.system() == "Windows":
     user32.SetProcessDPIAware()
 
 
-def rgba_masks():
+def _rgba_masks() -> tuple[int, int, int, int]:
+    """Get RGBA masks based on platform byte order."""
     if platform.system() == "Windows":
         return (0, 0, 0, 0)
 
@@ -28,7 +42,9 @@ def rgba_masks():
         return (0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000)
 
 
-class Frame:
+class Frame(BaseFrame):
+    """SDL2 window frame with Skia rendering."""
+
     UPDATE_EVENT_TYPE: Final = sdl.SDL_RegisterEvents(1)
 
     PIXEL_DEPTH = 32
@@ -37,27 +53,32 @@ class Frame:
     def __init__(
         self, title: str = "castella", width: float = 500, height: float = 500
     ):
+        super().__init__(title, width, height)
+
         sdl.SDL_Init(sdl.SDL_INIT_EVENTS)
-        self._rgba_masks = rgba_masks()
+        self._rgba_masks = _rgba_masks()
         window = sdl.SDL_CreateWindow(
             bytes(title, "utf8"),
             sdl.SDL_WINDOWPOS_CENTERED,
             sdl.SDL_WINDOWPOS_CENTERED,
-            width,
-            height,
+            int(width),
+            int(height),
             sdl.SDL_WINDOW_SHOWN
             | sdl.SDL_WINDOW_RESIZABLE
             | sdl.SDL_WINDOW_ALLOW_HIGHDPI,
         )
 
         self._window = window
-        self._size = core.Size(width, height)
         zengl.init(zengl.loader(headless=True))
         self._update_surface_and_painter()
-        self._update_event_queue = SimpleQueue()
 
     def _update_surface_and_painter(self) -> None:
-        info = skia.ImageInfo.MakeN32Premul(self._size.width, self._size.height)
+        """Create/recreate the Skia surface for the current size."""
+        from castella import skia_painter as painter
+
+        info = skia.ImageInfo.MakeN32Premul(
+            int(self._size.width), int(self._size.height)
+        )
         surface = skia.Surface.MakeRenderTarget(
             skia.GrDirectContext.MakeGL(), skia.Budgeted.kNo, info
         )
@@ -65,76 +86,27 @@ class Frame:
         self._surface = surface
         self._painter = painter.Painter(self, self._surface)
 
-    def on_mouse_down(self, handler: Callable[[core.MouseEvent], None]) -> None:
-        self._callback_on_mouse_down = handler
+    def _signal_main_thread(self) -> None:
+        """Signal main thread via SDL custom event."""
+        sdl_event = sdl.SDL_Event()
+        sdl_event.type = Frame.UPDATE_EVENT_TYPE
+        sdl.SDL_PushEvent(sdl_event)
 
-    def on_mouse_up(self, handler: Callable[[core.MouseEvent], None]) -> None:
-        self._callback_on_mouse_up = handler
+    # ========== Abstract Method Implementations ==========
 
-    def on_mouse_wheel(self, handler: Callable[[core.WheelEvent], None]) -> None:
-        self._callback_on_mouse_wheel = handler
-
-    def on_cursor_pos(self, handler: Callable[[core.MouseEvent], None]) -> None:
-        self._callback_on_cursor_pos = handler
-
-    def on_input_char(self, handler: Callable[[core.InputCharEvent], None]) -> None:
-        self._callback_on_input_char = handler
-
-    def on_input_key(self, handler: Callable[[core.InputKeyEvent], None]) -> None:
-        self._callback_on_input_key = handler
-
-    def on_redraw(self, handler: Callable[[core.Painter, bool], None]) -> None:
-        self._callback_on_redraw = handler
-
-    def _on_redraw(self, w, h, handler: Callable[[core.Painter, bool], None]) -> None:
-        self._size = core.Size(w, h)
-        self._update_surface_and_painter()
-        handler(self._painter, True)
-
-    def get_painter(self) -> core.Painter:
+    def get_painter(self) -> "BasePainter":
         return self._painter
 
-    def get_size(self) -> core.Size:
+    def get_size(self) -> Size:
         return self._size
-
-    def post_update(self, ev: core.UpdateEvent) -> None:
-        if threading.current_thread() is not threading.main_thread():
-            self._update_event_queue.put(ev)
-            sdl_event = sdl.SDL_Event()
-            sdl_event.type = Frame.UPDATE_EVENT_TYPE
-            sdl.SDL_PushEvent(sdl_event)
-        else:
-            self._post_update(ev)
-
-    def _post_update(self, ev: core.UpdateEvent) -> None:
-        if ev.target is None:
-            return
-
-        if isinstance(ev.target, core.App):
-            pos = core.Point(0, 0)
-            clippedRect = None
-        else:
-            w: core.Widget = cast(core.Widget, ev.target)
-            pos = w.get_pos()
-            clippedRect = core.Rect(core.Point(0, 0), w.get_size())
-
-        self._painter.save()
-        try:
-            self._painter.translate(pos)
-            if clippedRect is not None:
-                self._painter.clip(clippedRect)
-            ev.target.redraw(self._painter, ev.completely)
-            self._painter.flush()
-        finally:
-            self._painter.restore()
 
     def flush(self) -> None:
         skia_image = self._surface.makeImageSnapshot()
         skia_bytes = skia_image.tobytes()
 
         size = self._size
-        width = size.width
-        height = size.height
+        width = int(size.width)
+        height = int(size.height)
         sdl_surface = sdl.SDL_CreateRGBSurfaceFrom(
             skia_bytes,
             width,
@@ -144,7 +116,7 @@ class Frame:
             *self._rgba_masks,
         )
 
-        rect = sdl.SDL_Rect(0, 0, int(width), int(height))
+        rect = sdl.SDL_Rect(0, 0, width, height)
         window_surface = sdl.SDL_GetWindowSurface(self._window)
         sdl.SDL_BlitSurface(sdl_surface, rect, window_surface, rect)
         sdl.SDL_UpdateWindowSurface(self._window)
@@ -153,8 +125,7 @@ class Frame:
         self._surface.getCanvas().clear(0)
 
     def run(self) -> None:
-        if threading.current_thread() is not threading.main_thread():
-            raise RuntimeError("run method must be called from main thread")
+        self._ensure_main_thread()
 
         event = sdl.SDL_Event()
         while True:
@@ -168,48 +139,55 @@ class Frame:
                     sdl.SDL_Quit()
                     break
                 case Frame.UPDATE_EVENT_TYPE:
-                    if not self._update_event_queue.empty():
-                        self._post_update(self._update_event_queue.get_nowait())
+                    self._process_pending_updates()
                 case sdl.SDL_WINDOWEVENT:
                     if event.window.event == sdl.SDL_WINDOWEVENT_RESIZED:
                         width = event.window.data1
                         height = event.window.data2
-                        self._on_redraw(width, height, self._callback_on_redraw)
+                        self._on_resize(width, height)
                 case sdl.SDL_MOUSEBUTTONDOWN:
                     self._callback_on_mouse_down(
-                        core.MouseEvent(core.Point(event.button.x, event.button.y))
+                        MouseEvent(pos=Point(x=event.button.x, y=event.button.y))
                     )
                 case sdl.SDL_MOUSEBUTTONUP:
                     self._callback_on_mouse_up(
-                        core.MouseEvent(core.Point(event.button.x, event.button.y))
+                        MouseEvent(pos=Point(x=event.button.x, y=event.button.y))
                     )
                 case sdl.SDL_MOUSEWHEEL:
                     x, y = c_int(0), c_int(0)
                     sdl.SDL_GetMouseState(byref(x), byref(y))
                     self._callback_on_mouse_wheel(
-                        core.WheelEvent(
-                            core.Point(x.value, y.value),
-                            +event.wheel.x * 20,
-                            -event.wheel.y * 20,
+                        WheelEvent(
+                            pos=Point(x=x.value, y=y.value),
+                            x_offset=+event.wheel.x * 20,
+                            y_offset=-event.wheel.y * 20,
                         )
                     )
                 case sdl.SDL_MOUSEMOTION:
                     self._callback_on_cursor_pos(
-                        core.MouseEvent(core.Point(event.motion.x, event.motion.y))
+                        MouseEvent(pos=Point(x=event.motion.x, y=event.motion.y))
                     )
                 case sdl.SDL_KEYDOWN:
                     self._callback_on_input_key(
-                        core.InputKeyEvent(
-                            convert_to_key_code(event.key.keysym.sym),
-                            0,
-                            core.KeyAction.PRESS,
-                            0,
+                        InputKeyEvent(
+                            key=_convert_to_key_code(event.key.keysym.sym),
+                            scancode=0,
+                            action=KeyAction.PRESS,
+                            mods=0,
                         )
                     )
                 case sdl.SDL_TEXTINPUT:
                     self._callback_on_input_char(
-                        core.InputCharEvent(event.text.text.decode("utf-8"))
+                        InputCharEvent(char=event.text.text.decode("utf-8"))
                     )
+
+    def _on_resize(self, w: int, h: int) -> None:
+        """Handle window resize."""
+        self._size = Size(width=w, height=h)
+        self._update_surface_and_painter()
+        self._callback_on_redraw(self._painter, True)
+
+    # ========== Clipboard ==========
 
     def get_clipboard_text(self) -> str:
         return sdl.SDL_GetClipboardText().decode("utf-8")
@@ -217,30 +195,27 @@ class Frame:
     def set_clipboard_text(self, text: str) -> None:
         sdl.SDL_SetClipboardText(text.encode("utf-8"))
 
-    def async_get_clipboard_text(self, callback: Callable) -> None:
-        raise NotImplementedError("async_get_clipboard_text")
 
-    def async_set_clipboard_text(self, text: str, callback: Callable) -> None:
-        raise NotImplementedError("async_set_clipboard_text")
+# ========== Key Code Converter ==========
 
 
-def convert_to_key_code(keysym: int) -> core.KeyCode:
+def _convert_to_key_code(keysym: int) -> KeyCode:
     match keysym:
         case sdl.SDLK_BACKSPACE:
-            return core.KeyCode.BACKSPACE
+            return KeyCode.BACKSPACE
         case sdl.SDLK_LEFT:
-            return core.KeyCode.LEFT
+            return KeyCode.LEFT
         case sdl.SDLK_RIGHT:
-            return core.KeyCode.RIGHT
+            return KeyCode.RIGHT
         case sdl.SDLK_UP:
-            return core.KeyCode.UP
+            return KeyCode.UP
         case sdl.SDLK_DOWN:
-            return core.KeyCode.DOWN
+            return KeyCode.DOWN
         case sdl.SDLK_PAGEUP:
-            return core.KeyCode.PAGE_UP
+            return KeyCode.PAGE_UP
         case sdl.SDLK_PAGEDOWN:
-            return core.KeyCode.PAGE_DOWN
+            return KeyCode.PAGE_DOWN
         case sdl.SDLK_DELETE:
-            return core.KeyCode.DELETE
+            return KeyCode.DELETE
         case _:
-            return core.KeyCode.UNKNOWN
+            return KeyCode.UNKNOWN

@@ -90,8 +90,8 @@ class Painter:
         self._canvas.clipRect(
             to_ck_rect(
                 core.Rect(
-                    core.Point(0, 0),
-                    core.Size(rect.size.width + 1, rect.size.height + 1),
+                    core.Point(x=0, y=0),
+                    core.Size(width=rect.size.width + 1, height=rect.size.height + 1),
                 )
             ),
             window.CK.ClipOp.Intersect,
@@ -161,7 +161,7 @@ class Painter:
 
     def measure_np_array_as_an_image(self, array: "np.ndarray") -> core.Size:
         height, width, _ = array.shape
-        return core.Size(width, height)
+        return core.Size(width=width, height=height)
 
     def draw_np_array_as_an_image(
         self, array: "np.ndarray", x: float, y: float

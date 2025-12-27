@@ -1,15 +1,17 @@
 [project]
 name = "castella"
-version = "0.2.3"
+version = "0.3.0"
 description = "Castella is a pure Python cross-platform UI framework"
 authors = [{ name = "Yasushi Itoh", email = "i2y@icloud.com" }]
 license = "MIT"
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: MIT License",
-    'Programming Language :: Python :: 3',
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 readme = "README.md"
@@ -45,9 +47,8 @@ homepage = "https://github.com/i2y/castella"
 repository = "https://github.com/i2y/castella"
 documentation = "https://i2y.github.io/castella"
 
-[tool.rye]
-managed = true
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "glfw>=2.7.0",
     "PyOpenGL>=3.1.7",
     "glcontext>=2.5.0",
@@ -55,11 +56,9 @@ dev-dependencies = [
     "PySDL2>=0.9.16",
     "zengl>=2.4.1",
     "skia-python>=87.6",
-    "darkdetect>=0.5.1",
+    "darkdetect>=0.8",
     "mkdocs>=1.6.0",
-    "ruff>=0.4.2",
-    "black>=24.4.2",
-    "pip>=24.0",
+    "ruff>=0.8.0",
     "mkdocs-material>=9.5.20",
     "mkdocs-video>=1.5.0",
     "pymdown-extensions>=10.8.1",

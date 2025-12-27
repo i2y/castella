@@ -37,8 +37,8 @@ class PieChart(Widget):
     def __init__(self, data: PieChartState):
         super().__init__(
             state=data,
-            size=Size(0, 0),
-            pos=Point(0, 0),
+            size=Size(width=0, height=0),
+            pos=Point(x=0, y=0),
             pos_policy=None,
             width_policy=SizePolicy.CONTENT,
             height_policy=SizePolicy.CONTENT,

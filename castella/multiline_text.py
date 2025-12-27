@@ -41,8 +41,8 @@ class MultilineText(Widget):
 
         super().__init__(
             state=state,
-            size=Size(0, 0),
-            pos=Point(0, 0),
+            size=Size(width=0, height=0),
+            pos=Point(x=0, y=0),
             pos_policy=None,
             width_policy=SizePolicy.EXPANDING,
             height_policy=SizePolicy.CONTENT,
@@ -61,7 +61,7 @@ class MultilineText(Widget):
         line_spacing = self._line_spacing
 
         p.style(self._rect_style)
-        rect = Rect(origin=Point(0, 0), size=self.get_size())
+        rect = Rect(origin=Point(x=0, y=0), size=self.get_size())
         p.fill_rect(rect)
         p.stroke_rect(rect)
 
@@ -69,7 +69,7 @@ class MultilineText(Widget):
         h = self._text_style.font.size
         y = h + padding
         for line in self._get_lines(p):
-            p.fill_text(line, Point(padding + 0.1, y), None)
+            p.fill_text(line, Point(x=padding + 0.1, y=y), None)
             y += h + line_spacing
 
     def _get_lines(self, p: Painter) -> Generator[str, None, None]:
@@ -116,4 +116,4 @@ class MultilineText(Widget):
             + border_width * 2
         )
         p.restore()
-        return Size(w, h)
+        return Size(width=w, height=h)

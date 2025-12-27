@@ -116,8 +116,10 @@ class Painter:
         self._canvas.clipRect(
             _to_skia_rect(
                 core.Rect(
-                    core.Point(0, 0),
-                    core.Size(rect.size.width + 1, rect.size.height + 1),
+                    origin=core.Point(x=0, y=0),
+                    size=core.Size(
+                        width=rect.size.width + 1, height=rect.size.height + 1
+                    ),
                 )
             )
         )
@@ -167,7 +169,7 @@ class Painter:
             image = _get_cached_image(file_path)
         else:
             image = skia.Image.open(file_path)
-        return core.Size(image.width(), image.height())
+        return core.Size(width=image.width(), height=image.height())
 
     def draw_net_image(self, url: str, rect: core.Rect, use_cache: bool = True) -> None:
         if use_cache:
@@ -181,11 +183,11 @@ class Painter:
             image = _get_cached_net_image(url)
         else:
             image = _get_net_image(url)
-        return core.Size(image.width(), image.height())
+        return core.Size(width=image.width(), height=image.height())
 
     def measure_np_array_as_an_image(self, array: np.ndarray) -> core.Size:
         height, width, _ = array.shape
-        return core.Size(width, height)
+        return core.Size(width=width, height=height)
 
     def get_net_image_async(self, name: str, url: str, callback) -> None:
         raise NotImplementedError()

@@ -1,8 +1,11 @@
-from typing import Optional, List, Dict, TypeAlias
+from typing import TYPE_CHECKING, Optional, List, Dict, TypeAlias
 from math import ceil
 
-from castella.core import Circle, FillStyle, FontMetrics, Point, Rect, Size, Style
-from castella.font import EM, FontSlant, FontWeight
+from castella.core import Circle, FontMetrics, Point, Rect, Size, Style
+
+if TYPE_CHECKING:
+    import numpy as np
+from castella.font import FontSlant, FontWeight
 
 
 FONT_SIZE = 12
@@ -106,7 +109,7 @@ class Canvas:
         for j in range(x + 1, x + width - 1):
             for i in [y, y + height - 1]:
                 if 0 <= i < self._height and 0 <= j < self._width:
-                    if clip_rect and not clip_rect.contain(Point(j, i)):
+                    if clip_rect and not clip_rect.contain(Point(x=j, y=i)):
                         continue
                     self._rows[i][j] = (style, "─")
 
@@ -114,7 +117,7 @@ class Canvas:
         for i in range(y + 1, y + height - 1):
             for j in [x, x + width - 1]:
                 if 0 <= i < self._height and 0 <= j < self._width:
-                    if clip_rect and not clip_rect.contain(Point(j, i)):
+                    if clip_rect and not clip_rect.contain(Point(x=j, y=i)):
                         continue
                     self._rows[i][j] = (style, "│")
 
@@ -127,7 +130,7 @@ class Canvas:
         ]
         for j, i, char in corners:
             if 0 <= i < self._height and 0 <= j < self._width:
-                if clip_rect and not clip_rect.contain(Point(j, i)):
+                if clip_rect and not clip_rect.contain(Point(x=j, y=i)):
                     continue
                 self._rows[i][j] = (style, char)
 
@@ -151,7 +154,7 @@ class PTPainter:
     def __init__(self, canvas: Canvas):
         self.canvas = canvas
         self.current_style = Style()
-        self.translation = Point(0, 0)
+        self.translation = Point(x=0, y=0)
         self.clip_rect: Optional[Rect] = None
         self.state_stack: List[Dict] = []
 

@@ -1,3 +1,7 @@
+"""Castella core module - widgets, layouts, and application framework."""
+
+from __future__ import annotations
+
 import os
 import sys
 from abc import ABC, abstractmethod
@@ -5,26 +9,40 @@ from asyncio import Future
 from collections.abc import Iterable
 from copy import deepcopy
 from dataclasses import dataclass, replace
-from enum import Enum, auto
+from enum import Enum
 from typing import (
     Any,
     Callable,
     Generator,
     Generic,
-    List,
     Optional,
     Protocol,
     Self,
     TypeAlias,
     TypeVar,
-    Union,
     runtime_checkable,
 )
 
 from pydantic import BaseModel
 
-from castella.font import EM, Font, FontMetrics, FontSizePolicy
+from castella.models.font import EM, Font, FontMetrics, FontSizePolicy
 
+# Import from new modules
+from castella.models.geometry import Point, Size, Rect, Circle
+from castella.models.style import (
+    SizePolicy,
+    PositionPolicy,
+    FillStyle,
+    StrokeStyle,
+    Style,
+)
+from castella.models.events import (
+    MouseEvent,
+    WheelEvent,
+    InputCharEvent,
+    InputKeyEvent,
+    UpdateEvent,
+)
 
 try:
     import numpy as np
@@ -32,119 +50,6 @@ except ImportError:
     pass
 
 from . import color
-
-
-@dataclass(slots=True)
-class Point:
-    x: float
-    y: float
-
-    def __add__(self, other: "Point") -> "Point":
-        return Point(self.x + other.x, self.y + other.y)
-
-    def __sub__(self, other: "Point") -> "Point":
-        return Point(self.x - other.x, self.y - other.y)
-
-
-@dataclass(slots=True)
-class Size:
-    width: float
-    height: float
-
-    def __add__(self, other: "Size") -> "Size":
-        return Size(self.width + other.width, self.height + other.height)
-
-    def __sub__(self, other: "Size") -> "Size":
-        return Size(self.width - other.width, self.height - other.height)
-
-
-@dataclass(slots=True, frozen=True)
-class Rect:
-    origin: Point
-    size: Size
-
-    def contain(self, p: Point) -> bool:
-        return (self.origin.x <= p.x <= self.origin.x + self.size.width) and (
-            self.origin.y <= p.y <= self.origin.y + self.size.height
-        )
-
-    def intersect(self, other: "Rect") -> Optional["Rect"]:
-        x1 = max(self.origin.x, other.origin.x)
-        y1 = max(self.origin.y, other.origin.y)
-        x2 = min(self.origin.x + self.size.width, other.origin.x + other.size.width)
-        y2 = min(self.origin.y + self.size.height, other.origin.y + other.size.height)
-        return Rect(Point(x1, y1), Size(x2 - x1, y2 - y1))
-
-
-@dataclass(slots=True, frozen=True)
-class Circle:
-    center: Point
-    radius: float
-
-    def contain(self, p: Point) -> bool:
-        c = self.center
-        return ((p.x - c.x) ** 2 + (p.y - c.y) ** 2) < self.radius**2
-
-
-class SizePolicy(Enum):
-    FIXED = auto()
-    EXPANDING = auto()
-    CONTENT = auto()
-
-
-@dataclass(slots=True, frozen=True)
-class NewSizePolicy:
-    width: SizePolicy
-    height: SizePolicy
-
-
-class PositionPolicy(Enum):
-    FIXED = auto()
-    CENTER = auto()
-
-
-@dataclass(slots=True, frozen=True)
-class FillStyle:
-    color: str = "black"
-
-
-@dataclass(slots=True, frozen=True)
-class StrokeStyle:
-    color: str = "black"
-
-
-class LineCap(Enum):
-    BUTT = auto()
-    ROUND = auto()
-    SQUARE = auto()
-
-
-@dataclass(slots=True, frozen=True)
-class LineStyle:
-    width: float = 1.0
-    cap: LineCap = LineCap.BUTT
-
-
-@dataclass(slots=True, frozen=True)
-class Style:
-    fill: FillStyle = FillStyle()
-    stroke: StrokeStyle = StrokeStyle()
-    line: LineStyle = LineStyle()
-    font: Font = Font()
-    padding: int = EM  # currently this value has the meaning only for Text and Button
-
-
-@dataclass(slots=True, frozen=True)
-class TextStyle:
-    color: str
-    fontFamilies: List[str]
-    fontSize: float
-
-
-class TextAlign(Enum):
-    LEFT = auto()
-    CENTER = auto()
-    RIGHT = auto()
 
 
 class Painter(Protocol):
@@ -210,57 +115,6 @@ class Painter(Protocol):
 @runtime_checkable
 class CaretDrawable(Protocol):
     def draw_caret(self, pos: Point, height: int) -> None: ...
-
-
-W = TypeVar("W", bound="Widget")
-
-
-@dataclass(slots=True)
-class MouseEvent(Generic[W]):
-    pos: Point
-    target: Optional[W] = None
-
-    def translate(self, p: Point) -> "MouseEvent":
-        return MouseEvent(self.pos - p, self.target)
-
-
-@dataclass(slots=True, frozen=True)
-class WheelEvent:
-    pos: Point
-    x_offset: float
-    y_offset: float
-
-
-@dataclass(slots=True, frozen=True)
-class InputCharEvent:
-    char: str
-
-
-class KeyCode(Enum):
-    BACKSPACE = auto()
-    LEFT = auto()
-    RIGHT = auto()
-    UP = auto()
-    DOWN = auto()
-    PAGE_UP = auto()
-    PAGE_DOWN = auto()
-    DELETE = auto()
-    UNKNOWN = auto()
-
-
-class KeyAction(Enum):
-    PRESS = auto()
-    REPEAT = auto()
-    RELEASE = auto()
-    UNKNOWN = auto()
-
-
-@dataclass(slots=True, frozen=True)
-class InputKeyEvent:
-    key: KeyCode
-    scancode: int
-    action: KeyAction
-    mods: int
 
 
 class Frame(Protocol):
@@ -368,19 +222,14 @@ class SimpleValue(Observable, Protocol[V]):
     def value(self) -> V: ...
 
 
-from dataclasses import dataclass, MISSING, make_dataclass, field
-
-from typing import get_type_hints
-
-
 def get_zero_value(type_hint):
-    if type_hint == int:
+    if type_hint is int:
         return 0
-    elif type_hint == float:
+    elif type_hint is float:
         return 0.0
-    elif type_hint == bool:
+    elif type_hint is bool:
         return False
-    elif type_hint == str:
+    elif type_hint is str:
         return ""
     elif hasattr(type_hint, "__origin__") and type_hint.__origin__ is list:
         return []
@@ -396,14 +245,14 @@ class Model(BaseModel):
 
     def __init__(self, **data):
         super().__init__(**data)
-        for name in self.__fields__:
+        for name in self.model_fields:
             value = getattr(self, name)
             if not isinstance(value, State):
                 wrapped_value = State(value)
                 super().__setattr__(name, wrapped_value)
 
     def __setattr__(self, name, value):
-        if name in self.__fields__:
+        if name in self.model_fields:
             current_value = getattr(self, name, None)
             if isinstance(current_value, State):
                 current_value.set(value)
@@ -511,8 +360,8 @@ class Widget(ABC):
     ) -> tuple[Style, Style]:
         return (
             Style(
-                FillStyle(color=widget_style.bg_color),
-                StrokeStyle(color=widget_style.border_color),
+                fill=FillStyle(color=widget_style.bg_color),
+                stroke=StrokeStyle(color=widget_style.border_color),
             ),
             Style(
                 fill=FillStyle(color=widget_style.text_color),
@@ -738,7 +587,7 @@ class Widget(ABC):
         return (
             self.width_policy(SizePolicy.FIXED)
             .height_policy(SizePolicy.FIXED)
-            .resize(Size(width, height))
+            .resize(Size(width=width, height=height))
         )
 
     def fit_parent(self) -> Self:
@@ -1162,7 +1011,8 @@ def set_theme(theme: Theme) -> None:
 
 
 def replace_font_size(style: Style, size: float, policy: FontSizePolicy) -> Style:
-    return replace(style, font=replace(style.font, size=size, size_policy=policy))
+    new_font = style.font.model_copy(update={"size": int(size), "size_policy": policy})
+    return style.model_copy(update={"font": new_font})
 
 
 def determine_font(
@@ -1185,12 +1035,6 @@ def determine_font(
 
 
 SCROLL_BAR_SIZE = EM
-
-
-@dataclass(slots=True, frozen=True)
-class UpdateEvent:
-    target: Union[Widget, "App"]
-    completely: bool = False
 
 
 class App:
@@ -1227,18 +1071,18 @@ class App:
     def get_default_font_family(cls) -> str:
         return cls._default_font_family
 
-    def push_layer(self, l: Widget, p: PositionPolicy) -> Self:
+    def push_layer(self, layer: Widget, pos_policy: PositionPolicy) -> Self:
         if len(self._layers) > 0:
-            self.cursor_pos(MouseEvent(Point(-1, -1)))
-        self._layers.append(l)
-        self._layerPositions.append(p)
-        self._frame.post_update(UpdateEvent(self, True))
+            self.cursor_pos(MouseEvent(Point(x=-1, y=-1)))
+        self._layers.append(layer)
+        self._layerPositions.append(pos_policy)
+        self._frame.post_update(UpdateEvent(target=self, completely=True))
         return self
 
     def pop_layer(self) -> Self:
         self._layers.pop()
         self._layerPositions.pop()
-        self._frame.post_update(UpdateEvent(self, True))
+        self._frame.post_update(UpdateEvent(target=self, completely=True))
         return self
 
     def peek_layer(self) -> tuple[Widget, PositionPolicy]:
@@ -1328,18 +1172,23 @@ class App:
         # self._mouse_overed_layer = None
 
         p.style(self._style)
-        p.fill_rect(Rect(origin=Point(0, 0), size=self._frame.get_size() + Size(1, 1)))
+        p.fill_rect(
+            Rect(
+                origin=Point(x=0, y=0),
+                size=self._frame.get_size() + Size(width=1, height=1),
+            )
+        )
         for i in range(len(self._layers)):
-            l = self._layers[i]
+            layer = self._layers[i]
             pos = self._layerPositions[i]
-            self._relocate_layout(l, pos)
-            if completely or l.is_dirty():
+            self._relocate_layout(layer, pos)
+            if completely or layer.is_dirty():
                 p.save()
-                p.translate(l.get_pos())
-                p.clip(Rect(Point(0, 0), l.get_size()))
-                l.redraw(p, completely)
+                p.translate(layer.get_pos())
+                p.clip(Rect(origin=Point(x=0, y=0), size=layer.get_size()))
+                layer.redraw(p, completely)
                 p.restore()
-                l.dirty(False)
+                layer.dirty(False)
         p.flush()
 
     def _relocate_layout(self, w: Widget, p: PositionPolicy) -> None:
@@ -1373,7 +1222,7 @@ class App:
         w.resize(Size(width=width, height=height))
 
     def post_update(self, w: Widget, completely: bool = False) -> None:
-        self._frame.post_update(UpdateEvent(w, completely))
+        self._frame.post_update(UpdateEvent(target=w, completely=completely))
 
     def run(self) -> None:
         self._frame.on_mouse_down(self.mouse_down)
@@ -1491,7 +1340,7 @@ class Layout(Widget, ABC):
     def has_scrollbar(self, is_direction_x: bool) -> bool: ...
 
     def _adjust_pos(self, p: Point) -> Point:
-        return p + Point(0, 0)
+        return p + Point(x=0, y=0)
 
     def contain_in_content_area(self, p: Point) -> bool:
         return (self._pos.x < p.x < self._pos.x + self._size.width) and (
@@ -1501,7 +1350,12 @@ class Layout(Widget, ABC):
     def redraw(self, p: Painter, completely: bool) -> None:
         p.style(self._style)
         if completely or self.is_dirty():
-            p.fill_rect(Rect(origin=Point(0, 0), size=self.get_size() + Size(1, 1)))
+            p.fill_rect(
+                Rect(
+                    origin=Point(x=0, y=0),
+                    size=self.get_size() + Size(width=1, height=1),
+                )
+            )
         self._relocate_children(p)
         self._redraw_children(p, completely)
 
@@ -1513,7 +1367,7 @@ class Layout(Widget, ABC):
             if completely or c.is_dirty():
                 p.save()
                 p.translate((c.get_pos() - self.get_pos()))
-                p.clip(Rect(Point(0, 0), c.get_size()))
+                p.clip(Rect(origin=Point(x=0, y=0), size=c.get_size()))
                 c.redraw(p, completely)
                 p.restore()
                 c.dirty(False)
@@ -1555,9 +1409,9 @@ class Component(Layout, ABC):
     def __init__(self):
         super().__init__(
             state=None,
-            pos=Point(0, 0),
+            pos=Point(x=0, y=0),
             pos_policy=None,
-            size=Size(0, 0),
+            size=Size(width=0, height=0),
             width_policy=SizePolicy.EXPANDING,
             height_policy=SizePolicy.EXPANDING,
         )
@@ -1572,7 +1426,7 @@ class Component(Layout, ABC):
             return
 
         child = self._children[0]
-        child.resize(replace(self.get_size()))
+        child.resize(self.get_size().model_copy())
 
     def _move_children(self):
         child = self._children[0]
@@ -1599,7 +1453,7 @@ class Component(Layout, ABC):
 
     def measure(self, p: Painter) -> Size:
         if self._child is None:
-            return Size(0, 0)
+            return Size(width=0, height=0)
         return self._child.measure(p)
 
 

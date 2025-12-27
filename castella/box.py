@@ -1,4 +1,3 @@
-from dataclasses import astuple
 from typing import Self
 
 from castella.core import (
@@ -23,17 +22,17 @@ class Box(Layout):
     _scrollbar_widget_style = get_theme().scrollbar
     _scrollbox_widget_style = get_theme().scrollbox
     _scrollbar_style = Style(
-        FillStyle(color=_scrollbar_widget_style.bg_color),
-        StrokeStyle(color=_scrollbar_widget_style.border_color),
+        fill=FillStyle(color=_scrollbar_widget_style.bg_color),
+        stroke=StrokeStyle(color=_scrollbar_widget_style.border_color),
     )
-    _scrollbox_style = Style(FillStyle(color=_scrollbox_widget_style.bg_color))
+    _scrollbox_style = Style(fill=FillStyle(color=_scrollbox_widget_style.bg_color))
 
     def __init__(self, child: Widget):
         super().__init__(
             state=None,
-            pos=Point(0, 0),
+            pos=Point(x=0, y=0),
             pos_policy=None,
-            size=Size(0, 0),
+            size=Size(width=0, height=0),
             width_policy=SizePolicy.EXPANDING,
             height_policy=SizePolicy.EXPANDING,
         )
@@ -87,7 +86,9 @@ class Box(Layout):
         p.save()
         p.style(self._style)
         if completely or self.is_dirty():
-            p.fill_rect(Rect(origin=Point(0, 0), size=self_size + Size(1, 1)))
+            p.fill_rect(
+                Rect(origin=Point(x=0, y=0), size=self_size + Size(width=1, height=1))
+            )
 
         self._size.height -= x_scroll_bar_height
         self._size.width -= y_scroll_bar_width
@@ -100,8 +101,8 @@ class Box(Layout):
         self.correct_scroll_x_y(content_width, content_height)
         p.translate(
             Point(
-                -self._scroll_x * (self_width + y_scroll_bar_width) / self_width,
-                -self._scroll_y * (self_height + x_scroll_bar_height) / self_height,
+                x=-self._scroll_x * (self_width + y_scroll_bar_width) / self_width,
+                y=-self._scroll_y * (self_height + x_scroll_bar_height) / self_height,
             )
         )
         self._redraw_children(p, completely)
@@ -113,8 +114,11 @@ class Box(Layout):
             p.style(Box._scrollbar_style)
             p.fill_rect(
                 Rect(
-                    origin=Point(0, self_height - x_scroll_bar_height),
-                    size=Size(self_width - y_scroll_bar_width, x_scroll_bar_height),
+                    origin=Point(x=0, y=self_height - x_scroll_bar_height),
+                    size=Size(
+                        width=self_width - y_scroll_bar_width,
+                        height=x_scroll_bar_height,
+                    ),
                 )
             )
             p.style(Box._scrollbox_style)
@@ -124,11 +128,11 @@ class Box(Layout):
                 ) ** 2 / content_width
                 scroll_box = Rect(
                     origin=Point(
-                        (self._scroll_x / content_width)
+                        x=(self._scroll_x / content_width)
                         * (self_width - y_scroll_bar_width),
-                        self_height - x_scroll_bar_height,
+                        y=self_height - x_scroll_bar_height,
                     ),
-                    size=Size(scroll_box_width, x_scroll_bar_height),
+                    size=Size(width=scroll_box_width, height=x_scroll_bar_height),
                 )
                 self._scroll_box_x = scroll_box
                 p.fill_rect(scroll_box)
@@ -137,8 +141,11 @@ class Box(Layout):
             p.style(Box._scrollbar_style)
             p.fill_rect(
                 Rect(
-                    origin=Point(self_width - y_scroll_bar_width, 0),
-                    size=Size(y_scroll_bar_width, self_height - x_scroll_bar_height),
+                    origin=Point(x=self_width - y_scroll_bar_width, y=0),
+                    size=Size(
+                        width=y_scroll_bar_width,
+                        height=self_height - x_scroll_bar_height,
+                    ),
                 )
             )
             p.style(Box._scrollbox_style)
@@ -148,11 +155,11 @@ class Box(Layout):
                 ) ** 2 / content_height
                 scroll_box = Rect(
                     origin=Point(
-                        self_width - y_scroll_bar_width,
-                        (self._scroll_y / content_height)
+                        x=self_width - y_scroll_bar_width,
+                        y=(self._scroll_y / content_height)
                         * (self_height - x_scroll_bar_height),
                     ),
-                    size=Size(y_scroll_bar_width, scroll_box_height),
+                    size=Size(width=y_scroll_bar_width, height=scroll_box_height),
                 )
                 self._scroll_box_y = scroll_box
                 p.fill_rect(scroll_box)
@@ -279,10 +286,11 @@ class Box(Layout):
         return self._child.measure(p)
 
     def content_size(self) -> tuple[float, float]:
-        return astuple(self._child.get_size())
+        size = self._child.get_size()
+        return (size.width, size.height)
 
     def _adjust_pos(self, p: Point) -> Point:
-        return p + Point(self._scroll_x, self._scroll_y)
+        return p + Point(x=self._scroll_x, y=self._scroll_y)
 
     def contain_in_content_area(self, p: Point) -> bool:
         return (
