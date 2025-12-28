@@ -19,6 +19,13 @@ from castella.core import (
 
 
 class Box(Layout):
+    """A container that stacks children on top of each other.
+
+    Children are rendered in z_index order (lower first, higher on top).
+    All children occupy the same space and overlap.
+    Supports scrolling when content exceeds the box size.
+    """
+
     _scrollbar_widget_style = get_theme().scrollbar
     _scrollbox_widget_style = get_theme().scrollbox
     _scrollbar_style = Style(
@@ -27,7 +34,7 @@ class Box(Layout):
     )
     _scrollbox_style = Style(fill=FillStyle(color=_scrollbox_widget_style.bg_color))
 
-    def __init__(self, child: Widget):
+    def __init__(self, *children: Widget):
         super().__init__(
             state=None,
             pos=Point(x=0, y=0),
@@ -36,8 +43,8 @@ class Box(Layout):
             width_policy=SizePolicy.EXPANDING,
             height_policy=SizePolicy.EXPANDING,
         )
-        self.add(child)
-        self._child = child
+        for child in children:
+            self.add(child)
         self._under_dragging_x = False
         self._under_dragging_y = False
         self._last_drag_pos = None
@@ -47,8 +54,6 @@ class Box(Layout):
         self._scroll_box_y = None
 
     def add(self, w: Widget) -> None:
-        if len(self._children) > 0:
-            raise RuntimeError("Box cannot have more than 1 child widget")
         super().add(w)
 
     def redraw(self, p: Painter, completely: bool) -> None:
@@ -58,8 +63,10 @@ class Box(Layout):
         if self_width == 0 or self_height == 0:
             return
 
-        c = self._child
-        self._resize_child(p)
+        if len(self._children) == 0:
+            return
+
+        self._resize_children(p)
         content_width, content_height = self.content_size()
         x_scroll_bar_height = 0
         y_scroll_bar_width = 0
@@ -73,12 +80,20 @@ class Box(Layout):
         if content_width > self_width - y_scroll_bar_width:
             x_scroll_bar_height = SCROLL_BAR_SIZE
 
-        if c.get_width_policy() is SizePolicy.EXPANDING or x_scroll_bar_height == 0:
+        # Check if any child needs scrolling
+        needs_x_scroll = any(
+            c.get_width_policy() is not SizePolicy.EXPANDING for c in self._children
+        )
+        needs_y_scroll = any(
+            c.get_height_policy() is not SizePolicy.EXPANDING for c in self._children
+        )
+
+        if not needs_x_scroll or x_scroll_bar_height == 0:
             self._scroll_x = 0
             self._scroll_box_x = None
             x_scroll_bar_height = 0
 
-        if c.get_height_policy() is SizePolicy.EXPANDING or y_scroll_bar_width == 0:
+        if not needs_y_scroll or y_scroll_bar_width == 0:
             self._scroll_y = 0
             self._scroll_box_y = None
             y_scroll_bar_width = 0
@@ -283,11 +298,28 @@ class Box(Layout):
             return self
 
     def measure(self, p: Painter) -> Size:
-        return self._child.measure(p)
+        if len(self._children) == 0:
+            return Size(width=0, height=0)
+        # Return max size of all children
+        max_width = 0.0
+        max_height = 0.0
+        for c in self._children:
+            size = c.measure(p)
+            max_width = max(max_width, size.width)
+            max_height = max(max_height, size.height)
+        return Size(width=max_width, height=max_height)
 
     def content_size(self) -> tuple[float, float]:
-        size = self._child.get_size()
-        return (size.width, size.height)
+        if len(self._children) == 0:
+            return (0, 0)
+        # Return max size of all children
+        max_width = 0.0
+        max_height = 0.0
+        for c in self._children:
+            size = c.get_size()
+            max_width = max(max_width, size.width)
+            max_height = max(max_height, size.height)
+        return (max_width, max_height)
 
     def _adjust_pos(self, p: Point) -> Point:
         return p + Point(x=self._scroll_x, y=self._scroll_y)
@@ -315,24 +347,64 @@ class Box(Layout):
     def _relocate_children(self, p: Painter) -> None:
         if len(self._children) == 0:
             return
-        self._resize_child(p)
-        self._move_child()
+        self._resize_children(p)
+        self._move_children()
 
-    def _resize_child(self, p: Painter) -> None:
-        c = self._child
-        match c.get_width_policy():
-            case SizePolicy.CONTENT:
-                c.width(c.measure(p).width)
-            case SizePolicy.EXPANDING:
-                c.width(self.get_width())
+    def _resize_children(self, p: Painter) -> None:
+        for c in self._children:
+            match c.get_width_policy():
+                case SizePolicy.CONTENT:
+                    c.width(c.measure(p).width)
+                case SizePolicy.EXPANDING:
+                    c.width(self.get_width())
 
-        match c.get_height_policy():
-            case SizePolicy.CONTENT:
-                c.height(c.measure(p).height)
-            case SizePolicy.EXPANDING:
-                c.height(self.get_height())
+            match c.get_height_policy():
+                case SizePolicy.CONTENT:
+                    c.height(c.measure(p).height)
+                case SizePolicy.EXPANDING:
+                    c.height(self.get_height())
 
-    def _move_child(self) -> None:
-        c = self._child
-        c.move_x(self.get_pos().x)
-        c.move_y(self.get_pos().y)
+    def _move_children(self) -> None:
+        # All children are positioned at the same location (stacked)
+        # Fixed-size children are centered within the Box
+        box_pos = self.get_pos()
+        box_width = self.get_width()
+        box_height = self.get_height()
+
+        for c in self._children:
+            child_width = c.get_width()
+            child_height = c.get_height()
+
+            # Center horizontally if child is smaller than box
+            if c.get_width_policy() is SizePolicy.FIXED and child_width < box_width:
+                c.move_x(box_pos.x + (box_width - child_width) / 2)
+            else:
+                c.move_x(box_pos.x)
+
+            # Center vertically if child is smaller than box
+            if c.get_height_policy() is SizePolicy.FIXED and child_height < box_height:
+                c.move_y(box_pos.y + (box_height - child_height) / 2)
+            else:
+                c.move_y(box_pos.y)
+
+    def _redraw_children(self, p: Painter, completely: bool) -> None:
+        # For overlapping children in Box, we must redraw ALL children
+        # when ANY child is dirty OR the Box itself is dirty to maintain proper z-ordering
+        sorted_children = sorted(self._children, key=lambda c: c.get_z_index())
+        needs_redraw = (
+            completely
+            or self.is_dirty()
+            or any(c.is_dirty() for c in sorted_children)
+        )
+
+        if not needs_redraw:
+            return
+
+        for c in sorted_children:
+            p.save()
+            p.translate((c.get_pos() - self.get_pos()))
+            # Clip to child's actual size for proper bounds
+            p.clip(Rect(origin=Point(x=0, y=0), size=c.get_size()))
+            c.redraw(p, True)  # Always completely redraw for z-order correctness
+            p.restore()
+            c.dirty(False)

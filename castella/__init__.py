@@ -6,6 +6,10 @@ from castella.button import Button as Button, ButtonState as ButtonState
 from castella.column import Column as Column
 from castella.image import Image as Image
 from castella.input import Input as Input, InputState as InputState
+from castella.multiline_input import (
+    MultilineInput as MultilineInput,
+    MultilineInputState as MultilineInputState,
+)
 from castella.multiline_text import MultilineText as MultilineText
 from castella.net_image import NetImage as NetImage
 
@@ -27,3 +31,11 @@ from castella.table import (
     TableModel as TableModel,
     DataTable as DataTable,
 )
+
+try:
+    from castella.markdown import (
+        Markdown as Markdown,
+        MarkdownState as MarkdownState,
+    )
+except ImportError:
+    pass

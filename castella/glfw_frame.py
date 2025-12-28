@@ -17,6 +17,7 @@ from castella.models.events import (
     KeyAction,
     KeyCode,
     MouseEvent,
+    UpdateEvent,
     WheelEvent,
 )
 
@@ -205,6 +206,16 @@ def _convert_to_key_code(glfw_key_code: int) -> KeyCode:
             return KeyCode.PAGE_DOWN
         case glfw.KEY_DELETE:
             return KeyCode.DELETE
+        case glfw.KEY_ENTER:
+            return KeyCode.ENTER
+        case glfw.KEY_TAB:
+            return KeyCode.TAB
+        case glfw.KEY_ESCAPE:
+            return KeyCode.ESCAPE
+        case glfw.KEY_HOME:
+            return KeyCode.HOME
+        case glfw.KEY_END:
+            return KeyCode.END
         case _:
             return KeyCode.UNKNOWN
 

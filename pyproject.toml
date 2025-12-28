@@ -1,6 +1,6 @@
 [project]
 name = "castella"
-version = "0.3.0"
+version = "0.3.4"
 description = "Castella is a pure Python cross-platform UI framework"
 authors = [{ name = "Yasushi Itoh", email = "i2y@icloud.com" }]
 license = "MIT"
@@ -25,6 +25,10 @@ glfw = [
     "skia-python>=87.6",
     "darkdetect>=0.8",
     "pydantic>=2.7.4",
+    "markdown-it-py>=3.0.0",
+    "mdit-py-plugins>=0.4.0",
+    "pygments>=2.17.0",
+    "matplotlib>=3.9.0",
 ]
 sdl = [
     "glcontext>=2.5.0",
@@ -34,6 +38,10 @@ sdl = [
     "skia-python>=87.6",
     "darkdetect>=0.8",
     "pydantic>=2.7.4",
+    "markdown-it-py>=3.0.0",
+    "mdit-py-plugins>=0.4.0",
+    "pygments>=2.17.0",
+    "matplotlib>=3.9.0",
 ]
 tui = [
     "windows-curses>=2.3.3; sys_platform == 'win32'",
@@ -41,6 +49,9 @@ tui = [
     "darkdetect>=0.8",
     "pydantic>=2.7.4",
     "pyperclip>=1.9.0",
+    "markdown-it-py>=3.0.0",
+    "mdit-py-plugins>=0.4.0",
+    "pygments>=2.17.0",
 ]
 [project.urls]
 homepage = "https://github.com/i2y/castella"
@@ -64,6 +75,10 @@ dev = [
     "pymdown-extensions>=10.8.1",
     "pydantic>=2.7.4",
     "matplotlib>=3.9.0",
+    "markdown-it-py>=3.0.0",
+    "mdit-py-plugins>=0.4.0",
+    "pygments>=2.17.0",
+    "pillow>=10.0.0",
     "windows-curses>=2.3.3; sys_platform == 'win32'",
     "prompt-toolkit>=3.0.48",
     "pyperclip>=1.9.0",

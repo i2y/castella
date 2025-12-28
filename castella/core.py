@@ -35,8 +35,11 @@ from castella.models.style import (
     FillStyle,
     StrokeStyle,
     Style,
+    TextAlign,
 )
 from castella.models.events import (
+    KeyAction,
+    KeyCode,
     MouseEvent,
     WheelEvent,
     InputCharEvent,
@@ -53,7 +56,7 @@ from . import color
 
 
 class Painter(Protocol):
-    def clear_all(self) -> None: ...
+    def clear_all(self, color: Optional[str] = None) -> None: ...
 
     def fill_rect(self, rect: Rect) -> None: ...
 
@@ -283,6 +286,7 @@ class Widget(ABC):
         self._width_policy = width_policy
         self._height_policy = height_policy
         self._flex = 1
+        self._z_index: int = 1
         self._dirty = True
         self._enable_to_detach = True
         self._parent: Self | None = None
@@ -408,6 +412,16 @@ class Widget(ABC):
         if self._enable_to_detach:
             for o in self._observable:
                 o.detach(self)
+        # Clear any App-level references to this widget to prevent
+        # ghost redraws after the widget is removed from the tree
+        app = App.get()
+        if app is not None:
+            if app._mouse_overed is self:
+                app._mouse_overed = None
+            if app._focused is self:
+                app._focused = None
+            if app._downed is self:
+                app._downed = None
 
     def freeze(self) -> None:
         self._enable_to_detach = False
@@ -515,6 +529,7 @@ class Widget(ABC):
         parent = self._parent
         root = None
         while parent is not None:
+            # Any scrollable parent or Box with multiple children needs complete redraw
             if parent.is_scrollable() or isinstance(parent, StatefulComponent):
                 root = parent
             parent = parent._parent
@@ -531,6 +546,7 @@ class Widget(ABC):
                 or isinstance(self, StatefulComponent),
             )
         else:
+            # Force complete redraw for proper z-index handling
             App.get().post_update(root, True)
 
     def model(self, state: Observable) -> None:
@@ -561,6 +577,17 @@ class Widget(ABC):
 
     def flex(self, flex: int) -> Self:
         self._flex = flex
+        return self
+
+    def get_z_index(self) -> int:
+        """Get the z-index of this widget (default: 1)."""
+        return self._z_index
+
+    def z_index(self, z: int) -> Self:
+        """Set the z-index of this widget. Must be a positive integer."""
+        if z < 1:
+            raise ValueError("z_index must be a positive integer (>= 1)")
+        self._z_index = z
         return self
 
     def parent(self, parent: Self) -> None:
@@ -812,6 +839,8 @@ class Theme:
     simpletext: WidgetStyles
     multilinetext: WidgetStyles
     input: WidgetStyles
+    multilineinput: WidgetStyles
+    markdown: WidgetStyles
     button: WidgetStyles
     switch: WidgetStyles
     checkbox: WidgetStyles
@@ -955,6 +984,60 @@ def _get_theme() -> Theme:
                 text_color=color_schema["text-danger"],
             ),
         },
+        multilineinput={
+            "normal": WidgetStyle(
+                bg_color=color_schema["bg-secondary"],
+                border_color=color_schema["border-primary"],
+                text_color=color_schema["text-primary"],
+            ),
+            "info": WidgetStyle(
+                bg_color=color_schema["bg-info"],
+                border_color=color_schema["border-info"],
+                text_color=color_schema["text-info"],
+            ),
+            "success": WidgetStyle(
+                bg_color=color_schema["bg-success"],
+                border_color=color_schema["border-success"],
+                text_color=color_schema["text-success"],
+            ),
+            "warning": WidgetStyle(
+                bg_color=color_schema["bg-warning"],
+                border_color=color_schema["border-warning"],
+                text_color=color_schema["text-warning"],
+            ),
+            "danger": WidgetStyle(
+                bg_color=color_schema["bg-danger"],
+                border_color=color_schema["border-danger"],
+                text_color=color_schema["text-danger"],
+            ),
+        },
+        markdown={
+            "normal": WidgetStyle(
+                bg_color=color_schema["bg-primary"],
+                border_color=color_schema["border-primary"],
+                text_color=color_schema["text-primary"],
+            ),
+            "info": WidgetStyle(
+                bg_color=color_schema["bg-info"],
+                border_color=color_schema["border-info"],
+                text_color=color_schema["text-info"],
+            ),
+            "success": WidgetStyle(
+                bg_color=color_schema["bg-success"],
+                border_color=color_schema["border-success"],
+                text_color=color_schema["text-success"],
+            ),
+            "warning": WidgetStyle(
+                bg_color=color_schema["bg-warning"],
+                border_color=color_schema["border-warning"],
+                text_color=color_schema["text-warning"],
+            ),
+            "danger": WidgetStyle(
+                bg_color=color_schema["bg-danger"],
+                border_color=color_schema["border-danger"],
+                text_color=color_schema["text-danger"],
+            ),
+        },
         button={
             "normal": WidgetStyle(
                 bg_color=color_schema["bg-tertiary"],
@@ -1048,15 +1131,12 @@ class App:
         return cls._instance
 
     def __init__(self, frame: Frame, widget: Widget):
-        self._mouse_overed_layer = None
         self._frame = frame
+        self._root_widget = widget
         self._downed: Widget | None = None
         self._focused: Widget | None = None
         self._mouse_overed: Widget | None = None
-        self._layers: list[Widget] = []
-        self._layerPositions: list[PositionPolicy] = []
         self._style = Style(fill=FillStyle(color=get_theme().app.bg_color))
-        self.push_layer(widget, PositionPolicy.FIXED)
 
     @classmethod
     def get(cls) -> Self:
@@ -1071,25 +1151,8 @@ class App:
     def get_default_font_family(cls) -> str:
         return cls._default_font_family
 
-    def push_layer(self, layer: Widget, pos_policy: PositionPolicy) -> Self:
-        if len(self._layers) > 0:
-            self.cursor_pos(MouseEvent(Point(x=-1, y=-1)))
-        self._layers.append(layer)
-        self._layerPositions.append(pos_policy)
-        self._frame.post_update(UpdateEvent(target=self, completely=True))
-        return self
-
-    def pop_layer(self) -> Self:
-        self._layers.pop()
-        self._layerPositions.pop()
-        self._frame.post_update(UpdateEvent(target=self, completely=True))
-        return self
-
-    def peek_layer(self) -> tuple[Widget, PositionPolicy]:
-        return self._layers[-1], self._layerPositions[-1]
-
     def mouse_down(self, ev: MouseEvent) -> None:
-        target, p = self.peek_layer()[0].dispatch(ev.pos)
+        target, p = self._root_widget.dispatch(ev.pos)
         if target is not None and p is not None:
             ev.target = target
             self._prev_abs_pos = ev.pos
@@ -1097,40 +1160,39 @@ class App:
             self._prev_rel_pos = ev.pos
             target.mouse_down(ev)
             self._downed = target
-        else:
-            if len(self._layers) > 1:
-                self.pop_layer()
 
     def mouse_up(self, ev: MouseEvent) -> None:
         if self._downed is None:
             return
 
+        # Save reference before callbacks that may trigger view rebuild
+        # and clear _downed via widget.detach()
+        downed = self._downed
         try:
             if self._focused is not None:
                 self._focused.unfocused()
 
-            self._focused = self._downed
+            self._focused = downed
             self._focused.focused()
 
-            ev.target = self._downed
+            ev.target = downed
             diff = ev.pos - self._prev_abs_pos
             self._prev_abs_pos = ev.pos
             ev.pos = self._prev_rel_pos + diff
             self._prev_rel_pos = ev.pos
-            self._downed.mouse_up(ev)
+            downed.mouse_up(ev)
         finally:
             self._downed = None
 
     def mouse_wheel(self, ev: WheelEvent) -> None:
-        target, _ = self.peek_layer()[0].dispatch_to_scrollable(
+        target, _ = self._root_widget.dispatch_to_scrollable(
             ev.pos, abs(ev.x_offset) > abs(ev.y_offset)
         )
         if target is not None:
             target.mouse_wheel(ev)
 
     def cursor_pos(self, ev: MouseEvent) -> None:
-        layer = self.peek_layer()[0]
-        target, p = layer.dispatch(ev.pos)
+        target, p = self._root_widget.dispatch(ev.pos)
         if target is None:
             if self._mouse_overed is not None:
                 self._mouse_overed.mouse_out()
@@ -1138,13 +1200,10 @@ class App:
         elif self._downed is None:
             if self._mouse_overed is None:
                 self._mouse_overed = target
-                self._mouse_overed_layer = layer
                 target.mouse_over()
             elif self._mouse_overed is not target:
-                if self._mouse_overed_layer is layer:
-                    self._mouse_overed.mouse_out()
+                self._mouse_overed.mouse_out()
                 self._mouse_overed = target
-                self._mouse_overed_layer = layer
                 target.mouse_over()
         elif (
             target is self._downed or self._downed.dispatch(ev.pos)[0] is not None
@@ -1166,11 +1225,9 @@ class App:
         self._focused.input_key(ev)
 
     def redraw(self, p: Painter, completely: bool) -> None:
-        # self._downed = None
-        # self._focused = None
-        # self._mouse_overed = None
-        # self._mouse_overed_layer = None
-
+        # Clear entire canvas first to remove any remnants
+        bg_color = self._style.fill.color if self._style.fill else None
+        p.clear_all(bg_color)
         p.style(self._style)
         p.fill_rect(
             Rect(
@@ -1178,20 +1235,17 @@ class App:
                 size=self._frame.get_size() + Size(width=1, height=1),
             )
         )
-        for i in range(len(self._layers)):
-            layer = self._layers[i]
-            pos = self._layerPositions[i]
-            self._relocate_layout(layer, pos)
-            if completely or layer.is_dirty():
-                p.save()
-                p.translate(layer.get_pos())
-                p.clip(Rect(origin=Point(x=0, y=0), size=layer.get_size()))
-                layer.redraw(p, completely)
-                p.restore()
-                layer.dirty(False)
+        self._relocate_layout(self._root_widget)
+        if completely or self._root_widget.is_dirty():
+            p.save()
+            p.translate(self._root_widget.get_pos())
+            p.clip(Rect(origin=Point(x=0, y=0), size=self._root_widget.get_size()))
+            self._root_widget.redraw(p, completely)
+            p.restore()
+            self._root_widget.dirty(False)
         p.flush()
 
-    def _relocate_layout(self, w: Widget, p: PositionPolicy) -> None:
+    def _relocate_layout(self, w: Widget) -> None:
         if w is None:
             return
 
@@ -1210,15 +1264,6 @@ class App:
         else:
             width = latest_size.width
 
-        if p is PositionPolicy.FIXED:
-            pass
-        else:
-            w.move(
-                Point(
-                    int(self._frame.get_size().width / 2 - w.get_size().width / 2),
-                    int(self._frame.get_size().height / 2 - w.get_size().height / 2),
-                )
-            )
         w.resize(Size(width=width, height=height))
 
     def post_update(self, w: Widget, completely: bool = False) -> None:
@@ -1251,14 +1296,6 @@ class App:
         self, text: str, callback: Callable[[Future], None]
     ) -> None:
         return self._frame.async_set_clipboard_text(text, callback)
-
-
-def show_popup(p: Widget):
-    App.get().push_layer(p, PositionPolicy.CENTER)
-
-
-def hide_popup():
-    App.get().pop_layer()
 
 
 class Container(Protocol):
@@ -1308,7 +1345,11 @@ class Layout(Widget, ABC):
     def dispatch(self, p: Point) -> tuple[Widget | None, Point | None]:
         if self.contain_in_content_area(p):
             p = self._adjust_pos(p)
-            for c in self._children:
+            # Sort by z_index in reverse (higher z_index receives events first)
+            sorted_children = sorted(
+                self._children, key=lambda c: c.get_z_index(), reverse=True
+            )
+            for c in sorted_children:
                 target, adjusted_p = c.dispatch(p)
                 if target is not None:
                     return target, adjusted_p
@@ -1323,7 +1364,11 @@ class Layout(Widget, ABC):
     ) -> tuple[Widget | None, Point | None]:
         if self.contain_in_content_area(p):
             p = self._adjust_pos(p)
-            for c in self._children:
+            # Sort by z_index in reverse (higher z_index receives events first)
+            sorted_children = sorted(
+                self._children, key=lambda c: c.get_z_index(), reverse=True
+            )
+            for c in sorted_children:
                 target, adjusted_p = c.dispatch_to_scrollable(p, is_direction_x)
                 if target is not None:
                     return target, adjusted_p
@@ -1363,7 +1408,9 @@ class Layout(Widget, ABC):
     def _relocate_children(self, p: Painter) -> None: ...
 
     def _redraw_children(self, p: Painter, completely: bool) -> None:
-        for c in self._children:
+        # Sort children by z_index (lower first, higher on top)
+        sorted_children = sorted(self._children, key=lambda c: c.get_z_index())
+        for c in sorted_children:
             if completely or c.is_dirty():
                 p.save()
                 p.translate((c.get_pos() - self.get_pos()))
@@ -1443,12 +1490,20 @@ class Component(Layout, ABC):
             self.remove(self._child)
             self._child.detach()
             self._child = None
-        super().on_notify(event)
+        # Force complete redraw since the widget tree structure may have changed
+        self.dirty(True)
+        app = App.get()
+        if app is not None:
+            # Post update to App for full unclipped redraw
+            app._root_widget.dirty(True)
+            app._frame.post_update(UpdateEvent(target=app, completely=True))
 
     def redraw(self, p: Painter, completely: bool) -> None:
         if self._child is None:
             self._child = self.view()
             self.add(self._child)
+            # Force complete redraw when view changes
+            completely = True
         super().redraw(p, completely)
 
     def measure(self, p: Painter) -> Size:

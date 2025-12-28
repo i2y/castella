@@ -1,0 +1,94 @@
+"""Markdown Editor with Live Preview - combines MultilineInput and Markdown widgets."""
+
+from castella import (
+    App,
+    Box,
+    Button,
+    Column,
+    Component,
+    Markdown,
+    Row,
+    SizePolicy,
+    State,
+    Text,
+)
+from castella.frame import Frame
+from castella.multiline_input import MultilineInput, MultilineInputState
+
+
+INITIAL_MARKDOWN = """# Hello Markdown!
+
+This is a **live preview** editor.
+
+## Try editing:
+
+- Add some *italic* text
+- Create a list
+- Write some `code`
+
+```python
+print("Hello, Castella!")
+```
+
+> Type in the left panel to see changes here!
+"""
+
+
+class MarkdownEditor(Component):
+    """A split-view Markdown editor with live preview."""
+
+    def __init__(self):
+        super().__init__()
+        self._text_state = MultilineInputState(INITIAL_MARKDOWN.strip())
+        self._text_state.attach(self)
+
+    def view(self):
+        current_text = self._text_state.value()
+
+        return Row(
+            # Editor panel (left)
+            Column(
+                Text("Editor").height(30),
+                MultilineInput(
+                    self._text_state,
+                    font_size=13,
+                    padding=10,
+                    line_spacing=4,
+                    wrap=True,
+                )
+                .width_policy(SizePolicy.EXPANDING)
+                .height_policy(SizePolicy.EXPANDING),
+            )
+            .width_policy(SizePolicy.EXPANDING)
+            .height_policy(SizePolicy.EXPANDING),
+            # Preview panel (right)
+            Column(
+                Text("Preview").height(30),
+                Box(
+                    Markdown(
+                        current_text,
+                        base_font_size=13,
+                        padding=10,
+                        on_link_click=lambda url: print(f"Link: {url}"),
+                    )
+                    .width_policy(SizePolicy.EXPANDING)
+                    .height_policy(SizePolicy.CONTENT),
+                )
+                .width_policy(SizePolicy.EXPANDING)
+                .height_policy(SizePolicy.EXPANDING),
+            )
+            .width_policy(SizePolicy.EXPANDING)
+            .height_policy(SizePolicy.EXPANDING),
+        )
+
+
+def main():
+    app = App(
+        Frame("Markdown Editor", width=1000, height=700),
+        MarkdownEditor(),
+    )
+    app.run()
+
+
+if __name__ == "__main__":
+    main()
