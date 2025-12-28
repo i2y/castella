@@ -1,4 +1,6 @@
-from typing import Self
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Self
 
 from castella.core import (
     SCROLL_BAR_SIZE,
@@ -17,6 +19,9 @@ from castella.core import (
     get_theme,
 )
 
+if TYPE_CHECKING:
+    from castella.core import ScrollState
+
 
 class Box(Layout):
     """A container that stacks children on top of each other.
@@ -34,7 +39,9 @@ class Box(Layout):
     )
     _scrollbox_style = Style(fill=FillStyle(color=_scrollbox_widget_style.bg_color))
 
-    def __init__(self, *children: Widget):
+    def __init__(
+        self, *children: Widget, scroll_state: "ScrollState | None" = None
+    ):
         super().__init__(
             state=None,
             pos=Point(x=0, y=0),
@@ -48,10 +55,42 @@ class Box(Layout):
         self._under_dragging_x = False
         self._under_dragging_y = False
         self._last_drag_pos = None
-        self._scroll_x = 0
+        self._scroll_state = scroll_state
+        # Internal scroll values (used when no external state provided)
+        self.__scroll_x = scroll_state.x if scroll_state else 0
+        self.__scroll_y = scroll_state.y if scroll_state else 0
         self._scroll_box_x = None
-        self._scroll_y = 0
         self._scroll_box_y = None
+
+    @property
+    def _scroll_x(self) -> int:
+        """Get horizontal scroll position."""
+        if self._scroll_state is not None:
+            return self._scroll_state.x
+        return self.__scroll_x
+
+    @_scroll_x.setter
+    def _scroll_x(self, value: int) -> None:
+        """Set horizontal scroll position."""
+        if self._scroll_state is not None:
+            self._scroll_state.x = value
+        else:
+            self.__scroll_x = value
+
+    @property
+    def _scroll_y(self) -> int:
+        """Get vertical scroll position."""
+        if self._scroll_state is not None:
+            return self._scroll_state.y
+        return self.__scroll_y
+
+    @_scroll_y.setter
+    def _scroll_y(self, value: int) -> None:
+        """Set vertical scroll position."""
+        if self._scroll_state is not None:
+            self._scroll_state.y = value
+        else:
+            self.__scroll_y = value
 
     def add(self, w: Widget) -> None:
         super().add(w)

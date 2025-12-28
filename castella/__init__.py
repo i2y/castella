@@ -1,4 +1,5 @@
 from castella.core import *  # noqa: F403
+from castella.core import ScrollState as ScrollState
 
 from castella.async_net_image import AsyncNetImage as AsyncNetImage
 from castella.box import Box as Box

@@ -10,6 +10,7 @@ from castella import (
     ListState,
     Markdown,
     Row,
+    ScrollState,
     SizePolicy,
     State,
     Text,
@@ -52,6 +53,8 @@ class ChatApp(Component):
         self._messages = ListState(list(SAMPLE_MESSAGES))
         self._messages.attach(self)
         self._input_text = State("")
+        # ScrollState preserves scroll position across view rebuilds
+        self._scroll = ScrollState()
 
     def _send_message(self, _):
         text = self._input_text()
@@ -73,9 +76,10 @@ class ChatApp(Component):
         return Column(
             # Header
             Text("Markdown Chat").height(40),
-            # Messages area - use Box for scrollable area
+            # Messages area - use Box with scroll_state to preserve position
             Box(
                 Column(*message_widgets).height_policy(SizePolicy.CONTENT),
+                scroll_state=self._scroll,  # Preserves scroll position on re-render
             )
             .width_policy(SizePolicy.EXPANDING)
             .height_policy(SizePolicy.EXPANDING),

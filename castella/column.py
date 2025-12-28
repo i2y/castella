@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Generator, Self
+from typing import TYPE_CHECKING, Generator, Self
 
 from castella.core import (
     FillStyle,
@@ -20,6 +20,9 @@ from castella.layout.linear import Axis, LinearLayout, SCROLL_BAR_SIZE
 from castella.models.geometry import Point
 from castella.models.events import MouseEvent, WheelEvent
 from castella.spacer import Spacer
+
+if TYPE_CHECKING:
+    from castella.core import ScrollState
 
 
 class Column(LinearLayout, Layout):
@@ -39,7 +42,12 @@ class Column(LinearLayout, Layout):
     )
     _scrollbox_style = Style(fill=FillStyle(color=_scrollbox_widget_style.bg_color))
 
-    def __init__(self, *children: Widget, scrollable: bool = False):
+    def __init__(
+        self,
+        *children: Widget,
+        scrollable: bool = False,
+        scroll_state: "ScrollState | None" = None,
+    ):
         Layout.__init__(
             self,
             state=None,
@@ -49,7 +57,7 @@ class Column(LinearLayout, Layout):
             width_policy=SizePolicy.EXPANDING,
             height_policy=SizePolicy.EXPANDING,
         )
-        self._init_linear_layout(scrollable)
+        self._init_linear_layout(scrollable, scroll_state)
         for c in children:
             self.add(c)
 

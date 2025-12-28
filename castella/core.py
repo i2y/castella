@@ -761,6 +761,68 @@ class ListState(list, State[T]):
         self.notify()
 
 
+class ScrollState(ObservableBase):
+    """Observable scroll position state that persists across view rebuilds.
+
+    Use this to preserve scroll position when a Component re-renders.
+
+    Example:
+        class MyComponent(Component):
+            def __init__(self):
+                super().__init__()
+                self._items = ListState([...])
+                self._items.attach(self)
+                self._scroll = ScrollState()  # Survives re-renders
+
+            def view(self):
+                return Box(
+                    Column(*[Text(item) for item in self._items]),
+                    scroll_state=self._scroll,  # Pass to Box
+                )
+    """
+
+    def __init__(self, x: int = 0, y: int = 0):
+        super().__init__()
+        self._x = x
+        self._y = y
+
+    @property
+    def x(self) -> int:
+        """Get horizontal scroll position."""
+        return self._x
+
+    @x.setter
+    def x(self, value: int) -> None:
+        """Set horizontal scroll position."""
+        if self._x != value:
+            self._x = value
+            self.notify()
+
+    @property
+    def y(self) -> int:
+        """Get vertical scroll position."""
+        return self._y
+
+    @y.setter
+    def y(self, value: int) -> None:
+        """Set vertical scroll position."""
+        if self._y != value:
+            self._y = value
+            self.notify()
+
+    def set(self, x: int | None = None, y: int | None = None) -> None:
+        """Set scroll position (x and/or y)."""
+        changed = False
+        if x is not None and self._x != x:
+            self._x = x
+            changed = True
+        if y is not None and self._y != y:
+            self._y = y
+            changed = True
+        if changed:
+            self.notify()
+
+
 def _is_darkmode() -> bool:
     if os.getenv("CASTELLA_DARK_MODE") == "true":
         return True

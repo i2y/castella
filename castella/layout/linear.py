@@ -10,7 +10,7 @@ from castella.models.geometry import Point, Rect, Size
 from castella.models.style import SizePolicy
 
 if TYPE_CHECKING:
-    from castella.core import Layout, MouseEvent, Painter, WheelEvent, Widget
+    from castella.core import Layout, MouseEvent, Painter, ScrollState, WheelEvent, Widget
 
 
 class Axis(Enum):
@@ -38,15 +38,47 @@ class LinearLayout:
 
     _axis: Axis  # Must be set by subclass
 
-    def _init_linear_layout(self, scrollable: bool = False) -> None:
+    def _init_linear_layout(
+        self,
+        scrollable: bool = False,
+        scroll_state: "ScrollState | None" = None,
+    ) -> None:
         """Initialize linear layout state. Call from __init__."""
         self._spacer = None
         self._spacing = 0
-        self._scroll_offset = 0  # Unified: _scroll_x or _scroll_y
+        self._scroll_state = scroll_state
+        # Internal scroll offset (used when no external state provided)
+        # For LinearLayout, we use x for Row, y for Column
+        if scroll_state is not None:
+            self.__scroll_offset = (
+                scroll_state.x if self._is_horizontal else scroll_state.y
+            )
+        else:
+            self.__scroll_offset = 0
         self._scrollable = scrollable
         self._scroll_box: Rect | None = None
         self._under_dragging = False
         self._last_drag_pos: Point | None = None
+
+    @property
+    def _scroll_offset(self) -> int:
+        """Get scroll offset (x for Row, y for Column)."""
+        if self._scroll_state is not None:
+            return (
+                self._scroll_state.x if self._is_horizontal else self._scroll_state.y
+            )
+        return self.__scroll_offset
+
+    @_scroll_offset.setter
+    def _scroll_offset(self, value: int) -> None:
+        """Set scroll offset (x for Row, y for Column)."""
+        if self._scroll_state is not None:
+            if self._is_horizontal:
+                self._scroll_state.x = value
+            else:
+                self._scroll_state.y = value
+        else:
+            self.__scroll_offset = value
 
     # ========== Axis-Dependent Properties ==========
 
