@@ -195,8 +195,16 @@ class A2UIRenderer:
 
         This prepares for progressive rendering by storing the root ID
         and creating an empty pending component map.
+
+        If a surface with the same ID already exists, it is deleted first
+        to allow for a fresh render.
         """
         surface_id = msg.surface_id
+
+        # Clear existing surface if any (allows re-rendering)
+        if surface_id in self._surfaces:
+            del self._surfaces[surface_id]
+
         self._pending_roots[surface_id] = msg.root
         self._pending_components[surface_id] = {}
         return None  # Surface not yet created
