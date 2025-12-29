@@ -89,12 +89,12 @@ class ThemeManager:
     def _ensure_defaults(self) -> None:
         """Lazily initialize default themes."""
         if not self._initialized:
-            from .presets import DARK_THEME, LIGHT_THEME
+            from .presets import TOKYO_NIGHT_DARK_THEME, TOKYO_NIGHT_LIGHT_THEME
 
             if self._dark_theme is None:
-                self._dark_theme = DARK_THEME
+                self._dark_theme = TOKYO_NIGHT_DARK_THEME
             if self._light_theme is None:
-                self._light_theme = LIGHT_THEME
+                self._light_theme = TOKYO_NIGHT_LIGHT_THEME
             self._initialized = True
 
     @property
