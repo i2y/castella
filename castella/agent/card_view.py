@@ -40,7 +40,7 @@ class SkillBadge(Component):
             .height(28)
             .height_policy(SizePolicy.FIXED)
             .width(100)
-            .width_policy(SizePolicy.CONTENT)
+            .width_policy(SizePolicy.FIXED)
         )
 
 
@@ -94,7 +94,7 @@ class AgentCardView(Component):
             .height(24)
             .height_policy(SizePolicy.FIXED),
             Text(f"v{self._card.version}")
-            .text_color(theme.colors.text_secondary)
+            .text_color(theme.colors.text_info)
             .height(20)
             .height_policy(SizePolicy.FIXED),
         ).height(30).height_policy(SizePolicy.FIXED)
@@ -102,7 +102,7 @@ class AgentCardView(Component):
         # Description
         description = (
             Text(self._card.description or "No description")
-            .text_color(theme.colors.text_secondary)
+            .text_color(theme.colors.text_info)
             .height(20)
             .height_policy(SizePolicy.FIXED)
         )
@@ -140,7 +140,7 @@ class AgentCardView(Component):
             if len(self._card.skills) > 5:
                 more_text = (
                     Text(f"+{len(self._card.skills) - 5} more skills")
-                    .text_color(theme.colors.text_secondary)
+                    .text_color(theme.colors.text_info)
                     .height(16)
                     .height_policy(SizePolicy.FIXED)
                 )
@@ -197,7 +197,7 @@ class AgentListView(Component):
         if not self._cards:
             return (
                 Text("No agents found")
-                .text_color(theme.colors.text_secondary)
+                .text_color(theme.colors.text_info)
                 .height(40)
                 .height_policy(SizePolicy.FIXED)
             )
