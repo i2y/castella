@@ -867,12 +867,12 @@ SCROLL_BAR_SIZE = EM
 
 
 class App:
-    _instance: Self
+    _instance: Self | None = None
 
     _default_font_family = get_theme().app.text_font.family
 
     def __new__(cls, _frame: Frame, _widget: Widget):
-        if not hasattr(cls, "_instance"):
+        if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
@@ -885,7 +885,7 @@ class App:
         self._style = Style(fill=FillStyle(color=get_theme().app.bg_color))
 
     @classmethod
-    def get(cls) -> Self:
+    def get(cls) -> Self | None:
         return cls._instance
 
     @classmethod

@@ -76,14 +76,12 @@ class AgentHub(Component):
         self._width = width
         self._height = height
 
-        # List of agents (use regular list to avoid notify before App exists)
+        # List of agents
         self._agents: list["A2AClient"] = list(agents or [])
 
-        # Currently selected agent index (don't attach yet)
+        # Currently selected agent index
         self._selected_index = State(-1)
-
-        # Track if states are attached
-        self._states_attached = False
+        self._selected_index.attach(self)
 
         # URL input for adding agents
         self._url_input = State("")
@@ -106,14 +104,14 @@ class AgentHub(Component):
         }]
 
         messages = ListState(initial_messages)
-        # Don't attach here - will attach in view() when App exists
+        messages.attach(self)
         self._messages[index] = messages
 
         self._input_states[index] = MultilineInputState("")
         self._scroll_states[index] = ScrollState()
 
         loading = State(False)
-        # Don't attach here - will attach in view() when App exists
+        loading.attach(self)
         self._loading_states[index] = loading
 
     def add_agent(self, url_or_client: str | "A2AClient") -> "AgentHub":
@@ -397,15 +395,6 @@ class AgentHub(Component):
 
     def view(self):
         from castella.theme import ThemeManager
-
-        # Lazy attach states (avoid notify before App exists)
-        if not self._states_attached:
-            self._selected_index.attach(self)
-            for messages in self._messages.values():
-                messages.attach(self)
-            for loading in self._loading_states.values():
-                loading.attach(self)
-            self._states_attached = True
 
         theme = ThemeManager().current
 

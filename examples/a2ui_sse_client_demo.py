@@ -40,12 +40,13 @@ class A2UISSEClient(Component):
         self._base_url = base_url
         self._endpoint = initial_endpoint
 
-        # State - don't attach until view() is called (App may not exist yet)
+        # State - can now attach in __init__ (App.get() returns None safely)
         self._status = State("Connecting...")
         self._widget_content = State[any](None)
         self._error = State("")
-        self._states_attached = False
-        self._initial_fetch_done = False
+        self._status.attach(self)
+        self._widget_content.attach(self)
+        self._error.attach(self)
 
         # Renderer
         def on_action(action: UserAction):
@@ -56,6 +57,9 @@ class A2UISSEClient(Component):
                 print("Close requested")
 
         self._renderer = A2UIRenderer(on_action=on_action)
+
+        # Start initial fetch
+        self._fetch_ui(self._endpoint)
 
     def _fetch_ui(self, endpoint: str):
         """Fetch UI from the SSE endpoint in a background thread."""
@@ -122,18 +126,6 @@ class A2UISSEClient(Component):
 
     def view(self):
         from castella.theme import ThemeManager
-
-        # Lazy attach states (App exists now)
-        if not self._states_attached:
-            self._status.attach(self)
-            self._widget_content.attach(self)
-            self._error.attach(self)
-            self._states_attached = True
-
-        # Start initial fetch after App is ready
-        if not self._initial_fetch_done:
-            self._initial_fetch_done = True
-            self._fetch_ui(self._endpoint)
 
         theme = ThemeManager().current
 
