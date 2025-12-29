@@ -11,6 +11,7 @@ from castella import (
     MultilineText,
     NumpyImage,
     Row,
+    ScrollState,
     State,
     StatefulComponent,
     Switch,
@@ -40,10 +41,13 @@ class NumList(StatefulComponent):
     def __init__(self, n: State[int]):
         super().__init__(n)
         self.num = n
+        self._scroll = ScrollState()
 
     def view(self):
         return Column(
-            *(Text(i + 1).fixed_height(30) for i in range(self.num())), scrollable=True
+            *(Text(i + 1).fixed_height(30) for i in range(self.num())),
+            scrollable=True,
+            scroll_state=self._scroll,
         )
 
 
