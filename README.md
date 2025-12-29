@@ -21,6 +21,10 @@ The primary final goal of Castella is to provide features for Python programmers
 - ASCII charts for terminal environments (Bar, Pie, Line, Gauge).
 - Castella utilizes GPU via dependent libraries.
 - Z-index support enables layered UIs with modals, popups, and overlays.
+- **A2A Protocol support** - Connect to AI agents via Google's Agent-to-Agent protocol.
+- **A2UI Protocol support** - Render agent-generated UIs natively across all platforms.
+- **A2UI Streaming** - Progressive UI rendering with JSONL, SSE, and WebSocket support.
+- **AgentChat** - Build chat interfaces with AI agents in just 3 lines of code.
 
 ## Dependencies
 - For desktop platforms, Castella is standing on existing excellent python bindings for window management library (GLFW or SDL2) and 2D graphics library (Skia).
@@ -76,6 +80,25 @@ class Counter(Component):
 App(Frame("Counter", 800, 600), Counter()).run()
 ```
 [Watch a very short demo video](docs/videos/demo.mp4)
+
+## Agent Chat Example
+
+Build a chat UI for AI agents in just 3 lines:
+
+```python
+from castella.agent import AgentChat
+
+# Connect to an A2A-compatible agent
+chat = AgentChat.from_a2a("http://localhost:8080")
+chat.run()
+
+# Or use a custom handler
+chat = AgentChat(
+    handler=lambda msg: f"You said: {msg}",
+    title="My Bot",
+)
+chat.run()
+```
 
 You can see some other examples in [examples](examples) directory.
 

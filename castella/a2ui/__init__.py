@@ -27,6 +27,20 @@ Example:
     # Use in a Castella app
     run_app(widget)
 
+Streaming Example:
+    from castella.a2ui import A2UIRenderer
+
+    renderer = A2UIRenderer()
+
+    # From JSONL file
+    with open("ui.jsonl") as f:
+        surface = renderer.handle_stream(f)
+        widget = surface.root_widget
+
+    # From SSE endpoint (requires httpx)
+    from castella.a2ui.transports import sse_stream
+    surface = await renderer.handle_stream_async(await sse_stream(url))
+
 Reference:
     - A2UI Specification: https://a2ui.org/specification/v0.9-a2ui/
     - A2UI GitHub: https://github.com/google/A2UI
@@ -38,6 +52,12 @@ from castella.a2ui.catalog import (
     reset_default_catalog,
 )
 from castella.a2ui.renderer import A2UIRenderer, A2UISurface
+from castella.a2ui.stream import (
+    JSONLParser,
+    parse_async_stream,
+    parse_jsonl_string,
+    parse_sync_stream,
+)
 from castella.a2ui.types import (
     # Enums
     Alignment,
@@ -82,6 +102,7 @@ from castella.a2ui.types import (
     TextComponent,
     TextFieldComponent,
     # Messages
+    BeginRendering,
     ClientMessage,
     CreateSurface,
     DeleteSurface,
@@ -104,6 +125,11 @@ __all__ = [
     "ComponentCatalog",
     "get_default_catalog",
     "reset_default_catalog",
+    # Stream parsing
+    "JSONLParser",
+    "parse_async_stream",
+    "parse_jsonl_string",
+    "parse_sync_stream",
     # Enums
     "Alignment",
     "Distribution",
@@ -147,6 +173,7 @@ __all__ = [
     "TextComponent",
     "TextFieldComponent",
     # Messages
+    "BeginRendering",
     "ClientMessage",
     "CreateSurface",
     "DeleteSurface",

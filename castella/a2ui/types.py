@@ -361,8 +361,27 @@ class DeleteSurface(BaseModel):
     surface_id: str = Field(alias="surfaceId")
 
 
+class BeginRendering(BaseModel):
+    """Signal the start of progressive rendering.
+
+    Used in streaming scenarios to indicate that rendering is about to begin.
+    The root component ID specifies which component will be the root of the surface.
+    """
+
+    surface_id: str = Field(alias="surfaceId")
+    root: str  # Root component ID
+
+
 class ServerMessage(BaseModel):
-    """A message from server to client."""
+    """A message from server to client.
+
+    Supports the following message types:
+    - createSurface: Create a new UI surface with components
+    - updateComponents: Update existing components (for progressive rendering)
+    - updateDataModel: Update data model values
+    - deleteSurface: Delete a UI surface
+    - beginRendering: Signal the start of progressive rendering
+    """
 
     create_surface: CreateSurface | None = Field(default=None, alias="createSurface")
     update_components: UpdateComponents | None = Field(
@@ -372,6 +391,9 @@ class ServerMessage(BaseModel):
         default=None, alias="updateDataModel"
     )
     delete_surface: DeleteSurface | None = Field(default=None, alias="deleteSurface")
+    begin_rendering: BeginRendering | None = Field(
+        default=None, alias="beginRendering"
+    )
 
 
 # =============================================================================
