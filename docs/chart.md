@@ -411,3 +411,94 @@ class ChartDemo(Component):
 
 App(Frame("Chart Demo", 1000, 700), ChartDemo()).run()
 ```
+
+## ASCII Charts (Terminal)
+
+For terminal environments, Castella provides ASCII chart widgets that render using Unicode characters.
+
+### ASCIIBarChart
+
+```python
+from castella.chart import ASCIIBarChart, ASCIIBarData
+
+data = ASCIIBarData(
+    title="Quarterly Sales",
+    labels=["Q1", "Q2", "Q3", "Q4"],
+    values=[120, 180, 150, 200],
+)
+
+chart = ASCIIBarChart(data, width=30, show_values=True)
+```
+
+Output:
+```
+Quarterly Sales
+
+Q1 │██████████████████            │ 120.0
+Q2 │███████████████████████████   │ 180.0
+Q3 │██████████████████████▌       │ 150.0
+Q4 │██████████████████████████████│ 200.0
+```
+
+### ASCIIPieChart
+
+```python
+from castella.chart import ASCIIPieChart, ASCIIPieData
+
+data = ASCIIPieData(
+    title="Market Share",
+    labels=["Product A", "Product B", "Others"],
+    values=[50, 30, 20],
+)
+
+chart = ASCIIPieChart(data)
+```
+
+Output:
+```
+Market Share
+
+● Product A ██████████           50.0%
+○ Product B ██████               30.0%
+◐ Others    ████                 20.0%
+```
+
+### ASCIILineChart
+
+```python
+from castella.chart import ASCIILineChart
+
+chart = ASCIILineChart(
+    values=[10, 25, 15, 30, 20, 35],
+    width=40,
+    height=8,
+    title="Trend",
+)
+```
+
+### ASCIIGaugeChart
+
+```python
+from castella.chart import ASCIIGaugeChart
+
+chart = ASCIIGaugeChart(
+    value=67.5,
+    max_value=100,
+    width=25,
+    title="CPU Usage",
+)
+```
+
+Output:
+```
+CPU Usage
+[████████████████▊        ] 67.5/100
+```
+
+### Running in Terminal Mode
+
+To run your app in terminal mode:
+
+```bash
+CASTELLA_IS_TERMINAL_MODE=true uv run python your_app.py
+```
