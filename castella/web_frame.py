@@ -32,7 +32,7 @@ class Frame:
         self._add_mouse_down = lambda: document.body.addEventListener(
             "mousedown",
             create_proxy(
-                lambda ev: handler(core.MouseEvent(core.Point(x=ev.x, y=ev.y)))
+                lambda ev: handler(core.MouseEvent(pos=core.Point(x=ev.x, y=ev.y)))
             ),
         )
 
@@ -40,7 +40,7 @@ class Frame:
         self._add_mouse_up = lambda: document.body.addEventListener(
             "mouseup",
             create_proxy(
-                lambda ev: handler(core.MouseEvent(core.Point(x=ev.x, y=ev.y)))
+                lambda ev: handler(core.MouseEvent(pos=core.Point(x=ev.x, y=ev.y)))
             ),
         )
 
@@ -49,7 +49,7 @@ class Frame:
             "wheel",
             create_proxy(
                 lambda ev: handler(
-                    core.WheelEvent(core.Point(x=ev.x, y=ev.y), ev.deltaX, ev.deltaY)
+                    core.WheelEvent(pos=core.Point(x=ev.x, y=ev.y), x_offset=ev.deltaX, y_offset=ev.deltaY)
                 )
             ),
         )
@@ -58,14 +58,14 @@ class Frame:
         self._add_cursor_pos = lambda: document.body.addEventListener(
             "mousemove",
             create_proxy(
-                lambda ev: handler(core.MouseEvent(core.Point(x=ev.x, y=ev.y)))
+                lambda ev: handler(core.MouseEvent(pos=core.Point(x=ev.x, y=ev.y)))
             ),
         )
 
     def on_input_char(self, handler: Callable[[core.InputCharEvent], None]) -> None:
         self._add_input_char = lambda: document.body.addEventListener(
             "keypress",
-            create_proxy(lambda ev: handler(core.InputCharEvent(str(ev.key)))),
+            create_proxy(lambda ev: handler(core.InputCharEvent(char=str(ev.key)))),
         )
 
     def on_input_key(self, handler: Callable[[core.InputKeyEvent], None]) -> None:
@@ -74,7 +74,7 @@ class Frame:
             create_proxy(
                 lambda ev: handler(
                     core.InputKeyEvent(
-                        convert_to_key_code(ev.keyCode), 0, core.KeyAction.PRESS, 0
+                        key=convert_to_key_code(ev.keyCode), scancode=0, action=core.KeyAction.PRESS, mods=0
                     )
                 )
             ),
@@ -151,31 +151,6 @@ class Frame:
         document.body.appendChild(canvas)
         self._canvas = canvas
 
-        init_script = document.createElement("script")
-        init_script.innerHTML = """
-        const loadFont = fetch('https://storage.googleapis.com/skia-cdn/misc/Roboto-Regular.ttf')
-            .then((response) => response.arrayBuffer());
-
-        const ckLoaded = CanvasKitInit();
-        Promise.all([ckLoaded, loadFont]).then(([CanvasKit, robotoData]) => {
-            window.CK = CanvasKit;
-            window.fontMgr = CanvasKit.FontMgr.FromData([robotoData]);
-            window.typeface = CanvasKit.Typeface.MakeFreeTypeFaceFromData(robotoData)
-            let resize_event = new Event('resize');
-            window.dispatchEvent(resize_event);
-        });
-
-        window.addEventListener("resize", resize);
-        function resize() {
-            let canvas = document.getElementById("castella-app");
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-
-        window.addEventListener("load", resize);
-        """
-        document.body.appendChild(init_script)
-
         self._add_mouse_down()
         self._add_mouse_up()
         self._add_mouse_wheel()
@@ -183,6 +158,53 @@ class Frame:
         self._add_input_char()
         self._add_input_key()
         self._add_redraw()
+
+        # Check if CanvasKit is already initialized (from HTML)
+        if hasattr(window, "CK") and hasattr(window, "typeface"):
+            # Already initialized, trigger resize
+            self._trigger_resize()
+        else:
+            # Initialize CanvasKit
+            init_script = document.createElement("script")
+            init_script.innerHTML = """
+            const loadFont = fetch('Roboto-Regular.ttf')
+                .then((response) => response.arrayBuffer());
+
+            const ckLoaded = CanvasKitInit();
+            Promise.all([ckLoaded, loadFont]).then(([CanvasKit, robotoData]) => {
+                window.CK = CanvasKit;
+                window.fontMgr = CanvasKit.FontMgr.FromData([robotoData]);
+                window.typeface = CanvasKit.Typeface.MakeFreeTypeFaceFromData(robotoData);
+                let resize_event = new Event('resize');
+                window.dispatchEvent(resize_event);
+            });
+
+            window.addEventListener("resize", resize);
+            function resize() {
+                let canvas = document.getElementById("castella-app");
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+
+            window.addEventListener("load", resize);
+            """
+            document.body.appendChild(init_script)
+
+    def _trigger_resize(self) -> None:
+        from js import Event
+        resize_script = document.createElement("script")
+        resize_script.innerHTML = """
+        function resize() {
+            let canvas = document.getElementById("castella-app");
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener("resize", resize);
+        let resize_event = new Event('resize');
+        window.dispatchEvent(resize_event);
+        """
+        document.body.appendChild(resize_script)
 
     def get_clipboard_text(self) -> str:
         raise NotImplementedError("get_clipboard_text")

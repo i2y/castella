@@ -12,6 +12,7 @@ The primary final goal of Castella is to provide features for Python programmers
 - Castella provides hot-reloading or hot-restarting on development.
 - Dark mode is supported. If the runtime environment is in dark mode, Castella app's UI appearance will automatically be styled in dark mode.
 - Castella utilizes GPU via dependent libraries.
+- Z-index support enables layered UIs with modals, popups, and overlays.
 
 ## Dependencies
 - For desktop platforms, Castella is standing on existing excellent python bindings for window management library (GLFW or SDL2) and 2D graphics library (Skia).

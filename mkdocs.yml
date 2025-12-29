@@ -36,13 +36,20 @@ nav:
   - Getting started:
       - Installation: getting-started.md
       - Hello World: hello-world.md
+  - Core Concepts:
       - Layout: layout.md
+      - State Management: state.md
       - Custom Widgets: custom-widgets.md
+      - Styling: style.md
+  - Widgets:
       - Built-in Widgets: widgets.md
-      - Style: style.md
-      - Hot restarting: hot-restarting.md
-      - Hot reloading: hot-reloading.md
-  - Packaging: packaging.md
+      - Charts: chart.md
+  - Advanced:
+      - Z-Index and Layering: z-index.md
+      - Hot Restarting: hot-restarting.md
+      - Hot Reloading: hot-reloading.md
+  - Deployment:
+      - Packaging: packaging.md
   - License: license.md
 plugins:
   search:
@@ -77,5 +84,6 @@ extra:
       name: i2y on Twitter
     - icon: fontawesome/brands/github
       link: https://github.com/i2y/castella/
-  files:
-    - examples/*
+
+watch:
+  - docs/examples

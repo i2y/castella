@@ -141,9 +141,9 @@ class Canvas:
 def to_pt_rect(rect: Optional[Rect]) -> Optional[Rect]:
     if rect is not None:
         return Rect(
-            Point(ceil(rect.origin.x / FONT_SIZE), ceil(rect.origin.y / LINE_HEIGHT)),
-            Size(
-                ceil(rect.size.width / FONT_SIZE), ceil(rect.size.height / LINE_HEIGHT)
+            origin=Point(x=ceil(rect.origin.x / FONT_SIZE), y=ceil(rect.origin.y / LINE_HEIGHT)),
+            size=Size(
+                width=ceil(rect.size.width / FONT_SIZE), height=ceil(rect.size.height / LINE_HEIGHT)
             ),
         )
     else:
@@ -158,7 +158,7 @@ class PTPainter:
         self.clip_rect: Optional[Rect] = None
         self.state_stack: List[Dict] = []
 
-    def clear_all(self) -> None:
+    def clear_all(self, color: Optional[str] = None) -> None:
         size = self.canvas._width, self.canvas._height
         self.canvas = Canvas(*size)
 
@@ -172,7 +172,7 @@ class PTPainter:
         return FontMetrics(cap_height=LINE_HEIGHT)
 
     def fill_rect(self, rect: Rect) -> None:
-        rect = Rect(rect.origin + self.translation, rect.size)
+        rect = Rect(origin=rect.origin + self.translation, size=rect.size)
         x = div2(rect.origin.x, FONT_SIZE)
         y = ceil(rect.origin.y / LINE_HEIGHT)
         width = ceil(rect.size.width / FONT_SIZE)
@@ -181,7 +181,7 @@ class PTPainter:
         self.canvas.draw_rect(x, y, width, height, pt_style, to_pt_rect(self.clip_rect))
 
     def stroke_rect(self, rect: Rect) -> None:
-        rect = Rect(rect.origin + self.translation, rect.size)
+        rect = Rect(origin=rect.origin + self.translation, size=rect.size)
         x = ceil(rect.origin.x / FONT_SIZE)
         y = ceil(rect.origin.y / LINE_HEIGHT)
         width = ceil(rect.size.width / FONT_SIZE)
@@ -266,10 +266,10 @@ class PTPainter:
     def clip(self, rect: Optional[Rect]) -> None:
         if rect is not None:
             if self.clip_rect is None:
-                self.clip_rect = Rect(rect.origin + self.translation, rect.size)
+                self.clip_rect = Rect(origin=rect.origin + self.translation, size=rect.size)
             else:
                 self.clip_rect = self.clip_rect.intersect(
-                    Rect(rect.origin + self.translation, rect.size)
+                    Rect(origin=rect.origin + self.translation, size=rect.size)
                 )
 
     def translate(self, pos: Point) -> None:

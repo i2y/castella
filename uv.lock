@@ -36,21 +36,37 @@ wheels = [
 
 [[package]]
 name = "castella"
-version = "0.3.0"
+version = "0.3.4"
 source = { editable = "." }
 
 [package.optional-dependencies]
 glfw = [
     { name = "darkdetect" },
     { name = "glfw" },
+    { name = "markdown-it-py" },
+    { name = "matplotlib" },
+    { name = "mdit-py-plugins" },
     { name = "pydantic" },
+    { name = "pygments" },
     { name = "pyopengl" },
     { name = "skia-python" },
+]
+nc = [
+    { name = "darkdetect" },
+    { name = "markdown-it-py" },
+    { name = "mdit-py-plugins" },
+    { name = "pydantic" },
+    { name = "pygments" },
+    { name = "pyperclip" },
 ]
 sdl = [
     { name = "darkdetect" },
     { name = "glcontext" },
+    { name = "markdown-it-py" },
+    { name = "matplotlib" },
+    { name = "mdit-py-plugins" },
     { name = "pydantic" },
+    { name = "pygments" },
     { name = "pysdl2" },
     { name = "pysdl2-dll" },
     { name = "skia-python" },
@@ -58,8 +74,11 @@ sdl = [
 ]
 tui = [
     { name = "darkdetect" },
+    { name = "markdown-it-py" },
+    { name = "mdit-py-plugins" },
     { name = "prompt-toolkit" },
     { name = "pydantic" },
+    { name = "pygments" },
     { name = "pyperclip" },
     { name = "windows-curses", marker = "sys_platform == 'win32'" },
 ]
@@ -69,12 +88,16 @@ dev = [
     { name = "darkdetect" },
     { name = "glcontext" },
     { name = "glfw" },
+    { name = "markdown-it-py" },
     { name = "matplotlib" },
+    { name = "mdit-py-plugins" },
     { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "mkdocs-video" },
+    { name = "pillow" },
     { name = "prompt-toolkit" },
     { name = "pydantic" },
+    { name = "pygments" },
     { name = "pymdown-extensions" },
     { name = "pyopengl" },
     { name = "pyperclip" },
@@ -89,15 +112,32 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "darkdetect", marker = "extra == 'glfw'", specifier = ">=0.8" },
+    { name = "darkdetect", marker = "extra == 'nc'", specifier = ">=0.8" },
     { name = "darkdetect", marker = "extra == 'sdl'", specifier = ">=0.8" },
     { name = "darkdetect", marker = "extra == 'tui'", specifier = ">=0.8" },
     { name = "glcontext", marker = "extra == 'sdl'", specifier = ">=2.5.0" },
     { name = "glfw", marker = "extra == 'glfw'", specifier = ">=2.7.0" },
+    { name = "markdown-it-py", marker = "extra == 'glfw'", specifier = ">=3.0.0" },
+    { name = "markdown-it-py", marker = "extra == 'nc'", specifier = ">=3.0.0" },
+    { name = "markdown-it-py", marker = "extra == 'sdl'", specifier = ">=3.0.0" },
+    { name = "markdown-it-py", marker = "extra == 'tui'", specifier = ">=3.0.0" },
+    { name = "matplotlib", marker = "extra == 'glfw'", specifier = ">=3.9.0" },
+    { name = "matplotlib", marker = "extra == 'sdl'", specifier = ">=3.9.0" },
+    { name = "mdit-py-plugins", marker = "extra == 'glfw'", specifier = ">=0.4.0" },
+    { name = "mdit-py-plugins", marker = "extra == 'nc'", specifier = ">=0.4.0" },
+    { name = "mdit-py-plugins", marker = "extra == 'sdl'", specifier = ">=0.4.0" },
+    { name = "mdit-py-plugins", marker = "extra == 'tui'", specifier = ">=0.4.0" },
     { name = "prompt-toolkit", marker = "extra == 'tui'", specifier = ">=3.0.48" },
     { name = "pydantic", marker = "extra == 'glfw'", specifier = ">=2.7.4" },
+    { name = "pydantic", marker = "extra == 'nc'", specifier = ">=2.7.4" },
     { name = "pydantic", marker = "extra == 'sdl'", specifier = ">=2.7.4" },
     { name = "pydantic", marker = "extra == 'tui'", specifier = ">=2.7.4" },
+    { name = "pygments", marker = "extra == 'glfw'", specifier = ">=2.17.0" },
+    { name = "pygments", marker = "extra == 'nc'", specifier = ">=2.17.0" },
+    { name = "pygments", marker = "extra == 'sdl'", specifier = ">=2.17.0" },
+    { name = "pygments", marker = "extra == 'tui'", specifier = ">=2.17.0" },
     { name = "pyopengl", marker = "extra == 'glfw'", specifier = ">=3.1.7" },
+    { name = "pyperclip", marker = "extra == 'nc'", specifier = ">=1.9.0" },
     { name = "pyperclip", marker = "extra == 'tui'", specifier = ">=1.9.0" },
     { name = "pysdl2", marker = "extra == 'sdl'", specifier = ">=0.9.16" },
     { name = "pysdl2-dll", marker = "extra == 'sdl'", specifier = ">=2.30.2" },
@@ -106,19 +146,23 @@ requires-dist = [
     { name = "windows-curses", marker = "sys_platform == 'win32' and extra == 'tui'", specifier = ">=2.3.3" },
     { name = "zengl", marker = "extra == 'sdl'", specifier = ">=2.4.1" },
 ]
-provides-extras = ["glfw", "sdl", "tui"]
+provides-extras = ["glfw", "sdl", "tui", "nc"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "darkdetect", specifier = ">=0.8" },
     { name = "glcontext", specifier = ">=2.5.0" },
     { name = "glfw", specifier = ">=2.7.0" },
+    { name = "markdown-it-py", specifier = ">=3.0.0" },
     { name = "matplotlib", specifier = ">=3.9.0" },
+    { name = "mdit-py-plugins", specifier = ">=0.4.0" },
     { name = "mkdocs", specifier = ">=1.6.0" },
     { name = "mkdocs-material", specifier = ">=9.5.20" },
     { name = "mkdocs-video", specifier = ">=1.5.0" },
+    { name = "pillow", specifier = ">=10.0.0" },
     { name = "prompt-toolkit", specifier = ">=3.0.48" },
     { name = "pydantic", specifier = ">=2.7.4" },
+    { name = "pygments", specifier = ">=2.17.0" },
     { name = "pymdown-extensions", specifier = ">=10.8.1" },
     { name = "pyopengl", specifier = ">=3.1.7" },
     { name = "pyperclip", specifier = ">=1.9.0" },
@@ -665,6 +709,18 @@ wheels = [
 ]
 
 [[package]]
+name = "markdown-it-py"
+version = "4.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "mdurl" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5b/f5/4ec618ed16cc4f8fb3b701563655a69816155e79e24a17b651541804721d/markdown_it_py-4.0.0.tar.gz", hash = "sha256:cb0a2b4aa34f932c007117b194e945bd74e0ec24133ceb5bac59009cda1cb9f3", size = 73070, upload-time = "2025-08-11T12:57:52.854Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl", hash = "sha256:87327c59b172c5011896038353a81343b6754500a08cd7a4973bb48c6d578147", size = 87321, upload-time = "2025-08-11T12:57:51.923Z" },
+]
+
+[[package]]
 name = "markupsafe"
 version = "3.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -800,6 +856,27 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/04/30/3afaa31c757f34b7725ab9d2ba8b48b5e89c2019c003e7d0ead143aabc5a/matplotlib-3.10.8-pp311-pypy311_pp73-macosx_10_15_x86_64.whl", hash = "sha256:6da7c2ce169267d0d066adcf63758f0604aa6c3eebf67458930f9d9b79ad1db1", size = 8249198, upload-time = "2025-12-10T22:56:45.584Z" },
     { url = "https://files.pythonhosted.org/packages/48/2f/6334aec331f57485a642a7c8be03cb286f29111ae71c46c38b363230063c/matplotlib-3.10.8-pp311-pypy311_pp73-macosx_11_0_arm64.whl", hash = "sha256:9153c3292705be9f9c64498a8872118540c3f4123d1a1c840172edf262c8be4a", size = 8136817, upload-time = "2025-12-10T22:56:47.339Z" },
     { url = "https://files.pythonhosted.org/packages/73/e4/6d6f14b2a759c622f191b2d67e9075a3f56aaccb3be4bb9bb6890030d0a0/matplotlib-3.10.8-pp311-pypy311_pp73-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:1ae029229a57cd1e8fe542485f27e7ca7b23aa9e8944ddb4985d0bc444f1eca2", size = 8713867, upload-time = "2025-12-10T22:56:48.954Z" },
+]
+
+[[package]]
+name = "mdit-py-plugins"
+version = "0.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "markdown-it-py" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b2/fd/a756d36c0bfba5f6e39a1cdbdbfdd448dc02692467d83816dff4592a1ebc/mdit_py_plugins-0.5.0.tar.gz", hash = "sha256:f4918cb50119f50446560513a8e311d574ff6aaed72606ddae6d35716fe809c6", size = 44655, upload-time = "2025-08-11T07:25:49.083Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fb/86/dd6e5db36df29e76c7a7699123569a4a18c1623ce68d826ed96c62643cae/mdit_py_plugins-0.5.0-py3-none-any.whl", hash = "sha256:07a08422fc1936a5d26d146759e9155ea466e842f5ab2f7d2266dd084c8dab1f", size = 57205, upload-time = "2025-08-11T07:25:47.597Z" },
+]
+
+[[package]]
+name = "mdurl"
+version = "0.1.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d6/54/cfe61301667036ec958cb99bd3efefba235e65cdeb9c84d24a8293ba1d90/mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba", size = 8729, upload-time = "2022-08-14T12:40:10.846Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8", size = 9979, upload-time = "2022-08-14T12:40:09.779Z" },
 ]
 
 [[package]]
