@@ -15,11 +15,15 @@ from castella.core import (
     Widget,
     SizePolicy,
 )
-from castella.pt_painter import PTPainter
 
 
 # Unicode block characters for bar rendering (8 levels)
 BLOCKS = " ▏▎▍▌▋▊▉█"
+
+
+def _is_terminal_painter(p: Painter) -> bool:
+    """Check if painter is a terminal painter without importing PTPainter."""
+    return type(p).__name__ == "PTPainter"
 
 
 @dataclass
@@ -53,7 +57,6 @@ class ASCIIBarChart(Widget):
         width: int = 40,
         show_values: bool = True,
         bar_char: str = "█",
-        **kwargs,
     ):
         """Initialize ASCII bar chart.
 
@@ -63,7 +66,12 @@ class ASCIIBarChart(Widget):
             show_values: Whether to show values at end of bars.
             bar_char: Character to use for bars.
         """
-        super().__init__(**kwargs)
+        super().__init__(
+            state=None,
+            pos=Point(x=0, y=0),
+            pos_policy=None,
+            size=Size(width=0, height=0),
+        )
         self._data = data
         self._chart_width = width
         self._show_values = show_values
@@ -84,18 +92,17 @@ class ASCIIBarChart(Widget):
         return lines * 12  # Line height
 
     def redraw(self, p: Painter, completely: bool) -> None:
-        if not isinstance(p, PTPainter):
+        if not _is_terminal_painter(p):
             # For non-terminal, just draw a placeholder
             self._draw_placeholder(p)
             return
 
-        rect = self.layout_rect()
         lines = self._render_lines()
 
-        y = rect.origin.y
+        y = 0
         for line in lines:
             p.style(Style(fill=FillStyle(color="#ffffff")))
-            p.fill_text(line, Point(x=rect.origin.x, y=y), None)
+            p.fill_text(line, Point(x=0, y=y), None)
             y += 12  # Line height
 
     def _render_lines(self) -> list[str]:
@@ -142,13 +149,14 @@ class ASCIIBarChart(Widget):
 
     def _draw_placeholder(self, p: Painter) -> None:
         """Draw placeholder for non-terminal environments."""
-        rect = self.layout_rect()
+        size = self.get_size()
+        rect = Rect(origin=Point(x=0, y=0), size=size)
         p.style(Style(fill=FillStyle(color="#333333")))
         p.fill_rect(rect)
         p.style(Style(fill=FillStyle(color="#ffffff")))
         p.fill_text(
             f"[ASCII Bar Chart: {self._data.title}]",
-            Point(x=rect.origin.x + 10, y=rect.origin.y + 20),
+            Point(x=10, y=20),
             None,
         )
 
@@ -184,14 +192,18 @@ class ASCIIPieChart(Widget):
     def __init__(
         self,
         data: ASCIIPieData,
-        **kwargs,
     ):
         """Initialize ASCII pie chart.
 
         Args:
             data: Chart data.
         """
-        super().__init__(**kwargs)
+        super().__init__(
+            state=None,
+            pos=Point(x=0, y=0),
+            pos_policy=None,
+            size=Size(width=0, height=0),
+        )
         self._data = data
         self._width_policy = SizePolicy.EXPANDING
         self._height_policy = SizePolicy.CONTENT
@@ -207,17 +219,16 @@ class ASCIIPieChart(Widget):
         return lines * 12
 
     def redraw(self, p: Painter, completely: bool) -> None:
-        if not isinstance(p, PTPainter):
+        if not _is_terminal_painter(p):
             self._draw_placeholder(p)
             return
 
-        rect = self.layout_rect()
         lines = self._render_lines()
 
-        y = rect.origin.y
+        y = 0
         for line in lines:
             p.style(Style(fill=FillStyle(color="#ffffff")))
-            p.fill_text(line, Point(x=rect.origin.x, y=y), None)
+            p.fill_text(line, Point(x=0, y=y), None)
             y += 12
 
     def _render_lines(self) -> list[str]:
@@ -253,13 +264,14 @@ class ASCIIPieChart(Widget):
 
     def _draw_placeholder(self, p: Painter) -> None:
         """Draw placeholder for non-terminal environments."""
-        rect = self.layout_rect()
+        size = self.get_size()
+        rect = Rect(origin=Point(x=0, y=0), size=size)
         p.style(Style(fill=FillStyle(color="#333333")))
         p.fill_rect(rect)
         p.style(Style(fill=FillStyle(color="#ffffff")))
         p.fill_text(
             f"[ASCII Pie Chart: {self._data.title}]",
-            Point(x=rect.origin.x + 10, y=rect.origin.y + 20),
+            Point(x=10, y=20),
             None,
         )
 
@@ -289,7 +301,6 @@ class ASCIILineChart(Widget):
         width: int = 60,
         height: int = 10,
         title: str = "",
-        **kwargs,
     ):
         """Initialize ASCII line chart.
 
@@ -299,7 +310,12 @@ class ASCIILineChart(Widget):
             height: Height in characters.
             title: Chart title.
         """
-        super().__init__(**kwargs)
+        super().__init__(
+            state=None,
+            pos=Point(x=0, y=0),
+            pos_policy=None,
+            size=Size(width=0, height=0),
+        )
         self._values = list(values)
         self._chart_width = width
         self._chart_height = height
@@ -317,17 +333,16 @@ class ASCIILineChart(Widget):
         return lines * 12
 
     def redraw(self, p: Painter, completely: bool) -> None:
-        if not isinstance(p, PTPainter):
+        if not _is_terminal_painter(p):
             self._draw_placeholder(p)
             return
 
-        rect = self.layout_rect()
         lines = self._render_lines()
 
-        y = rect.origin.y
+        y = 0
         for line in lines:
             p.style(Style(fill=FillStyle(color="#ffffff")))
-            p.fill_text(line, Point(x=rect.origin.x, y=y), None)
+            p.fill_text(line, Point(x=0, y=y), None)
             y += 12
 
     def _render_lines(self) -> list[str]:
@@ -390,13 +405,14 @@ class ASCIILineChart(Widget):
 
     def _draw_placeholder(self, p: Painter) -> None:
         """Draw placeholder for non-terminal environments."""
-        rect = self.layout_rect()
+        size = self.get_size()
+        rect = Rect(origin=Point(x=0, y=0), size=size)
         p.style(Style(fill=FillStyle(color="#333333")))
         p.fill_rect(rect)
         p.style(Style(fill=FillStyle(color="#ffffff")))
         p.fill_text(
             f"[ASCII Line Chart: {self._title}]",
-            Point(x=rect.origin.x + 10, y=rect.origin.y + 20),
+            Point(x=10, y=20),
             None,
         )
 
@@ -417,7 +433,6 @@ class ASCIIGaugeChart(Widget):
         min_value: float = 0,
         width: int = 30,
         title: str = "",
-        **kwargs,
     ):
         """Initialize ASCII gauge chart.
 
@@ -428,7 +443,12 @@ class ASCIIGaugeChart(Widget):
             width: Width in characters.
             title: Chart title.
         """
-        super().__init__(**kwargs)
+        super().__init__(
+            state=None,
+            pos=Point(x=0, y=0),
+            pos_policy=None,
+            size=Size(width=0, height=0),
+        )
         self._value = value
         self._max_value = max_value
         self._min_value = min_value
@@ -444,17 +464,16 @@ class ASCIIGaugeChart(Widget):
         return 3 * 12  # Title + gauge + value
 
     def redraw(self, p: Painter, completely: bool) -> None:
-        if not isinstance(p, PTPainter):
+        if not _is_terminal_painter(p):
             self._draw_placeholder(p)
             return
 
-        rect = self.layout_rect()
         lines = self._render_lines()
 
-        y = rect.origin.y
+        y = 0
         for line in lines:
             p.style(Style(fill=FillStyle(color="#ffffff")))
-            p.fill_text(line, Point(x=rect.origin.x, y=y), None)
+            p.fill_text(line, Point(x=0, y=y), None)
             y += 12
 
     def _render_lines(self) -> list[str]:
@@ -486,12 +505,13 @@ class ASCIIGaugeChart(Widget):
 
     def _draw_placeholder(self, p: Painter) -> None:
         """Draw placeholder for non-terminal environments."""
-        rect = self.layout_rect()
+        size = self.get_size()
+        rect = Rect(origin=Point(x=0, y=0), size=size)
         p.style(Style(fill=FillStyle(color="#333333")))
         p.fill_rect(rect)
         p.style(Style(fill=FillStyle(color="#ffffff")))
         p.fill_text(
             f"[ASCII Gauge: {self._title} = {self._value}]",
-            Point(x=rect.origin.x + 10, y=rect.origin.y + 20),
+            Point(x=10, y=20),
             None,
         )
