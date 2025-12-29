@@ -94,7 +94,9 @@ class LinearScale:
         start = math.ceil(self.domain_min / step) * step
         ticks: list[float] = []
         current = start
-        while current <= self.domain_max + step * 0.001:  # Small epsilon for float comparison
+        while (
+            current <= self.domain_max + step * 0.001
+        ):  # Small epsilon for float comparison
             ticks.append(round(current, 10))  # Round to avoid float precision issues
             current += step
 

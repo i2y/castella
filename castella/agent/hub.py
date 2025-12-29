@@ -14,7 +14,7 @@ Example:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Self
+from typing import TYPE_CHECKING
 
 from castella import App, Box, Column, Row, ScrollState, Text
 from castella.button import Button
@@ -98,10 +98,12 @@ class AgentHub(Component):
 
     def _init_agent_chat_state(self, index: int, client: "A2AClient") -> None:
         """Initialize chat state for an agent."""
-        initial_messages = [{
-            "role": "system",
-            "content": f"Connected to **{client.name}**. {client.description}",
-        }]
+        initial_messages = [
+            {
+                "role": "system",
+                "content": f"Connected to **{client.name}**. {client.description}",
+            }
+        ]
 
         messages = ListState(initial_messages)
         messages.attach(self)
@@ -178,7 +180,7 @@ class AgentHub(Component):
         try:
             self.add_agent(url)
             self._url_input.set("")
-        except Exception as e:
+        except Exception:
             # Could show error message in UI
             pass
 
@@ -207,10 +209,12 @@ class AgentHub(Component):
             return
 
         # Add user message
-        messages.append({
-            "role": "user",
-            "content": text,
-        })
+        messages.append(
+            {
+                "role": "user",
+                "content": text,
+            }
+        )
 
         # Clear input
         input_state.set("")
@@ -225,17 +229,21 @@ class AgentHub(Component):
             if scroll_state:
                 scroll_state.y = 999999
 
-            messages.append({
-                "role": "assistant",
-                "content": response,
-            })
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": response,
+                }
+            )
         except Exception as e:
             if scroll_state:
                 scroll_state.y = 999999
-            messages.append({
-                "role": "system",
-                "content": f"Error: {e}",
-            })
+            messages.append(
+                {
+                    "role": "system",
+                    "content": f"Error: {e}",
+                }
+            )
         finally:
             loading.set(False)
 
@@ -280,24 +288,30 @@ class AgentHub(Component):
         items.append(Spacer())
 
         # Add agent section
-        add_section = Column(
-            Text("Add Agent")
-            .text_color(theme.colors.text_info)
-            .height(24)
-            .height_policy(SizePolicy.FIXED),
-            Row(
-                Input(self._url_input())
-                .on_change(lambda t: self._url_input.set(t))
-                .height(32)
+        add_section = (
+            Column(
+                Text("Add Agent")
+                .text_color(theme.colors.text_info)
+                .height(24)
                 .height_policy(SizePolicy.FIXED),
-                Button("Add")
-                .on_click(self._add_agent_from_input)
-                .width(60)
-                .width_policy(SizePolicy.FIXED)
-                .height(32)
+                Row(
+                    Input(self._url_input())
+                    .on_change(lambda t: self._url_input.set(t))
+                    .height(32)
+                    .height_policy(SizePolicy.FIXED),
+                    Button("Add")
+                    .on_click(self._add_agent_from_input)
+                    .width(60)
+                    .width_policy(SizePolicy.FIXED)
+                    .height(32)
+                    .height_policy(SizePolicy.FIXED),
+                )
+                .height(40)
                 .height_policy(SizePolicy.FIXED),
-            ).height(40).height_policy(SizePolicy.FIXED),
-        ).height(80).height_policy(SizePolicy.FIXED)
+            )
+            .height(80)
+            .height_policy(SizePolicy.FIXED)
+        )
         items.append(add_section)
 
         return (
@@ -311,8 +325,9 @@ class AgentHub(Component):
         """Build chat view for the selected agent."""
         if index < 0 or index >= len(self._agents):
             return Column(
-                Text("Select an agent to start chatting")
-                .text_color(theme.colors.text_info)
+                Text("Select an agent to start chatting").text_color(
+                    theme.colors.text_info
+                )
             ).bg_color(theme.colors.bg_primary)
 
         client = self._agents[index]
@@ -342,32 +357,40 @@ class AgentHub(Component):
 
             content_widget = Markdown(content, base_font_size=14)
 
-            msg_box = Box(
-                Column(
-                    Text(role_label)
-                    .text_color(role_color)
-                    .height(20)
-                    .height_policy(SizePolicy.FIXED),
-                    content_widget,
-                ).height_policy(SizePolicy.CONTENT)
-            ).bg_color(bg_color).height_policy(SizePolicy.CONTENT)
+            msg_box = (
+                Box(
+                    Column(
+                        Text(role_label)
+                        .text_color(role_color)
+                        .height(20)
+                        .height_policy(SizePolicy.FIXED),
+                        content_widget,
+                    ).height_policy(SizePolicy.CONTENT)
+                )
+                .bg_color(bg_color)
+                .height_policy(SizePolicy.CONTENT)
+            )
 
             msg_widgets.append(msg_box)
 
         # Loading indicator
         if loading():
-            loading_box = Box(
-                Column(
-                    Text(client.name)
-                    .text_color(theme.colors.text_info)
-                    .height(20)
-                    .height_policy(SizePolicy.FIXED),
-                    Text("Thinking...")
-                    .text_color(theme.colors.text_info)
-                    .height(24)
-                    .height_policy(SizePolicy.FIXED),
-                ).height_policy(SizePolicy.CONTENT)
-            ).bg_color(theme.colors.bg_secondary).height_policy(SizePolicy.CONTENT)
+            loading_box = (
+                Box(
+                    Column(
+                        Text(client.name)
+                        .text_color(theme.colors.text_info)
+                        .height(20)
+                        .height_policy(SizePolicy.FIXED),
+                        Text("Thinking...")
+                        .text_color(theme.colors.text_info)
+                        .height(24)
+                        .height_policy(SizePolicy.FIXED),
+                    ).height_policy(SizePolicy.CONTENT)
+                )
+                .bg_color(theme.colors.bg_secondary)
+                .height_policy(SizePolicy.CONTENT)
+            )
             msg_widgets.append(loading_box)
 
         # Message area
@@ -379,17 +402,21 @@ class AgentHub(Component):
 
         # Input area
         send_label = "..." if loading() else "Send"
-        input_area = Row(
-            MultilineInput(input_state, font_size=14)
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
-            Button(send_label)
-            .on_click(lambda _: self._send_message(index))
-            .width(80)
-            .width_policy(SizePolicy.FIXED)
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
-        ).height(56).height_policy(SizePolicy.FIXED)
+        input_area = (
+            Row(
+                MultilineInput(input_state, font_size=14)
+                .height(40)
+                .height_policy(SizePolicy.FIXED),
+                Button(send_label)
+                .on_click(lambda _: self._send_message(index))
+                .width(80)
+                .width_policy(SizePolicy.FIXED)
+                .height(40)
+                .height_policy(SizePolicy.FIXED),
+            )
+            .height(56)
+            .height_policy(SizePolicy.FIXED)
+        )
 
         return Column(messages_area, input_area)
 

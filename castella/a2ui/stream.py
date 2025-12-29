@@ -111,7 +111,9 @@ def parse_sync_stream(stream: Iterator[str]) -> Iterator[ServerMessage]:
         yield final
 
 
-async def parse_async_stream(stream: AsyncIterator[str]) -> AsyncIterator[ServerMessage]:
+async def parse_async_stream(
+    stream: AsyncIterator[str],
+) -> AsyncIterator[ServerMessage]:
     """Parse an asynchronous stream of JSONL data.
 
     Args:

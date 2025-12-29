@@ -15,10 +15,10 @@ from castella.core import (
 )
 from castella.models.font import Font
 
-from castella.chart.base import BaseChart, ChartLayout, ChartMargins
+from castella.chart.base import BaseChart, ChartLayout
 from castella.chart.hit_testing import HitTestable, RectElement
 from castella.chart.scales import LinearScale, BandScale
-from castella.chart.models import CategoricalChartData, CategoricalSeries, SeriesStyle
+from castella.chart.models import CategoricalChartData
 
 
 class BarChart(BaseChart):
@@ -119,7 +119,9 @@ class BarChart(BaseChart):
         cat_scale = BandScale(
             categories=categories,
             range_min=plot.x if not self._horizontal else plot.y,
-            range_max=(plot.x + plot.width) if not self._horizontal else (plot.y + plot.height),
+            range_max=(plot.x + plot.width)
+            if not self._horizontal
+            else (plot.y + plot.height),
             padding_inner=self._bar_gap,
             padding_outer=self._bar_gap / 2,
         )
@@ -193,7 +195,9 @@ class BarChart(BaseChart):
                 continue
 
             series_idx = element.series_index
-            series = state.series[series_idx] if series_idx < len(state.series) else None
+            series = (
+                state.series[series_idx] if series_idx < len(state.series) else None
+            )
             color = series.style.color if series else self.get_series_color(series_idx)
 
             # Highlight on hover
@@ -257,7 +261,9 @@ class BarChart(BaseChart):
         cat_scale = BandScale(
             categories=categories,
             range_min=plot.x if not self._horizontal else plot.y,
-            range_max=(plot.x + plot.width) if not self._horizontal else (plot.y + plot.height),
+            range_max=(plot.x + plot.width)
+            if not self._horizontal
+            else (plot.y + plot.height),
             padding_inner=self._bar_gap,
             padding_outer=self._bar_gap / 2,
         )
@@ -349,7 +355,6 @@ class BarChart(BaseChart):
 
         for i, series in enumerate(state.series):
             color = series.style.color
-            opacity = 1.0 if state.is_series_visible(i) else 0.3
 
             # Color box
             p.style(Style(fill=FillStyle(color=color)))
@@ -361,9 +366,15 @@ class BarChart(BaseChart):
             )
 
             # Series name
-            text_color = self._theme.text_color if state.is_series_visible(i) else self._theme.text_secondary
+            text_color = (
+                self._theme.text_color
+                if state.is_series_visible(i)
+                else self._theme.text_secondary
+            )
             p.style(Style(fill=FillStyle(color=text_color), font=Font(size=11)))
-            p.fill_text(series.name, Point(x=x + box_size + 6, y=y + box_size - 2), None)
+            p.fill_text(
+                series.name, Point(x=x + box_size + 6, y=y + box_size - 2), None
+            )
 
             x += spacing
 

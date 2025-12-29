@@ -11,12 +11,11 @@ from castella.core import (
     Rect,
     Style,
     FillStyle,
-    StrokeStyle,
     Circle,
 )
 from castella.models.font import Font
 
-from castella.chart.base import BaseChart, ChartLayout, ChartMargins
+from castella.chart.base import BaseChart, ChartLayout
 from castella.chart.hit_testing import HitTestable, CircleElement
 from castella.chart.scales import LinearScale
 from castella.chart.models import NumericChartData, NumericSeries
@@ -271,7 +270,6 @@ class AreaChart(BaseChart):
                 prev_points = stacked_points.get(series_idx - 1, [])
                 if data_idx < len(prev_points):
                     base_screen_y = prev_points[data_idx][1]
-                    value_height = y_scale(0) - y_scale(point.y)
                     screen_y = base_screen_y - (y_scale(0) - y_scale(point.y))
                 else:
                     screen_y = y_scale(point.y)
@@ -332,11 +330,15 @@ class AreaChart(BaseChart):
         for i in range(len(points) - 1):
             top_left = points[i]
             top_right = points[i + 1]
-            bottom_left = baseline_points[i] if i < len(baseline_points) else Point(
-                x=top_left.x, y=baseline_y
+            bottom_left = (
+                baseline_points[i]
+                if i < len(baseline_points)
+                else Point(x=top_left.x, y=baseline_y)
             )
-            bottom_right = baseline_points[i + 1] if i + 1 < len(baseline_points) else Point(
-                x=top_right.x, y=baseline_y
+            bottom_right = (
+                baseline_points[i + 1]
+                if i + 1 < len(baseline_points)
+                else Point(x=top_right.x, y=baseline_y)
             )
 
             # Draw vertical strips to fill the area
@@ -385,7 +387,9 @@ class AreaChart(BaseChart):
                 t = j / steps
                 x = start.x + t * dx
                 y = start.y + t * dy
-                p.fill_circle(Circle(center=Point(x=x, y=y), radius=self._line_width / 2))
+                p.fill_circle(
+                    Circle(center=Point(x=x, y=y), radius=self._line_width / 2)
+                )
 
     def _apply_opacity(self, hex_color: str, opacity: float) -> str:
         """Apply opacity to a color by lightening toward background."""
@@ -524,7 +528,9 @@ class AreaChart(BaseChart):
                 else self._theme.text_secondary
             )
             p.style(Style(fill=FillStyle(color=text_color), font=Font(size=11)))
-            p.fill_text(series.name, Point(x=x + box_size + 6, y=y + box_size - 2), None)
+            p.fill_text(
+                series.name, Point(x=x + box_size + 6, y=y + box_size - 2), None
+            )
 
             x += spacing
 

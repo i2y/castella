@@ -102,10 +102,12 @@ class MultiAgentChat(Component):
     def _init_agent_state(self, agent_id: str, client: "A2AClient") -> None:
         """Initialize state for a new agent."""
         # Initial welcome message
-        initial_messages = [{
-            "role": "system",
-            "content": f"Connected to **{client.name}**. {client.description}",
-        }]
+        initial_messages = [
+            {
+                "role": "system",
+                "content": f"Connected to **{client.name}**. {client.description}",
+            }
+        ]
 
         messages = ListState(initial_messages)
         messages.attach(self)
@@ -153,10 +155,12 @@ class MultiAgentChat(Component):
             return
 
         # Add user message
-        messages.append({
-            "role": "user",
-            "content": text,
-        })
+        messages.append(
+            {
+                "role": "user",
+                "content": text,
+            }
+        )
 
         # Clear input
         input_state.set("")
@@ -172,17 +176,21 @@ class MultiAgentChat(Component):
             if scroll_state:
                 scroll_state.y = 999999
 
-            messages.append({
-                "role": "assistant",
-                "content": response,
-            })
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": response,
+                }
+            )
         except Exception as e:
             if scroll_state:
                 scroll_state.y = 999999
-            messages.append({
-                "role": "system",
-                "content": f"Error: {e}",
-            })
+            messages.append(
+                {
+                    "role": "system",
+                    "content": f"Error: {e}",
+                }
+            )
         finally:
             loading.set(False)
 
@@ -215,15 +223,19 @@ class MultiAgentChat(Component):
 
             content_widget = Markdown(content, base_font_size=14)
 
-            msg_box = Box(
-                Column(
-                    Text(role_label)
-                    .text_color(role_color)
-                    .height(20)
-                    .height_policy(SizePolicy.FIXED),
-                    content_widget,
-                ).height_policy(SizePolicy.CONTENT)
-            ).bg_color(bg_color).height_policy(SizePolicy.CONTENT)
+            msg_box = (
+                Box(
+                    Column(
+                        Text(role_label)
+                        .text_color(role_color)
+                        .height(20)
+                        .height_policy(SizePolicy.FIXED),
+                        content_widget,
+                    ).height_policy(SizePolicy.CONTENT)
+                )
+                .bg_color(bg_color)
+                .height_policy(SizePolicy.CONTENT)
+            )
 
             msg_widgets.append(msg_box)
 
@@ -231,18 +243,22 @@ class MultiAgentChat(Component):
         if loading():
             agent_name = self._agents.get(agent_id)
             agent_name = agent_name.name if agent_name else "Agent"
-            loading_box = Box(
-                Column(
-                    Text(agent_name)
-                    .text_color(theme.colors.text_info)
-                    .height(20)
-                    .height_policy(SizePolicy.FIXED),
-                    Text("Thinking...")
-                    .text_color(theme.colors.text_info)
-                    .height(24)
-                    .height_policy(SizePolicy.FIXED),
-                ).height_policy(SizePolicy.CONTENT)
-            ).bg_color(theme.colors.bg_secondary).height_policy(SizePolicy.CONTENT)
+            loading_box = (
+                Box(
+                    Column(
+                        Text(agent_name)
+                        .text_color(theme.colors.text_info)
+                        .height(20)
+                        .height_policy(SizePolicy.FIXED),
+                        Text("Thinking...")
+                        .text_color(theme.colors.text_info)
+                        .height(24)
+                        .height_policy(SizePolicy.FIXED),
+                    ).height_policy(SizePolicy.CONTENT)
+                )
+                .bg_color(theme.colors.bg_secondary)
+                .height_policy(SizePolicy.CONTENT)
+            )
             msg_widgets.append(loading_box)
 
         # Message area
@@ -254,17 +270,21 @@ class MultiAgentChat(Component):
 
         # Input area
         send_label = "..." if loading() else "Send"
-        input_area = Row(
-            MultilineInput(input_state, font_size=14)
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
-            Button(send_label)
-            .on_click(lambda _: self._send_message(agent_id))
-            .width(80)
-            .width_policy(SizePolicy.FIXED)
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
-        ).height(56).height_policy(SizePolicy.FIXED)
+        input_area = (
+            Row(
+                MultilineInput(input_state, font_size=14)
+                .height(40)
+                .height_policy(SizePolicy.FIXED),
+                Button(send_label)
+                .on_click(lambda _: self._send_message(agent_id))
+                .width(80)
+                .width_policy(SizePolicy.FIXED)
+                .height(40)
+                .height_policy(SizePolicy.FIXED),
+            )
+            .height(56)
+            .height_policy(SizePolicy.FIXED)
+        )
 
         return Column(messages_area, input_area)
 
@@ -275,19 +295,20 @@ class MultiAgentChat(Component):
 
         if not self._agents:
             return Column(
-                Text("No agents configured")
-                .text_color(theme.colors.text_info)
+                Text("No agents configured").text_color(theme.colors.text_info)
             ).bg_color(theme.colors.bg_primary)
 
         # Build tabs for each agent
         tab_items = []
         for agent_id, client in self._agents.items():
             chat_view = self._build_chat_view(agent_id, theme)
-            tab_items.append(TabItem(
-                id=agent_id,
-                label=client.name,
-                content=chat_view,
-            ))
+            tab_items.append(
+                TabItem(
+                    id=agent_id,
+                    label=client.name,
+                    content=chat_view,
+                )
+            )
 
         tabs_state = TabsState(tab_items, self._current_agent())
         tabs = Tabs(tabs_state).on_change(lambda id: self._current_agent.set(id))

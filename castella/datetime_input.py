@@ -277,9 +277,7 @@ class DateTimeInput(StatefulComponent):
 
         main_row = (
             Row(
-                Text(display_text)
-                .text_color(theme.colors.text_primary)
-                .erase_border(),
+                Text(display_text).text_color(theme.colors.text_primary).erase_border(),
                 Button("...")
                 .on_click(lambda _: self._toggle_picker())
                 .fixed_size(40, 32),
@@ -338,49 +336,57 @@ class DateTimeInput(StatefulComponent):
 
         if self._dt_state.enable_date:
             # Date picker: Year / Month / Day
-            date_row = Row(
-                Column(
-                    Text("Year").height(20).height_policy(SizePolicy.FIXED),
-                    Input(self._temp_year)
-                    .on_change(lambda v: setattr(self, "_temp_year", v))
-                    .height(32)
-                    .height_policy(SizePolicy.FIXED),
-                ),
-                Column(
-                    Text("Month").height(20).height_policy(SizePolicy.FIXED),
-                    Input(self._temp_month)
-                    .on_change(lambda v: setattr(self, "_temp_month", v))
-                    .height(32)
-                    .height_policy(SizePolicy.FIXED),
-                ),
-                Column(
-                    Text("Day").height(20).height_policy(SizePolicy.FIXED),
-                    Input(self._temp_day)
-                    .on_change(lambda v: setattr(self, "_temp_day", v))
-                    .height(32)
-                    .height_policy(SizePolicy.FIXED),
-                ),
-            ).height(60).height_policy(SizePolicy.FIXED)
+            date_row = (
+                Row(
+                    Column(
+                        Text("Year").height(20).height_policy(SizePolicy.FIXED),
+                        Input(self._temp_year)
+                        .on_change(lambda v: setattr(self, "_temp_year", v))
+                        .height(32)
+                        .height_policy(SizePolicy.FIXED),
+                    ),
+                    Column(
+                        Text("Month").height(20).height_policy(SizePolicy.FIXED),
+                        Input(self._temp_month)
+                        .on_change(lambda v: setattr(self, "_temp_month", v))
+                        .height(32)
+                        .height_policy(SizePolicy.FIXED),
+                    ),
+                    Column(
+                        Text("Day").height(20).height_policy(SizePolicy.FIXED),
+                        Input(self._temp_day)
+                        .on_change(lambda v: setattr(self, "_temp_day", v))
+                        .height(32)
+                        .height_policy(SizePolicy.FIXED),
+                    ),
+                )
+                .height(60)
+                .height_policy(SizePolicy.FIXED)
+            )
             rows.append(date_row)
 
         if self._dt_state.enable_time:
             # Time picker: Hour : Minute
-            time_row = Row(
-                Column(
-                    Text("Hour").height(20).height_policy(SizePolicy.FIXED),
-                    Input(self._temp_hour)
-                    .on_change(lambda v: setattr(self, "_temp_hour", v))
-                    .height(32)
-                    .height_policy(SizePolicy.FIXED),
-                ),
-                Column(
-                    Text("Min").height(20).height_policy(SizePolicy.FIXED),
-                    Input(self._temp_minute)
-                    .on_change(lambda v: setattr(self, "_temp_minute", v))
-                    .height(32)
-                    .height_policy(SizePolicy.FIXED),
-                ),
-            ).height(60).height_policy(SizePolicy.FIXED)
+            time_row = (
+                Row(
+                    Column(
+                        Text("Hour").height(20).height_policy(SizePolicy.FIXED),
+                        Input(self._temp_hour)
+                        .on_change(lambda v: setattr(self, "_temp_hour", v))
+                        .height(32)
+                        .height_policy(SizePolicy.FIXED),
+                    ),
+                    Column(
+                        Text("Min").height(20).height_policy(SizePolicy.FIXED),
+                        Input(self._temp_minute)
+                        .on_change(lambda v: setattr(self, "_temp_minute", v))
+                        .height(32)
+                        .height_policy(SizePolicy.FIXED),
+                    ),
+                )
+                .height(60)
+                .height_policy(SizePolicy.FIXED)
+            )
             rows.append(time_row)
 
         # Done button
@@ -390,7 +396,9 @@ class DateTimeInput(StatefulComponent):
                 Button("Done")
                 .on_click(lambda _: self._apply_and_close())
                 .kind(Kind.INFO),
-            ).height(50).height_policy(SizePolicy.FIXED)
+            )
+            .height(50)
+            .height_policy(SizePolicy.FIXED)
         )
 
         return Column(*rows)

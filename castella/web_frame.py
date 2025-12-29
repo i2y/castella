@@ -49,7 +49,11 @@ class Frame:
             "wheel",
             create_proxy(
                 lambda ev: handler(
-                    core.WheelEvent(pos=core.Point(x=ev.x, y=ev.y), x_offset=ev.deltaX, y_offset=ev.deltaY)
+                    core.WheelEvent(
+                        pos=core.Point(x=ev.x, y=ev.y),
+                        x_offset=ev.deltaX,
+                        y_offset=ev.deltaY,
+                    )
                 )
             ),
         )
@@ -74,7 +78,10 @@ class Frame:
             create_proxy(
                 lambda ev: handler(
                     core.InputKeyEvent(
-                        key=convert_to_key_code(ev.keyCode), scancode=0, action=core.KeyAction.PRESS, mods=0
+                        key=convert_to_key_code(ev.keyCode),
+                        scancode=0,
+                        action=core.KeyAction.PRESS,
+                        mods=0,
                     )
                 )
             ),
@@ -191,7 +198,6 @@ class Frame:
             document.body.appendChild(init_script)
 
     def _trigger_resize(self) -> None:
-        from js import Event
         resize_script = document.createElement("script")
         resize_script.innerHTML = """
         function resize() {

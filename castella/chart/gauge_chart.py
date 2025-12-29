@@ -10,16 +10,13 @@ from typing import Self
 from castella.core import (
     Painter,
     Point,
-    Size,
-    Rect,
     Style,
     FillStyle,
-    StrokeStyle,
     Circle,
 )
 from castella.models.font import Font
 
-from castella.chart.base import BaseChart, ChartLayout, ChartMargins
+from castella.chart.base import BaseChart, ChartLayout
 from castella.chart.hit_testing import HitTestable, ArcElement
 from castella.chart.models import GaugeChartData
 
@@ -191,8 +188,13 @@ class GaugeChart(BaseChart):
 
         # Draw background arc (track)
         self._draw_arc(
-            p, center, inner_radius, radius, start_angle, end_angle,
-            self._theme.grid_color
+            p,
+            center,
+            inner_radius,
+            radius,
+            start_angle,
+            end_angle,
+            self._theme.grid_color,
         )
 
         # Draw threshold segments or single value arc
@@ -209,7 +211,9 @@ class GaugeChart(BaseChart):
             if self.is_element_hovered(0, 0):
                 color = self.lighten_color(color, 0.2)
 
-            self._draw_arc(p, center, inner_radius, radius, start_angle, value_angle, color)
+            self._draw_arc(
+                p, center, inner_radius, radius, start_angle, value_angle, color
+            )
 
         # Draw tick marks
         if self._show_ticks:
@@ -292,7 +296,15 @@ class GaugeChart(BaseChart):
                 if self.is_element_hovered(0, 0):
                     draw_color = self.lighten_color(draw_color, 0.2)
 
-                self._draw_arc(p, center, inner_radius, outer_radius, seg_start, seg_end, draw_color)
+                self._draw_arc(
+                    p,
+                    center,
+                    inner_radius,
+                    outer_radius,
+                    seg_start,
+                    seg_end,
+                    draw_color,
+                )
 
     def _draw_ticks(
         self,
@@ -341,7 +353,11 @@ class GaugeChart(BaseChart):
             label_y = center.y + label_radius * math.sin(angle)
 
             label = f"{value:.0f}"
-            p.style(Style(fill=FillStyle(color=self._theme.text_secondary), font=Font(size=9)))
+            p.style(
+                Style(
+                    fill=FillStyle(color=self._theme.text_secondary), font=Font(size=9)
+                )
+            )
             text_width = p.measure_text(label)
             p.fill_text(label, Point(x=label_x - text_width / 2, y=label_y + 3), None)
 
@@ -356,13 +372,21 @@ class GaugeChart(BaseChart):
         value_text = state.value_format.format(state.value)
         p.style(Style(fill=FillStyle(color=self._theme.text_color), font=Font(size=28)))
         value_width = p.measure_text(value_text)
-        p.fill_text(value_text, Point(x=center.x - value_width / 2, y=center.y + 10), None)
+        p.fill_text(
+            value_text, Point(x=center.x - value_width / 2, y=center.y + 10), None
+        )
 
         # Title (if set via data)
         if state.title:
-            p.style(Style(fill=FillStyle(color=self._theme.text_secondary), font=Font(size=11)))
+            p.style(
+                Style(
+                    fill=FillStyle(color=self._theme.text_secondary), font=Font(size=11)
+                )
+            )
             title_width = p.measure_text(state.title)
-            p.fill_text(state.title, Point(x=center.x - title_width / 2, y=center.y - 20), None)
+            p.fill_text(
+                state.title, Point(x=center.x - title_width / 2, y=center.y - 20), None
+            )
 
     def _get_element_anchor(self, element: HitTestable) -> Point:
         """Get anchor point for tooltip positioning."""

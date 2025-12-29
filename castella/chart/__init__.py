@@ -62,7 +62,12 @@ from castella.chart.pie_chart import PieChart
 from castella.chart.scatter_chart import ScatterChart, PointShape
 from castella.chart.area_chart import AreaChart
 from castella.chart.stacked_bar_chart import StackedBarChart
-from castella.chart.gauge_chart import GaugeChart, GaugeStyle, GaugeThreshold, DonutChart
+from castella.chart.gauge_chart import (
+    GaugeChart,
+    GaugeStyle,
+    GaugeThreshold,
+    DonutChart,
+)
 
 # ASCII charts for terminal
 from castella.chart.ascii import (

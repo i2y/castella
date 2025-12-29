@@ -11,12 +11,11 @@ from castella.core import (
     Rect,
     Style,
     FillStyle,
-    StrokeStyle,
     Circle,
 )
 from castella.models.font import Font
 
-from castella.chart.base import BaseChart, ChartLayout, ChartMargins
+from castella.chart.base import BaseChart, ChartLayout
 from castella.chart.hit_testing import HitTestable, CircleElement
 from castella.chart.scales import LinearScale
 from castella.chart.models import NumericChartData, NumericSeries
@@ -141,7 +140,8 @@ class LineChart(BaseChart):
                 elements.append(
                     CircleElement(
                         center=Point(x=screen_x, y=screen_y),
-                        radius=self._point_radius + 2,  # Slightly larger for hit testing
+                        radius=self._point_radius
+                        + 2,  # Slightly larger for hit testing
                         series_index=series_idx,
                         data_index=data_idx,
                         value=point.y,
@@ -189,7 +189,6 @@ class LineChart(BaseChart):
             if not state.is_series_visible(series_idx):
                 continue
 
-            color = series.style.color
             self._render_series(p, series, series_idx, x_scale, y_scale, state)
 
         # Draw legend
@@ -262,10 +261,6 @@ class LineChart(BaseChart):
 
         if length < 0.1:
             return
-
-        # Calculate perpendicular offset for line width
-        px = -dy / length * width / 2
-        py = dx / length * width / 2
 
         # Draw line as a thin rectangle (rotated)
         # Since we can't rotate, draw as a series of small circles
@@ -408,12 +403,20 @@ class LineChart(BaseChart):
             )
 
             # Point on the line
-            p.fill_circle(Circle(center=Point(x=x + box_size / 2, y=y + box_size / 2), radius=3))
+            p.fill_circle(
+                Circle(center=Point(x=x + box_size / 2, y=y + box_size / 2), radius=3)
+            )
 
             # Series name
-            text_color = self._theme.text_color if state.is_series_visible(i) else self._theme.text_secondary
+            text_color = (
+                self._theme.text_color
+                if state.is_series_visible(i)
+                else self._theme.text_secondary
+            )
             p.style(Style(fill=FillStyle(color=text_color), font=Font(size=11)))
-            p.fill_text(series.name, Point(x=x + box_size + 6, y=y + box_size - 2), None)
+            p.fill_text(
+                series.name, Point(x=x + box_size + 6, y=y + box_size - 2), None
+            )
 
             x += spacing
 

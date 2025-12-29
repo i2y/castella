@@ -136,7 +136,9 @@ class Modal(StatefulComponent):
 
         # Build backdrop (semi-transparent overlay)
         backdrop = (
-            _ClickableBackdrop(self._on_backdrop_click if self._close_on_backdrop_click else None)
+            _ClickableBackdrop(
+                self._on_backdrop_click if self._close_on_backdrop_click else None
+            )
             .bg_color("rgba(0, 0, 0, 0.5)")
             .z_index(99)
         )
@@ -162,11 +164,7 @@ class Modal(StatefulComponent):
                     .fixed_size(32, 32)
                 )
 
-            title_bar = (
-                Row(*title_elements)
-                .height(40)
-                .height_policy(SizePolicy.FIXED)
-            )
+            title_bar = Row(*title_elements).height(40).height_policy(SizePolicy.FIXED)
             modal_children.append(title_bar)
 
         # Add content

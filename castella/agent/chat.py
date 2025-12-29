@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING, Callable, Literal
 from castella.box import Box
 from castella.button import Button
 from castella.column import Column
-from castella.core import Component, ListState, ScrollState, SizePolicy, State
+from castella.core import Component, ListState, ScrollState, SizePolicy
 from castella.markdown import Markdown
 from castella.multiline_input import MultilineInput, MultilineInputState
 from castella.row import Row
@@ -148,9 +148,7 @@ class ChatMessage(Component):
                 )
 
             elements.append(
-                Row(*header_parts)
-                .height(24)
-                .height_policy(SizePolicy.FIXED)
+                Row(*header_parts).height(24).height_policy(SizePolicy.FIXED)
             )
 
         # Content - use Markdown for assistant, plain Text for user/system
@@ -179,10 +177,7 @@ class ChatMessage(Component):
                 )
 
         return (
-            Box(
-                Column(*elements)
-                .height_policy(SizePolicy.CONTENT)
-            )
+            Box(Column(*elements).height_policy(SizePolicy.CONTENT))
             .bg_color(bg_color)
             .height_policy(SizePolicy.CONTENT)
         )
@@ -197,7 +192,7 @@ class ChatMessage(Component):
             ).height_policy(SizePolicy.CONTENT)
         else:
             # Plain text for user/system - estimate height based on content
-            line_count = self._content.count('\n') + 1
+            line_count = self._content.count("\n") + 1
             estimated_height = max(24, line_count * 20)
             return (
                 Text(self._content)
@@ -251,10 +246,6 @@ class ChatInput(Component):
             self._input_state.set("")
 
     def view(self):
-        from castella.theme import ThemeManager
-
-        theme = ThemeManager().current
-
         return (
             Row(
                 MultilineInput(
@@ -320,15 +311,12 @@ class ChatView(Component):
         theme = ThemeManager().current
 
         if not self._messages:
-            return (
-                Box(
-                    Text("No messages yet")
-                    .text_color(theme.colors.text_info)
-                    .height(40)
-                    .height_policy(SizePolicy.FIXED)
-                )
-                .bg_color(theme.colors.bg_primary)
-            )
+            return Box(
+                Text("No messages yet")
+                .text_color(theme.colors.text_info)
+                .height(40)
+                .height_policy(SizePolicy.FIXED)
+            ).bg_color(theme.colors.bg_primary)
 
         message_widgets = []
         for msg in self._messages:
@@ -346,20 +334,13 @@ class ChatView(Component):
             msg_widget.height_policy(SizePolicy.CONTENT)
             message_widgets.append(msg_widget)
             # Add small spacer between messages
-            message_widgets.append(
-                Spacer()
-                .height(8)
-                .height_policy(SizePolicy.FIXED)
-            )
+            message_widgets.append(Spacer().height(8).height_policy(SizePolicy.FIXED))
 
-        return (
-            Column(
-                *message_widgets,
-                scrollable=True,
-                scroll_state=self._scroll_state,
-            )
-            .bg_color(theme.colors.bg_primary)
-        )
+        return Column(
+            *message_widgets,
+            scrollable=True,
+            scroll_state=self._scroll_state,
+        ).bg_color(theme.colors.bg_primary)
 
 
 class ChatContainer(Component):

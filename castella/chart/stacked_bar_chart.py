@@ -11,14 +11,13 @@ from castella.core import (
     Rect,
     Style,
     FillStyle,
-    StrokeStyle,
 )
 from castella.models.font import Font
 
-from castella.chart.base import BaseChart, ChartLayout, ChartMargins
+from castella.chart.base import BaseChart, ChartLayout
 from castella.chart.hit_testing import HitTestable, RectElement
 from castella.chart.scales import LinearScale, BandScale
-from castella.chart.models import CategoricalChartData, CategoricalSeries
+from castella.chart.models import CategoricalChartData
 
 
 class StackedBarChart(BaseChart):
@@ -192,7 +191,9 @@ class StackedBarChart(BaseChart):
         cat_scale = BandScale(
             categories=categories,
             range_min=plot.x if not self._horizontal else plot.y,
-            range_max=(plot.x + plot.width) if not self._horizontal else (plot.y + plot.height),
+            range_max=(plot.x + plot.width)
+            if not self._horizontal
+            else (plot.y + plot.height),
             padding_inner=self._bar_gap,
             padding_outer=self._bar_gap / 2,
         )
@@ -265,7 +266,9 @@ class StackedBarChart(BaseChart):
                 continue
 
             series_idx = element.series_index
-            series = state.series[series_idx] if series_idx < len(state.series) else None
+            series = (
+                state.series[series_idx] if series_idx < len(state.series) else None
+            )
             color = series.style.color if series else self.get_series_color(series_idx)
 
             # Highlight on hover
@@ -325,7 +328,9 @@ class StackedBarChart(BaseChart):
         cat_scale = BandScale(
             categories=categories,
             range_min=plot.x if not self._horizontal else plot.y,
-            range_max=(plot.x + plot.width) if not self._horizontal else (plot.y + plot.height),
+            range_max=(plot.x + plot.width)
+            if not self._horizontal
+            else (plot.y + plot.height),
             padding_inner=self._bar_gap,
             padding_outer=self._bar_gap / 2,
         )
@@ -417,7 +422,9 @@ class StackedBarChart(BaseChart):
         cat_scale = BandScale(
             categories=categories,
             range_min=plot.x if not self._horizontal else plot.y,
-            range_max=(plot.x + plot.width) if not self._horizontal else (plot.y + plot.height),
+            range_max=(plot.x + plot.width)
+            if not self._horizontal
+            else (plot.y + plot.height),
             padding_inner=self._bar_gap,
             padding_outer=self._bar_gap / 2,
         )
@@ -492,7 +499,9 @@ class StackedBarChart(BaseChart):
                 else self._theme.text_secondary
             )
             p.style(Style(fill=FillStyle(color=text_color), font=Font(size=11)))
-            p.fill_text(series.name, Point(x=x + box_size + 6, y=y + box_size - 2), None)
+            p.fill_text(
+                series.name, Point(x=x + box_size + 6, y=y + box_size - 2), None
+            )
 
             x += spacing
 

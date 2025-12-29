@@ -236,7 +236,9 @@ class MultilineInput(Widget):
         self._scroll_box_y: Rect | None = None  # Scrollbar thumb rect
         self._under_dragging_y = False
         self._last_drag_pos: Point | None = None
-        self._last_display_lines: list[tuple[int, str, int]] | None = None  # For click handling
+        self._last_display_lines: list[tuple[int, str, int]] | None = (
+            None  # For click handling
+        )
         # Note: scroll_y and manual_scroll are stored in state to persist across re-renders
 
         super().__init__(
@@ -356,9 +358,7 @@ class MultilineInput(Widget):
         # Calculate total content height
         num_lines = len(display_lines)
         self._content_height = (
-            font_size * num_lines
-            + line_spacing * max(0, num_lines - 1)
-            + padding * 2
+            font_size * num_lines + line_spacing * max(0, num_lines - 1) + padding * 2
         )
 
         # Calculate visible area height
@@ -403,10 +403,12 @@ class MultilineInput(Widget):
         # Clip content area and apply scroll offset
         content_width = max(0, size.width - border_width * 2 - scrollbar_width)
         p.save()
-        p.clip(Rect(
-            origin=Point(x=border_width, y=border_width),
-            size=Size(width=content_width, height=visible_height)
-        ))
+        p.clip(
+            Rect(
+                origin=Point(x=border_width, y=border_width),
+                size=Size(width=content_width, height=visible_height),
+            )
+        )
         p.translate(Point(x=0, y=-state._scroll_y))
 
         for display_idx, (_, text, _) in enumerate(display_lines):
@@ -596,7 +598,7 @@ class MultilineInput(Widget):
 
         # Get display lines (need to recalculate here)
         # Store last calculated display_lines in state for click handling
-        if not hasattr(self, '_last_display_lines') or self._last_display_lines is None:
+        if not hasattr(self, "_last_display_lines") or self._last_display_lines is None:
             # Can't calculate exact position, but flag is set to prevent cursor reset
             self._dirty = True
             if self._parent is not None:
@@ -619,7 +621,9 @@ class MultilineInput(Widget):
                 for i in range(len(text) + 1):
                     # We need a painter to measure, but we don't have one here
                     # Use approximate calculation based on average char width
-                    char_width = font_size * 0.5  # Approximate (adjusted for typical fonts)
+                    char_width = (
+                        font_size * 0.5
+                    )  # Approximate (adjusted for typical fonts)
                     if i * char_width >= click_x:
                         col = start_col + max(0, i - 1)
                         break
@@ -660,9 +664,7 @@ class MultilineInput(Widget):
         if scroll_range <= 0:
             return
 
-        thumb_height = max(
-            20, (visible_height / self._content_height) * visible_height
-        )
+        thumb_height = max(20, (visible_height / self._content_height) * visible_height)
         track_range = visible_height - thumb_height
         if track_range <= 0:
             return

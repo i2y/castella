@@ -178,7 +178,9 @@ class Painter:
             to_ck_rect(
                 core.Rect(
                     origin=core.Point(x=0, y=0),
-                    size=core.Size(width=rect.size.width + 1, height=rect.size.height + 1),
+                    size=core.Size(
+                        width=rect.size.width + 1, height=rect.size.height + 1
+                    ),
                 )
             ),
             window.CK.ClipOp.Intersect,

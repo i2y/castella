@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator, Iterator
 from typing import TYPE_CHECKING, Any, Callable
 
-from castella.a2ui._factories import get_child_ids, resolve_value
+from castella.a2ui._factories import resolve_value
 from castella.a2ui.catalog import ComponentCatalog, get_default_catalog
 from castella.a2ui.types import (
     BeginRendering,
@@ -30,9 +30,7 @@ from castella.a2ui.types import (
 from castella.core import Widget
 
 if TYPE_CHECKING:
-    from castella.box import Box
-    from castella.column import Column
-    from castella.row import Row
+    pass
 
 
 class A2UISurface:
@@ -127,7 +125,9 @@ class A2UIRenderer:
         self._pending_initial_data: dict[str, Any] | None = None
         # For progressive rendering: track pending surfaces and their root IDs
         self._pending_roots: dict[str, str] = {}  # surface_id -> root_id
-        self._pending_components: dict[str, dict[str, Component]] = {}  # surface_id -> {id: component}
+        self._pending_components: dict[
+            str, dict[str, Component]
+        ] = {}  # surface_id -> {id: component}
 
     def _action_handler(
         self, action_name: str, source_component_id: str, context: dict[str, Any]
@@ -161,7 +161,9 @@ class A2UIRenderer:
             )
             self._on_action(user_action)
 
-    def handle_message(self, message: dict[str, Any] | ServerMessage) -> A2UISurface | None:
+    def handle_message(
+        self, message: dict[str, Any] | ServerMessage
+    ) -> A2UISurface | None:
         """Handle an A2UI server message.
 
         Args:
@@ -370,7 +372,9 @@ class A2UIRenderer:
                     if parts:
                         if parts[-1] not in current:
                             current[parts[-1]] = []
-                        if isinstance(current[parts[-1]], list) and idx < len(current[parts[-1]]):
+                        if isinstance(current[parts[-1]], list) and idx < len(
+                            current[parts[-1]]
+                        ):
                             pass  # Already there
             else:
                 # Primitive value - store as "_item"
@@ -431,9 +435,6 @@ class A2UIRenderer:
         components: list[Component],
     ) -> A2UISurface:
         """Update an existing surface with new/updated components."""
-        from castella.box import Box
-        from castella.column import Column
-        from castella.row import Row
 
         # Track newly added component IDs
         new_ids = set()

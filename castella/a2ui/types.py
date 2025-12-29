@@ -391,9 +391,7 @@ class ServerMessage(BaseModel):
         default=None, alias="updateDataModel"
     )
     delete_surface: DeleteSurface | None = Field(default=None, alias="deleteSurface")
-    begin_rendering: BeginRendering | None = Field(
-        default=None, alias="beginRendering"
-    )
+    begin_rendering: BeginRendering | None = Field(default=None, alias="beginRendering")
 
 
 # =============================================================================

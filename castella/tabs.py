@@ -186,9 +186,7 @@ class Tabs(StatefulComponent):
 
         # Tab bar
         tab_bar = (
-            Row(*tab_buttons)
-            .height(self._tab_height)
-            .height_policy(SizePolicy.FIXED)
+            Row(*tab_buttons).height(self._tab_height).height_policy(SizePolicy.FIXED)
         )
 
         # Selected content

@@ -103,16 +103,20 @@ class AgentChat(Component):
         # Initialize state - add initial messages BEFORE attaching
         initial_messages = []
         if system_message:
-            initial_messages.append({
-                "role": "system",
-                "content": system_message,
-            })
+            initial_messages.append(
+                {
+                    "role": "system",
+                    "content": system_message,
+                }
+            )
         elif self._a2a_client is not None:
             # Add welcome message from agent
-            initial_messages.append({
-                "role": "system",
-                "content": f"Connected to **{self._a2a_client.name}**. {self._a2a_client.description}",
-            })
+            initial_messages.append(
+                {
+                    "role": "system",
+                    "content": f"Connected to **{self._a2a_client.name}**. {self._a2a_client.description}",
+                }
+            )
 
         self._messages: ListState[dict] = ListState(initial_messages)
         self._messages.attach(self)
@@ -155,10 +159,12 @@ class AgentChat(Component):
             return
 
         # Add user message
-        self._messages.append({
-            "role": "user",
-            "content": text,
-        })
+        self._messages.append(
+            {
+                "role": "user",
+                "content": text,
+            }
+        )
 
         # Clear input
         self._input_state.set("")
@@ -177,16 +183,20 @@ class AgentChat(Component):
 
             # Set scroll BEFORE append so re-render picks it up
             self._scroll_state.y = 999999
-            self._messages.append({
-                "role": "assistant",
-                "content": response,
-            })
+            self._messages.append(
+                {
+                    "role": "assistant",
+                    "content": response,
+                }
+            )
         except Exception as e:
             self._scroll_state.y = 999999
-            self._messages.append({
-                "role": "system",
-                "content": f"Error: {e}",
-            })
+            self._messages.append(
+                {
+                    "role": "system",
+                    "content": f"Error: {e}",
+                }
+            )
         finally:
             self._is_loading.set(False)
 
@@ -203,9 +213,7 @@ class AgentChat(Component):
 
             try:
                 card = self._a2a_client.agent_card
-                elements.append(
-                    AgentCardView(card, show_skills=True, compact=True)
-                )
+                elements.append(AgentCardView(card, show_skills=True, compact=True))
             except Exception:
                 pass  # Skip if agent card not available
 
@@ -232,32 +240,40 @@ class AgentChat(Component):
             # Use Markdown for content
             content_widget = Markdown(content, base_font_size=14)
 
-            msg_box = Box(
-                Column(
-                    Text(role_label)
-                    .text_color(role_color)
-                    .height(20)
-                    .height_policy(SizePolicy.FIXED),
-                    content_widget,
-                ).height_policy(SizePolicy.CONTENT)
-            ).bg_color(bg_color).height_policy(SizePolicy.CONTENT)
+            msg_box = (
+                Box(
+                    Column(
+                        Text(role_label)
+                        .text_color(role_color)
+                        .height(20)
+                        .height_policy(SizePolicy.FIXED),
+                        content_widget,
+                    ).height_policy(SizePolicy.CONTENT)
+                )
+                .bg_color(bg_color)
+                .height_policy(SizePolicy.CONTENT)
+            )
 
             msg_widgets.append(msg_box)
 
         # Loading indicator
         if self._is_loading():
-            loading_box = Box(
-                Column(
-                    Text("Assistant")
-                    .text_color(theme.colors.text_info)
-                    .height(20)
-                    .height_policy(SizePolicy.FIXED),
-                    Text("Thinking...")
-                    .text_color(theme.colors.text_info)
-                    .height(24)
-                    .height_policy(SizePolicy.FIXED),
-                ).height_policy(SizePolicy.CONTENT)
-            ).bg_color(theme.colors.bg_secondary).height_policy(SizePolicy.CONTENT)
+            loading_box = (
+                Box(
+                    Column(
+                        Text("Assistant")
+                        .text_color(theme.colors.text_info)
+                        .height(20)
+                        .height_policy(SizePolicy.FIXED),
+                        Text("Thinking...")
+                        .text_color(theme.colors.text_info)
+                        .height(24)
+                        .height_policy(SizePolicy.FIXED),
+                    ).height_policy(SizePolicy.CONTENT)
+                )
+                .bg_color(theme.colors.bg_secondary)
+                .height_policy(SizePolicy.CONTENT)
+            )
             msg_widgets.append(loading_box)
 
         # Message area
@@ -276,7 +292,9 @@ class AgentChat(Component):
                 .height(40)
                 .height_policy(SizePolicy.FIXED),
                 self._create_send_button(theme),
-            ).height(56).height_policy(SizePolicy.FIXED)
+            )
+            .height(56)
+            .height_policy(SizePolicy.FIXED)
         )
 
         return Column(*elements)

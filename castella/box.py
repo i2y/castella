@@ -39,9 +39,7 @@ class Box(Layout):
     )
     _scrollbox_style = Style(fill=FillStyle(color=_scrollbox_widget_style.bg_color))
 
-    def __init__(
-        self, *children: Widget, scroll_state: "ScrollState | None" = None
-    ):
+    def __init__(self, *children: Widget, scroll_state: "ScrollState | None" = None):
         super().__init__(
             state=None,
             pos=Point(x=0, y=0),
@@ -435,9 +433,7 @@ class Box(Layout):
         # when ANY child is dirty OR the Box itself is dirty to maintain proper z-ordering
         sorted_children = sorted(self._children, key=lambda c: c.get_z_index())
         needs_redraw = (
-            completely
-            or self.is_dirty()
-            or any(c.is_dirty() for c in sorted_children)
+            completely or self.is_dirty() or any(c.is_dirty() for c in sorted_children)
         )
 
         if not needs_redraw:

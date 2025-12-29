@@ -103,14 +103,15 @@ class A2AClient:
             self._connected = True
         except ImportError as e:
             raise A2AClientError(
-                "python-a2a is not installed. "
-                "Install it with: pip install python-a2a"
+                "python-a2a is not installed. Install it with: pip install python-a2a"
             ) from e
         except Exception as e:
             self._connected = False
             if self._on_error:
                 self._on_error(e)
-            raise A2AConnectionError(f"Failed to connect to {self._agent_url}: {e}") from e
+            raise A2AConnectionError(
+                f"Failed to connect to {self._agent_url}: {e}"
+            ) from e
 
     @property
     def is_connected(self) -> bool:

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from dataclasses import dataclass, field
-from typing import Any, Callable, Self
+from dataclasses import dataclass
+from typing import Callable, Self
 
 from castella.core import (
     Widget,
@@ -15,15 +15,14 @@ from castella.core import (
     SizePolicy,
     Style,
     FillStyle,
-    StrokeStyle,
     MouseEvent,
     WheelEvent,
 )
 from castella.models.font import Font
 
 from castella.chart.hit_testing import HitTestable, hit_test
-from castella.chart.transform import ChartTransform, ViewBounds
-from castella.chart.theme import ChartTheme, get_chart_theme
+from castella.chart.transform import ChartTransform
+from castella.chart.theme import get_chart_theme
 from castella.chart.events import ChartHoverEvent, ChartClickEvent
 from castella.chart.models.chart_data import ChartDataBase
 
@@ -220,7 +219,9 @@ class BaseChart(Widget):
             origin=Point(x=m.left, y=m.top + title_height),
             size=Size(
                 width=max(0, size.width - m.left - m.right),
-                height=max(0, size.height - m.top - m.bottom - title_height - legend_height),
+                height=max(
+                    0, size.height - m.top - m.bottom - title_height - legend_height
+                ),
             ),
         )
 
@@ -231,7 +232,9 @@ class BaseChart(Widget):
 
         legend_area = Rect(
             origin=Point(x=m.left, y=size.height - legend_height - m.bottom / 2),
-            size=Size(width=max(0, size.width - m.left - m.right), height=legend_height),
+            size=Size(
+                width=max(0, size.width - m.left - m.right), height=legend_height
+            ),
         )
 
         return ChartLayout(
@@ -319,7 +322,10 @@ class BaseChart(Widget):
         new_series_idx = element.series_index if element else -1
         new_data_idx = element.data_index if element else -1
 
-        if new_series_idx != self._hovered_series_idx or new_data_idx != self._hovered_data_idx:
+        if (
+            new_series_idx != self._hovered_series_idx
+            or new_data_idx != self._hovered_data_idx
+        ):
             self._hovered_element = element
             self._hovered_series_idx = new_series_idx
             self._hovered_data_idx = new_data_idx
@@ -464,6 +470,7 @@ class BaseChart(Widget):
             The chart data.
         """
         from typing import cast
+
         return cast(ChartDataBase, self._state)
 
     def get_series_color(self, index: int) -> str:

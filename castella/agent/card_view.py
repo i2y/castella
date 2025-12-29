@@ -88,16 +88,20 @@ class AgentCardView(Component):
         theme = ThemeManager().current
 
         # Header with name and version
-        header = Row(
-            Text(self._card.name)
-            .text_color(theme.colors.text_primary)
-            .height(24)
-            .height_policy(SizePolicy.FIXED),
-            Text(f"v{self._card.version}")
-            .text_color(theme.colors.text_info)
-            .height(20)
-            .height_policy(SizePolicy.FIXED),
-        ).height(30).height_policy(SizePolicy.FIXED)
+        header = (
+            Row(
+                Text(self._card.name)
+                .text_color(theme.colors.text_primary)
+                .height(24)
+                .height_policy(SizePolicy.FIXED),
+                Text(f"v{self._card.version}")
+                .text_color(theme.colors.text_info)
+                .height(20)
+                .height_policy(SizePolicy.FIXED),
+            )
+            .height(30)
+            .height_policy(SizePolicy.FIXED)
+        )
 
         # Description
         description = (
@@ -131,9 +135,13 @@ class AgentCardView(Component):
             content.append(skills_header)
 
             # Create skill badges in rows
-            skills_row = Row(
-                *[SkillBadge(s) for s in self._card.skills[:5]],  # Limit to 5
-            ).height(32).height_policy(SizePolicy.FIXED)
+            skills_row = (
+                Row(
+                    *[SkillBadge(s) for s in self._card.skills[:5]],  # Limit to 5
+                )
+                .height(32)
+                .height_policy(SizePolicy.FIXED)
+            )
             content.append(skills_row)
 
             # Show remaining count if more than 5
@@ -148,9 +156,7 @@ class AgentCardView(Component):
 
         # Wrap in a card box
         return (
-            Box(
-                Column(*content).height_policy(SizePolicy.CONTENT)
-            )
+            Box(Column(*content).height_policy(SizePolicy.CONTENT))
             .bg_color(theme.colors.bg_secondary)
             .border_color(theme.colors.border_primary)
             .height_policy(SizePolicy.CONTENT)

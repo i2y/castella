@@ -10,7 +10,14 @@ from castella.models.geometry import Point, Rect, Size
 from castella.models.style import SizePolicy
 
 if TYPE_CHECKING:
-    from castella.core import Layout, MouseEvent, Painter, ScrollState, WheelEvent, Widget
+    from castella.core import (
+        Layout,
+        MouseEvent,
+        Painter,
+        ScrollState,
+        WheelEvent,
+        Widget,
+    )
 
 
 class Axis(Enum):
@@ -64,9 +71,7 @@ class LinearLayout:
     def _scroll_offset(self) -> int:
         """Get scroll offset (x for Row, y for Column)."""
         if self._scroll_state is not None:
-            return (
-                self._scroll_state.x if self._is_horizontal else self._scroll_state.y
-            )
+            return self._scroll_state.x if self._is_horizontal else self._scroll_state.y
         return self.__scroll_offset
 
     @_scroll_offset.setter

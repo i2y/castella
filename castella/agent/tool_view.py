@@ -18,7 +18,6 @@ from __future__ import annotations
 import json
 
 from castella.box import Box
-from castella.button import Button
 from castella.column import Column
 from castella.core import Component, SizePolicy, State
 from castella.row import Row
@@ -74,7 +73,9 @@ class ToolCallView(Component):
         # Header with tool name and expand/collapse toggle
         toggle_icon = "▼" if self._expanded() else "▶"
         status_text = "completed" if self._result is not None else "running..."
-        status_color = theme.colors.text_success if self._result else theme.colors.text_warning
+        status_color = (
+            theme.colors.text_success if self._result else theme.colors.text_warning
+        )
 
         header = (
             Row(
@@ -117,7 +118,11 @@ class ToolCallView(Component):
 
             # Result section
             if self._result is not None:
-                result_text = self._result if len(self._result) < 500 else self._result[:500] + "..."
+                result_text = (
+                    self._result
+                    if len(self._result) < 500
+                    else self._result[:500] + "..."
+                )
                 elements.append(
                     Box(
                         Column(
@@ -135,9 +140,7 @@ class ToolCallView(Component):
                 )
 
         return (
-            Box(
-                Column(*elements).height_policy(SizePolicy.CONTENT)
-            )
+            Box(Column(*elements).height_policy(SizePolicy.CONTENT))
             .bg_color(theme.colors.bg_tertiary)
             .border_color(theme.colors.border_primary)
             .height_policy(SizePolicy.CONTENT)
@@ -194,19 +197,17 @@ class ToolHistoryPanel(Component):
                 .height_policy(SizePolicy.FIXED)
             )
         else:
-            for call in self._tool_calls[-self._max_visible:]:
+            for call in self._tool_calls[-self._max_visible :]:
                 elements.append(
                     ToolCallView(
-                        name=call.name if hasattr(call, 'name') else str(call),
-                        arguments=call.arguments if hasattr(call, 'arguments') else {},
-                        result=call.result if hasattr(call, 'result') else None,
+                        name=call.name if hasattr(call, "name") else str(call),
+                        arguments=call.arguments if hasattr(call, "arguments") else {},
+                        result=call.result if hasattr(call, "result") else None,
                     )
                 )
 
         return (
-            Box(
-                Column(*elements).height_policy(SizePolicy.CONTENT)
-            )
+            Box(Column(*elements).height_policy(SizePolicy.CONTENT))
             .bg_color(theme.colors.bg_secondary)
             .height_policy(SizePolicy.CONTENT)
         )

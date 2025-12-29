@@ -50,7 +50,9 @@ class ChartTheme:
     border_color: str = "#d1d5db"
     tooltip_bg: str = "#1f2937"
     tooltip_border: str = "#374151"
-    series_colors: list[str] = field(default_factory=lambda: list(DEFAULT_SERIES_COLORS))
+    series_colors: list[str] = field(
+        default_factory=lambda: list(DEFAULT_SERIES_COLORS)
+    )
     is_dark: bool = False
 
     @classmethod
@@ -72,9 +74,7 @@ class ChartTheme:
             palette.text_danger,
         ]
         # Add more colors from defaults if needed
-        series_colors.extend(
-            c for c in DEFAULT_SERIES_COLORS if c not in series_colors
-        )
+        series_colors.extend(c for c in DEFAULT_SERIES_COLORS if c not in series_colors)
 
         # Use border_secondary as a secondary text color (lighter/dimmer)
         text_secondary = palette.border_primary

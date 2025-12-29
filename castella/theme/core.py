@@ -136,7 +136,9 @@ class Theme(BaseModel):
             bg_color=self.colors.bg_canvas,
             border_color=self.colors.border_primary,
             text_color=self.colors.text_primary,
-            text_font=Font(family=self.typography.font_family, size=self.typography.base_size),
+            text_font=Font(
+                family=self.typography.font_family, size=self.typography.base_size
+            ),
         )
 
     @property

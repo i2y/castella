@@ -17,7 +17,6 @@ from castella.models.events import (
     KeyAction,
     KeyCode,
     MouseEvent,
-    UpdateEvent,
     WheelEvent,
 )
 

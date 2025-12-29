@@ -291,8 +291,14 @@ class ASCIILineChart(Widget):
     # Braille dots for plotting (2x4 grid per character)
     BRAILLE_BASE = 0x2800
     BRAILLE_DOTS = [
-        0x01, 0x02, 0x04, 0x40,  # Left column: top to bottom
-        0x08, 0x10, 0x20, 0x80,  # Right column: top to bottom
+        0x01,
+        0x02,
+        0x04,
+        0x40,  # Left column: top to bottom
+        0x08,
+        0x10,
+        0x20,
+        0x80,  # Right column: top to bottom
     ]
 
     def __init__(
@@ -362,7 +368,9 @@ class ASCIILineChart(Widget):
         val_range = max_val - min_val if max_val != min_val else 1
 
         # Create a 2D grid for the chart
-        grid = [[" " for _ in range(self._chart_width)] for _ in range(self._chart_height)]
+        grid = [
+            [" " for _ in range(self._chart_width)] for _ in range(self._chart_height)
+        ]
 
         # Plot points
         for i, value in enumerate(self._values):
@@ -376,9 +384,15 @@ class ASCIILineChart(Widget):
         # Connect with lines (simple)
         for i in range(len(self._values) - 1):
             x1 = int((i / max(len(self._values) - 1, 1)) * (self._chart_width - 1))
-            x2 = int(((i + 1) / max(len(self._values) - 1, 1)) * (self._chart_width - 1))
-            y1 = int(((self._values[i] - min_val) / val_range) * (self._chart_height - 1))
-            y2 = int(((self._values[i + 1] - min_val) / val_range) * (self._chart_height - 1))
+            x2 = int(
+                ((i + 1) / max(len(self._values) - 1, 1)) * (self._chart_width - 1)
+            )
+            y1 = int(
+                ((self._values[i] - min_val) / val_range) * (self._chart_height - 1)
+            )
+            y2 = int(
+                ((self._values[i + 1] - min_val) / val_range) * (self._chart_height - 1)
+            )
             y1 = self._chart_height - 1 - y1
             y2 = self._chart_height - 1 - y2
 

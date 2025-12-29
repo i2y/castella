@@ -141,9 +141,12 @@ class Canvas:
 def to_pt_rect(rect: Optional[Rect]) -> Optional[Rect]:
     if rect is not None:
         return Rect(
-            origin=Point(x=ceil(rect.origin.x / FONT_SIZE), y=ceil(rect.origin.y / LINE_HEIGHT)),
+            origin=Point(
+                x=ceil(rect.origin.x / FONT_SIZE), y=ceil(rect.origin.y / LINE_HEIGHT)
+            ),
             size=Size(
-                width=ceil(rect.size.width / FONT_SIZE), height=ceil(rect.size.height / LINE_HEIGHT)
+                width=ceil(rect.size.width / FONT_SIZE),
+                height=ceil(rect.size.height / LINE_HEIGHT),
             ),
         )
     else:
@@ -266,7 +269,9 @@ class PTPainter:
     def clip(self, rect: Optional[Rect]) -> None:
         if rect is not None:
             if self.clip_rect is None:
-                self.clip_rect = Rect(origin=rect.origin + self.translation, size=rect.size)
+                self.clip_rect = Rect(
+                    origin=rect.origin + self.translation, size=rect.size
+                )
             else:
                 self.clip_rect = self.clip_rect.intersect(
                     Rect(origin=rect.origin + self.translation, size=rect.size)

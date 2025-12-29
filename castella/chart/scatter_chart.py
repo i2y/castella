@@ -12,12 +12,11 @@ from castella.core import (
     Rect,
     Style,
     FillStyle,
-    StrokeStyle,
     Circle,
 )
 from castella.models.font import Font
 
-from castella.chart.base import BaseChart, ChartLayout, ChartMargins
+from castella.chart.base import BaseChart, ChartLayout
 from castella.chart.hit_testing import HitTestable, CircleElement
 from castella.chart.scales import LinearScale
 from castella.chart.models import NumericChartData, NumericSeries
@@ -193,7 +192,6 @@ class ScatterChart(BaseChart):
             if not state.is_series_visible(series_idx):
                 continue
 
-            color = series.style.color
             self._render_series_points(p, series, series_idx, x_scale, y_scale)
 
         # Draw legend
@@ -418,7 +416,9 @@ class ScatterChart(BaseChart):
                 else self._theme.text_secondary
             )
             p.style(Style(fill=FillStyle(color=text_color), font=Font(size=11)))
-            p.fill_text(series.name, Point(x=x + box_size + 6, y=y + box_size - 2), None)
+            p.fill_text(
+                series.name, Point(x=x + box_size + 6, y=y + box_size - 2), None
+            )
 
             x += spacing
 

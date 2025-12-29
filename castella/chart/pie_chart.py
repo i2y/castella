@@ -12,12 +12,11 @@ from castella.core import (
     Rect,
     Style,
     FillStyle,
-    StrokeStyle,
     Circle,
 )
 from castella.models.font import Font
 
-from castella.chart.base import BaseChart, ChartLayout, ChartMargins
+from castella.chart.base import BaseChart, ChartLayout
 from castella.chart.hit_testing import HitTestable, ArcElement
 from castella.chart.scales import PolarScale
 from castella.chart.models import CategoricalChartData
@@ -178,7 +177,9 @@ class PieChart(BaseChart):
             color = self.get_series_color(data_idx)
 
             # Highlight on hover
-            is_hovered = self.is_element_hovered(element.series_index, element.data_index)
+            is_hovered = self.is_element_hovered(
+                element.series_index, element.data_index
+            )
             if is_hovered:
                 color = self.lighten_color(color, 0.2)
 
@@ -319,7 +320,9 @@ class PieChart(BaseChart):
             )
 
             # Category name
-            p.style(Style(fill=FillStyle(color=self._theme.text_color), font=Font(size=11)))
+            p.style(
+                Style(fill=FillStyle(color=self._theme.text_color), font=Font(size=11))
+            )
             label = point.label or point.category
             p.fill_text(label, Point(x=x + box_size + 6, y=y + box_size - 2), None)
 

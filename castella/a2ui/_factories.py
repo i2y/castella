@@ -9,7 +9,6 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from castella.a2ui.types import (
-    Alignment,
     ButtonComponent,
     CardComponent,
     CheckBoxComponent,
@@ -18,7 +17,6 @@ from castella.a2ui.types import (
     DataBinding,
     DateTimeInputComponent,
     DividerComponent,
-    Distribution,
     ExplicitChildren,
     ImageComponent,
     ListComponent,
@@ -30,7 +28,6 @@ from castella.a2ui.types import (
     RowComponent,
     SliderComponent,
     TabsComponent,
-    TemplateChildren,
     TextComponent,
     TextFieldComponent,
     TextUsageHint,
@@ -424,11 +421,13 @@ def create_tabs(
     for item in component.tab_items:
         label = resolve_value(item.label, data_model, item.id)
         # Create placeholder content - renderer will replace with actual widget
-        tab_items.append(CastellaTabItem(
-            id=item.id,
-            label=str(label),
-            content=Spacer(),  # Placeholder
-        ))
+        tab_items.append(
+            CastellaTabItem(
+                id=item.id,
+                label=str(label),
+                content=Spacer(),  # Placeholder
+            )
+        )
 
     # Get selected tab
     selected_id = resolve_value(component.selected_tab, data_model, None)
@@ -533,9 +532,6 @@ def create_choice_picker(
     from castella.radio_buttons import RadioButtons
     from castella.checkbox import CheckBox
 
-    # Get label
-    label = resolve_value(component.label, data_model, "")
-
     # Get choices
     choices = []
     for choice in component.choices:
@@ -574,6 +570,7 @@ def create_choice_picker(
                             component.id,
                             {"path": path, "value": list(current_selected)},
                         )
+
                     return handler
 
                 cb = cb.on_click(make_handler(choice, selected_set))
@@ -600,7 +597,10 @@ def create_choice_picker(
                 action_handler(
                     "__data_update__",
                     component.id,
-                    {"path": path, "value": choices[idx] if idx < len(choices) else None},
+                    {
+                        "path": path,
+                        "value": choices[idx] if idx < len(choices) else None,
+                    },
                 )
 
             widget = widget.on_select(on_select)
