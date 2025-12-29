@@ -409,6 +409,8 @@ See the examples directory for working demos:
 - `examples/agent_chat_a2a_demo.py` - A2A agent connection demo
 - `examples/a2ui_demo.py` - A2UI rendering examples (all components)
 - `examples/a2ui_streaming_demo.py` - A2UI streaming/progressive rendering demo
+- `examples/a2ui_mock_server.py` - Mock A2UI server with SSE streaming
+- `examples/a2ui_sse_client_demo.py` - SSE client that connects to A2UI server
 - `examples/a2a_demo.py` - A2A client/server demo
 
 ## References
