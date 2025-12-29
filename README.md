@@ -23,8 +23,23 @@ The primary final goal of Castella is to provide features for Python programmers
 - For web browsers, Castella is standing on awesome Pyodide/PyScript and CanvasKit (Wasm version of Skia).
 - For terminals, Castella is standing on prompt_toolkit.
 
-## Installation
-https://i2y.github.io/castella/getting-started/
+## Quick Start
+
+```bash
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create a new project
+uv init my-app && cd my-app
+
+# Add Castella with GLFW backend
+uv add "castella[glfw]"
+
+# Run your app
+uv run python your_app.py
+```
+
+For detailed installation instructions (SDL2, TUI, web), see the [Getting Started Guide](https://i2y.github.io/castella/getting-started/).
 
 ## An example of code using Castella
 
