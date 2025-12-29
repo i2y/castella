@@ -29,7 +29,7 @@ class SimpleChatDemo(Component):
         self._messages.attach(self)
         self._input_state = MultilineInputState("")
         self._scroll_state = ScrollState()
-        self._scroll_state.attach(self)  # Trigger re-render on scroll change
+        # Don't attach - manual scrolling works better without re-renders
 
     def _send_message(self, event=None):
         text = self._input_state.value().strip()
@@ -50,11 +50,13 @@ class SimpleChatDemo(Component):
         else:
             response = f"You said: *{text}*"
 
+        # Set scroll to bottom BEFORE adding message (so re-render picks it up)
+        self._scroll_state.y = 999999
+
         self._messages.append({"role": "assistant", "content": response})
 
-        # Clear input and scroll to bottom
+        # Clear input
         self._input_state.set("")
-        self._scroll_state.y = 999999  # Scroll to bottom
 
     def view(self):
         theme = ThemeManager().current

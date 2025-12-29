@@ -31,6 +31,7 @@ Example:
     App(Frame("Agent Chat", 800, 600), chat).run()
 """
 
+from castella.agent.agent_chat import AgentChat
 from castella.agent.card_view import AgentCardView, AgentListView
 from castella.agent.chat import (
     ChatContainer,
@@ -43,6 +44,8 @@ from castella.agent.chat import (
 from castella.agent.tool_view import ToolCallView, ToolHistoryPanel
 
 __all__ = [
+    # High-level API
+    "AgentChat",
     # Chat components
     "ChatMessage",
     "ChatInput",
