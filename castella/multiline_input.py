@@ -401,7 +401,7 @@ class MultilineInput(Widget):
         state._scroll_y = max(0, min(state._scroll_y, max_scroll))
 
         # Clip content area and apply scroll offset
-        content_width = size.width - border_width * 2 - scrollbar_width
+        content_width = max(0, size.width - border_width * 2 - scrollbar_width)
         p.save()
         p.clip(Rect(
             origin=Point(x=border_width, y=border_width),

@@ -121,6 +121,8 @@ class Theme(BaseModel):
             return deepcopy(generate_switch_styles(self.colors, font, radius))
         elif class_name == "checkbox":
             return deepcopy(generate_checkbox_styles(self.colors, font, radius))
+        elif class_name == "slider":
+            return deepcopy(generate_slider_styles(self.colors, font, radius))
         elif class_name in ("layout", "row", "column", "box"):
             return deepcopy(generate_layout_styles(self.colors))
         else:
@@ -448,6 +450,44 @@ def generate_checkbox_styles(
 ) -> WidgetStyles:
     """Generate styles for Checkbox widget."""
     return generate_switch_styles(colors, font, border_radius, shadow)
+
+
+def generate_slider_styles(
+    colors: ColorPalette,
+    font: Font = Font(),
+    border_radius: float = 0.0,
+    shadow: Shadow | None = None,
+) -> WidgetStyles:
+    """Generate styles for Slider widget."""
+    return {
+        # Track (background bar)
+        "normal": WidgetStyle(
+            bg_color=colors.bg_tertiary,
+            border_color=colors.border_primary,
+            text_color=colors.fg,
+            text_font=font,
+            border_radius=border_radius,
+            shadow=shadow,
+        ),
+        # Fill (progress bar)
+        "normal_selected": WidgetStyle(
+            bg_color=colors.bg_selected,
+            border_color=colors.border_primary,
+            text_color=colors.fg,
+            text_font=font,
+            border_radius=border_radius,
+            shadow=shadow,
+        ),
+        # Thumb (draggable knob)
+        "normal_hover": WidgetStyle(
+            bg_color=colors.fg,
+            border_color=colors.border_primary,
+            text_color=colors.bg_primary,
+            text_font=font,
+            border_radius=border_radius,
+            shadow=shadow,
+        ),
+    }
 
 
 def generate_layout_styles(

@@ -15,6 +15,7 @@ from castella.a2ui.types import (
     CheckBoxComponent,
     ColumnComponent,
     DataBinding,
+    DateTimeInputComponent,
     DividerComponent,
     Distribution,
     ExplicitChildren,
@@ -23,7 +24,10 @@ from castella.a2ui.types import (
     LiteralNumber,
     LiteralString,
     MarkdownComponent,
+    ModalComponent,
     RowComponent,
+    SliderComponent,
+    TabsComponent,
     TextComponent,
     TextFieldComponent,
     TextUsageHint,
@@ -223,6 +227,88 @@ def create_checkbox(
     return widget
 
 
+def create_slider(
+    component: SliderComponent,
+    data_model: dict[str, Any],
+    action_handler: ActionHandler,
+) -> Widget:
+    """Create a Slider widget from an A2UI Slider component."""
+    from castella.slider import Slider
+
+    # Get current value
+    value = resolve_value(component.value, data_model, 0.0)
+
+    widget = Slider(
+        value=float(value) if value is not None else 0.0,
+        min_val=component.min,
+        max_val=component.max,
+    )
+
+    # If value is a binding, set up two-way binding via on_change
+    if isinstance(component.value, DataBinding):
+        path = component.value.path
+
+        def on_change(new_value: float) -> None:
+            action_handler(
+                "__data_update__",
+                component.id,
+                {"path": path, "value": new_value},
+            )
+
+        widget = widget.on_change(on_change)
+
+    # Apply flex weight if specified
+    if component.weight is not None:
+        widget = widget.flex(int(component.weight))
+
+    return widget
+
+
+def create_datetime_input(
+    component: DateTimeInputComponent,
+    data_model: dict[str, Any],
+    action_handler: ActionHandler,
+) -> Widget:
+    """Create a DateTimeInput widget from an A2UI DateTimeInput component."""
+    from castella.datetime_input import DateTimeInput, DateTimeInputState
+
+    # Get label
+    label = resolve_value(component.label, data_model, None)
+
+    # Get value
+    value = resolve_value(component.value, data_model, None)
+
+    state = DateTimeInputState(
+        value=str(value) if value else None,
+        enable_date=component.enable_date,
+        enable_time=component.enable_time,
+    )
+
+    widget = DateTimeInput(
+        state=state,
+        label=str(label) if label else None,
+    )
+
+    # Set up data binding for value
+    if isinstance(component.value, DataBinding):
+        path = component.value.path
+
+        def on_change(new_value: str | None) -> None:
+            action_handler(
+                "__data_update__",
+                component.id,
+                {"path": path, "value": new_value},
+            )
+
+        widget = widget.on_change(on_change)
+
+    # Apply flex weight if specified
+    if component.weight is not None:
+        widget = widget.flex(int(component.weight))
+
+    return widget
+
+
 def create_image(
     component: ImageComponent,
     data_model: dict[str, Any],
@@ -313,6 +399,98 @@ def create_card(
     # Apply flex weight if specified
     if component.weight is not None:
         widget = widget.flex(int(component.weight))
+
+    return widget
+
+
+def create_tabs(
+    component: TabsComponent,
+    data_model: dict[str, Any],
+    action_handler: ActionHandler,
+) -> Widget:
+    """Create a Tabs widget from an A2UI Tabs component.
+
+    Note: Tab content widgets are referenced by content_id and will be
+    connected by the renderer after all components are created.
+    """
+    from castella.tabs import Tabs, TabsState, TabItem as CastellaTabItem
+    from castella.spacer import Spacer
+
+    # Build tab items (content will be connected by renderer)
+    tab_items = []
+    for item in component.tab_items:
+        label = resolve_value(item.label, data_model, item.id)
+        # Create placeholder content - renderer will replace with actual widget
+        tab_items.append(CastellaTabItem(
+            id=item.id,
+            label=str(label),
+            content=Spacer(),  # Placeholder
+        ))
+
+    # Get selected tab
+    selected_id = resolve_value(component.selected_tab, data_model, None)
+    if selected_id is None and tab_items:
+        selected_id = tab_items[0].id
+
+    state = TabsState(tab_items, str(selected_id) if selected_id else None)
+    widget = Tabs(state)
+
+    # Set up data binding for selected tab
+    if isinstance(component.selected_tab, DataBinding):
+        path = component.selected_tab.path
+
+        def on_change(new_tab_id: str) -> None:
+            action_handler(
+                "__data_update__",
+                component.id,
+                {"path": path, "value": new_tab_id},
+            )
+
+        widget = widget.on_change(on_change)
+
+    return widget
+
+
+def create_modal(
+    component: ModalComponent,
+    data_model: dict[str, Any],
+    action_handler: ActionHandler,
+) -> Widget:
+    """Create a Modal widget from an A2UI Modal component.
+
+    Note: Modal children (content) will be connected by the renderer
+    after all components are created.
+    """
+    from castella.modal import Modal, ModalState
+    from castella.spacer import Spacer
+
+    # Get title
+    title = resolve_value(component.title, data_model, None)
+
+    # Get open state
+    is_open = resolve_value(component.open, data_model, False)
+
+    state = ModalState(bool(is_open))
+
+    # Create modal with placeholder content (renderer will replace)
+    widget = Modal(
+        content=Spacer(),  # Placeholder
+        state=state,
+        title=str(title) if title else None,
+    )
+
+    # Set up data binding for open state
+    if isinstance(component.open, DataBinding):
+        path = component.open.path
+
+        def on_close() -> None:
+            action_handler(
+                "__data_update__",
+                component.id,
+                {"path": path, "value": False},
+            )
+
+        widget = widget.on_close(on_close)
 
     return widget
 

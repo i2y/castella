@@ -21,11 +21,18 @@ except ImportError:
 from castella.row import Row as Row
 from castella.spacer import Spacer as Spacer
 from castella.switch import Switch as Switch
+from castella.slider import Slider as Slider, SliderState as SliderState
 from castella.text import Text as Text, SimpleText as SimpleText
 from castella.checkbox import CheckBox as CheckBox
 from castella.radio_buttons import (
     RadioButtons as RadioButtons,
     RadioButtonsState as RadioButtonsState,
+)
+from castella.tabs import Tabs as Tabs, TabsState as TabsState, TabItem as TabItem
+from castella.modal import Modal as Modal, ModalState as ModalState
+from castella.datetime_input import (
+    DateTimeInput as DateTimeInput,
+    DateTimeInputState as DateTimeInputState,
 )
 from castella.table import (
     TableEvent as TableEvent,

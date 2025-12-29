@@ -33,6 +33,8 @@ Example:
 
 from castella.agent.agent_chat import AgentChat
 from castella.agent.card_view import AgentCardView, AgentListView
+from castella.agent.hub import AgentHub
+from castella.agent.multi import MultiAgentChat
 from castella.agent.chat import (
     ChatContainer,
     ChatInput,
@@ -46,6 +48,8 @@ from castella.agent.tool_view import ToolCallView, ToolHistoryPanel
 __all__ = [
     # High-level API
     "AgentChat",
+    "AgentHub",
+    "MultiAgentChat",
     # Chat components
     "ChatMessage",
     "ChatInput",

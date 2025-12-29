@@ -205,8 +205,8 @@ class Button(Widget):
         p.style(self._text_style)
         state: ButtonState = cast(ButtonState, self._state)
         s = Size(
-            p.measure_text(state.get_text()) + 2 * self._style.padding,
-            self._text_style.font.size,
+            width=p.measure_text(state.get_text()) + 2 * self._style.padding,
+            height=self._text_style.font.size,
         )
         p.restore()
         return s

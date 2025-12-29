@@ -53,10 +53,14 @@ class ComponentCatalog:
             create_card,
             create_checkbox,
             create_column,
+            create_datetime_input,
             create_divider,
             create_image,
             create_markdown,
+            create_modal,
             create_row,
+            create_slider,
+            create_tabs,
             create_text,
             create_textfield,
         )
@@ -71,16 +75,16 @@ class ComponentCatalog:
             "Button": create_button,
             "TextField": create_textfield,
             "CheckBox": create_checkbox,
-            # "Slider": create_slider,  # TODO: implement
-            # "DateTimeInput": create_datetime_input,  # TODO: implement
+            "Slider": create_slider,
+            "DateTimeInput": create_datetime_input,
             # "ChoicePicker": create_choice_picker,  # TODO: implement
             # Layout components
             "Row": create_row,
             "Column": create_column,
             "Card": create_card,
+            "Tabs": create_tabs,
+            "Modal": create_modal,
             # "List": create_list,  # TODO: implement
-            # "Tabs": create_tabs,  # TODO: implement
-            # "Modal": create_modal,  # TODO: implement
         }
 
     def register(self, component_type: str, factory: WidgetFactory) -> None:
