@@ -17,6 +17,7 @@ The primary final goal of Castella is to provide features for Python programmers
 - Custom themes via `Theme.derive()` for partial overrides or full `ColorPalette` customization.
 - Rich markdown rendering with syntax highlighting and LaTeX math support.
 - Multi-line text editor with scrolling and cursor positioning.
+- Native interactive charts (Bar, Line, Pie, Scatter, Area, Stacked Bar, Gauge) with tooltips, hover, and click events.
 - Castella utilizes GPU via dependent libraries.
 - Z-index support enables layered UIs with modals, popups, and overlays.
 

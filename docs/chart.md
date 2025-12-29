@@ -1,156 +1,413 @@
 # Charts
 
-Castella provides chart widgets powered by Matplotlib for data visualization.
+Castella provides native interactive chart widgets with GPU rendering via Skia (desktop) and CanvasKit (web). No external dependencies like Matplotlib required.
 
-!!! note "Requirements"
-    Charts require `matplotlib` and `numpy`:
-    ```bash
-    # With uv (recommended)
-    uv add matplotlib numpy
+## Features
 
-    # With pip
-    pip install matplotlib numpy
-    ```
+- **7 Chart Types**: Bar, Line, Pie, Scatter, Area, Stacked Bar, Gauge
+- **Full Interactivity**: Tooltips, hover effects, click events
+- **Pydantic v2 Models**: Type-safe, validated data models
+- **Theme Integration**: Automatically uses current Castella theme
+- **Observable Pattern**: Charts auto-update when data changes
 
-## BarChart
-
-Bar charts display categorical data with rectangular bars.
+## Quick Start
 
 ```python
-from castella.bar_chart import BarChart, BarChartState
+from castella.chart import BarChart, CategoricalChartData, CategoricalSeries, SeriesStyle
 
-# Create chart state with labels and values
-data = BarChartState(
-    label=["A", "B", "C", "D"],
-    value=[10, 25, 15, 30]
+# Create data
+data = CategoricalChartData(title="Sales by Quarter")
+data.add_series(CategoricalSeries.from_values(
+    name="2024",
+    categories=["Q1", "Q2", "Q3", "Q4"],
+    values=[100, 120, 90, 150],
+    style=SeriesStyle(color="#3b82f6"),
+))
+
+# Create chart
+chart = BarChart(data, show_values=True)
+```
+
+## Data Models
+
+### CategoricalChartData
+
+For charts with category labels (Bar, Pie, Stacked Bar):
+
+```python
+from castella.chart import CategoricalChartData, CategoricalSeries, SeriesStyle
+
+data = CategoricalChartData(title="Monthly Sales")
+data.add_series(CategoricalSeries.from_values(
+    name="Product A",
+    categories=["Jan", "Feb", "Mar", "Apr"],
+    values=[50, 75, 60, 90],
+    style=SeriesStyle(color="#3b82f6"),
+))
+data.add_series(CategoricalSeries.from_values(
+    name="Product B",
+    categories=["Jan", "Feb", "Mar", "Apr"],
+    values=[40, 55, 70, 65],
+    style=SeriesStyle(color="#22c55e"),
+))
+```
+
+### NumericChartData
+
+For charts with numeric X/Y data (Line, Scatter, Area):
+
+```python
+from castella.chart import NumericChartData, NumericSeries, SeriesStyle
+
+data = NumericChartData(title="Temperature Over Time")
+
+# Y values only (X auto-generated as 0, 1, 2, ...)
+data.add_series(NumericSeries.from_y_values(
+    name="Sensor A",
+    y_values=[20, 22, 21, 25, 24, 23],
+    style=SeriesStyle(color="#3b82f6"),
+))
+
+# Explicit X and Y values
+data.add_series(NumericSeries.from_values(
+    name="Sensor B",
+    x_values=[0, 1, 2, 3, 4, 5],
+    y_values=[18, 19, 20, 22, 21, 20],
+    style=SeriesStyle(color="#22c55e"),
+))
+```
+
+### GaugeChartData
+
+For gauge/meter charts:
+
+```python
+from castella.chart import GaugeChartData
+
+data = GaugeChartData(
+    title="CPU Usage",
+    value=67,
+    min_value=0,
+    max_value=100,
+    value_format="{:.0f}%",
+    thresholds=[
+        (0.0, "#22c55e"),   # Green for 0-50%
+        (0.5, "#f59e0b"),   # Yellow for 50-80%
+        (0.8, "#ef4444"),   # Red for 80-100%
+    ],
+)
+```
+
+## Chart Types
+
+### BarChart
+
+Vertical bar chart for categorical data:
+
+```python
+from castella.chart import BarChart, CategoricalChartData, CategoricalSeries
+
+data = CategoricalChartData(title="Sales")
+data.add_series(CategoricalSeries.from_values(
+    name="Revenue",
+    categories=["Q1", "Q2", "Q3", "Q4"],
+    values=[100, 150, 120, 180],
+))
+
+chart = BarChart(
+    data,
+    show_values=True,      # Show value labels on bars
+    bar_width_ratio=0.7,   # Bar width as ratio of available space
+    enable_tooltip=True,   # Show tooltips on hover
+)
+```
+
+### LineChart
+
+Line chart with optional points:
+
+```python
+from castella.chart import LineChart, NumericChartData, NumericSeries
+
+data = NumericChartData(title="Stock Price")
+data.add_series(NumericSeries.from_y_values(
+    name="AAPL",
+    y_values=[150, 155, 148, 160, 158, 165],
+))
+
+chart = LineChart(
+    data,
+    show_points=True,     # Show data points
+    point_radius=4.0,     # Point size
+    line_width=2.0,       # Line thickness
+    smooth=False,         # Use straight lines (True for curves)
+)
+```
+
+### PieChart
+
+Pie and donut charts:
+
+```python
+from castella.chart import PieChart, CategoricalChartData, CategoricalSeries
+
+data = CategoricalChartData(title="Market Share")
+data.add_series(CategoricalSeries.from_values(
+    name="Companies",
+    categories=["Company A", "Company B", "Company C", "Others"],
+    values=[35, 28, 22, 15],
+))
+
+chart = PieChart(
+    data,
+    inner_radius_ratio=0.0,  # 0.0 for pie, 0.5+ for donut
+    show_labels=True,        # Show category labels
+    show_percentages=True,   # Show percentage values
+)
+```
+
+### ScatterChart
+
+Scatter plot with customizable point shapes:
+
+```python
+from castella.chart import ScatterChart, PointShape, NumericChartData, NumericSeries
+
+data = NumericChartData(title="Height vs Weight")
+data.add_series(NumericSeries.from_values(
+    name="Male",
+    x_values=[170, 175, 180, 185],
+    y_values=[70, 75, 80, 85],
+))
+
+chart = ScatterChart(
+    data,
+    point_radius=6,
+    point_shape=PointShape.CIRCLE,  # CIRCLE, SQUARE, DIAMOND, TRIANGLE
+    show_grid=True,
+)
+```
+
+### AreaChart
+
+Filled area chart:
+
+```python
+from castella.chart import AreaChart, NumericChartData, NumericSeries
+
+data = NumericChartData(title="Website Traffic")
+data.add_series(NumericSeries.from_y_values(
+    name="Visitors",
+    y_values=[1200, 1500, 1300, 1800, 2100],
+))
+
+chart = AreaChart(
+    data,
+    fill_opacity=0.3,    # Area fill transparency
+    show_points=True,    # Show data points
+    stacked=False,       # Stack multiple series
+)
+```
+
+### StackedBarChart
+
+Stacked bar chart for comparing parts of a whole:
+
+```python
+from castella.chart import StackedBarChart, CategoricalChartData, CategoricalSeries
+
+data = CategoricalChartData(title="Revenue by Region")
+data.add_series(CategoricalSeries.from_values(
+    name="North", categories=["Q1", "Q2", "Q3", "Q4"], values=[100, 120, 90, 150],
+))
+data.add_series(CategoricalSeries.from_values(
+    name="South", categories=["Q1", "Q2", "Q3", "Q4"], values=[80, 100, 110, 95],
+))
+data.add_series(CategoricalSeries.from_values(
+    name="East", categories=["Q1", "Q2", "Q3", "Q4"], values=[60, 75, 85, 70],
+))
+
+chart = StackedBarChart(
+    data,
+    normalized=False,    # True for 100% stacked chart
+    show_values=False,
+)
+```
+
+### GaugeChart
+
+Gauge/meter chart with threshold colors:
+
+```python
+from castella.chart import GaugeChart, GaugeStyle, GaugeChartData
+
+data = GaugeChartData(
+    title="CPU Usage",
+    value=67,
+    min_value=0,
+    max_value=100,
+    value_format="{:.0f}%",
+    thresholds=[
+        (0.0, "#22c55e"),   # Green
+        (0.5, "#f59e0b"),   # Yellow
+        (0.8, "#ef4444"),   # Red
+    ],
 )
 
-# Use in your view
-BarChart(data)
-```
-
-### Updating Data
-
-```python
-# Update the chart data (triggers automatic re-render)
-data.set(
-    label=["X", "Y", "Z"],
-    value=[5, 10, 20]
+chart = GaugeChart(
+    data,
+    style=GaugeStyle.HALF_CIRCLE,  # HALF_CIRCLE, THREE_QUARTER, FULL_CIRCLE
+    show_ticks=True,
+    arc_width=25,
 )
 ```
 
-## LineChart
+## Interactivity
 
-Line charts display data points connected by lines, useful for showing trends.
+### Event Handlers
+
+All charts support hover and click events:
 
 ```python
-from castella.line_chart import LineChart, LineChartState
+chart = BarChart(data).on_click(on_bar_click).on_hover(on_bar_hover)
 
-# Create chart state with values
-data = LineChartState(value=[1, 4, 2, 5, 3, 6])
+def on_bar_click(event):
+    print(f"Clicked: {event.label} = {event.value}")
+    print(f"Series: {event.series_index}, Data: {event.data_index}")
 
-# Use in your view
-LineChart(data)
+def on_bar_hover(event):
+    print(f"Hovering: {event.label}")
 ```
 
-### Updating Data
+### Tooltips
+
+Tooltips are enabled by default and show on hover:
 
 ```python
-# Update the chart data
-data.set(value=[10, 8, 12, 9, 15])
+chart = LineChart(data, enable_tooltip=True)  # Default
+chart = LineChart(data, enable_tooltip=False)  # Disable
 ```
 
-## PieChart
+### Series Visibility
 
-Pie charts display proportional data as slices of a circle.
+Toggle series visibility (useful with legends):
 
 ```python
-from castella.pie_chart import PieChart, PieChartState
+# Hide/show series
+data.set_series_visibility(series_index=1, visible=False)
+data.toggle_series_visibility(series_index=0)
 
-# Create chart state with labels and values
-data = PieChartState(
-    label=["Category A", "Category B", "Category C"],
-    value=[30, 45, 25]
+# Check visibility
+if data.is_series_visible(0):
+    print("Series 0 is visible")
+```
+
+## Reactive Updates
+
+Charts automatically re-render when their data changes:
+
+```python
+class LiveChart(Component):
+    def __init__(self):
+        super().__init__()
+        self._data = GaugeChartData(title="CPU", value=50, max_value=100)
+        self._data.attach(self)  # Re-render on data change
+
+    def view(self):
+        return Column(
+            GaugeChart(self._data, style=GaugeStyle.HALF_CIRCLE),
+            Button("Update").on_click(self._update),
+        )
+
+    def _update(self, _):
+        import random
+        self._data.set_value(random.randint(0, 100))  # Triggers re-render
+```
+
+## SeriesStyle
+
+Customize series appearance:
+
+```python
+from castella.chart import SeriesStyle
+
+style = SeriesStyle(
+    color="#3b82f6",       # Primary color
+    fill_opacity=0.3,      # Fill transparency (for area charts)
+    line_width=2.0,        # Line thickness
+    point_radius=4.0,      # Point size
 )
 
-# Use in your view
-PieChart(data)
-```
-
-### Updating Data
-
-```python
-# Update the chart data
-data.set(
-    label=["New A", "New B"],
-    value=[60, 40]
+series = CategoricalSeries.from_values(
+    name="Sales",
+    categories=["A", "B", "C"],
+    values=[10, 20, 30],
+    style=style,
 )
 ```
 
 ## Complete Example
 
 ```python
-from castella import App, Column, Row, Button, Text
+from castella import App, Component, Column, Row, Button, SizePolicy
 from castella.frame import Frame
-from castella.bar_chart import BarChart, BarChartState
-from castella.pie_chart import PieChart, PieChartState
-from castella.line_chart import LineChart, LineChartState
+from castella.chart import (
+    BarChart, LineChart, PieChart, GaugeChart, GaugeStyle,
+    CategoricalChartData, NumericChartData, GaugeChartData,
+    CategoricalSeries, NumericSeries, SeriesStyle,
+)
 
 
-# Create chart data
-bar_data = BarChartState(label=["Foo", "Bar", "Baz"], value=[50, 100, 75])
-pie_data = PieChartState(label=["Foo", "Bar", "Baz"], value=[50, 100, 75])
-line_data = LineChartState(value=[10, 25, 15, 30, 20])
-
-App(
-    Frame("Charts Demo", 1200, 400),
-    Row(
-        BarChart(bar_data),
-        PieChart(pie_data),
-        LineChart(line_data),
-    ),
-).run()
-```
-
-## Reactive Charts
-
-Charts automatically update when their state changes:
-
-```python
-from castella import App, Column, Row, Button, Component, State
-from castella.frame import Frame
-from castella.bar_chart import BarChart, BarChartState
-import random
-
-
-class ReactiveChartDemo(Component):
+class ChartDemo(Component):
     def __init__(self):
         super().__init__()
-        self._chart_data = BarChartState(
-            label=["A", "B", "C"],
-            value=[10, 20, 30]
-        )
-        self.model(self._chart_data)
 
-    def _randomize(self, _):
-        self._chart_data.set(
-            label=["A", "B", "C"],
-            value=[random.randint(5, 50) for _ in range(3)]
+        # Bar chart data
+        self._bar_data = CategoricalChartData(title="Quarterly Sales")
+        self._bar_data.add_series(CategoricalSeries.from_values(
+            name="2024",
+            categories=["Q1", "Q2", "Q3", "Q4"],
+            values=[120, 150, 130, 180],
+            style=SeriesStyle(color="#3b82f6"),
+        ))
+        self._bar_data.attach(self)
+
+        # Line chart data
+        self._line_data = NumericChartData(title="Daily Views")
+        self._line_data.add_series(NumericSeries.from_y_values(
+            name="Page Views",
+            y_values=[100, 120, 90, 150, 180, 160, 200],
+            style=SeriesStyle(color="#22c55e"),
+        ))
+        self._line_data.attach(self)
+
+        # Gauge data
+        self._gauge_data = GaugeChartData(
+            title="Performance",
+            value=75,
+            max_value=100,
+            value_format="{:.0f}%",
         )
+        self._gauge_data.attach(self)
 
     def view(self):
         return Column(
-            BarChart(self._chart_data),
-            Button("Randomize Data").on_click(self._randomize),
+            Row(
+                BarChart(self._bar_data, show_values=True)
+                    .on_click(lambda e: print(f"Bar: {e.label}")),
+                LineChart(self._line_data, show_points=True)
+                    .on_hover(lambda e: print(f"Line: {e.value}")),
+            ),
+            Row(
+                GaugeChart(self._gauge_data, style=GaugeStyle.HALF_CIRCLE),
+                Button("Randomize").on_click(self._randomize),
+            ).height(200).height_policy(SizePolicy.FIXED),
         )
 
+    def _randomize(self, _):
+        import random
+        self._gauge_data.set_value(random.randint(0, 100))
 
-App(Frame("Reactive Chart", 600, 500), ReactiveChartDemo()).run()
+
+App(Frame("Chart Demo", 1000, 700), ChartDemo()).run()
 ```
-
-## Notes
-
-- Charts default to `SizePolicy.CONTENT` for both width and height
-- Charts are rendered as images using Matplotlib's figure canvas
-- Matplotlib must be installed for chart widgets to work
-- Performance depends on Matplotlib rendering speed

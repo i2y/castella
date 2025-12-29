@@ -281,6 +281,23 @@ class NumericChartData(ChartDataBase):
         self.notify()
         return self
 
+    def update_series(self, index: int, series: NumericSeries) -> Self:
+        """Update a specific series by index.
+
+        Args:
+            index: Index of the series to update.
+            series: The new series data.
+
+        Returns:
+            Self for chaining.
+        """
+        if 0 <= index < len(self.series):
+            new_series = list(self.series)
+            new_series[index] = series
+            self.series = new_series
+            self.notify()
+        return self
+
     @property
     def x_range(self) -> tuple[float, float]:
         """Get the X value range across all visible series."""

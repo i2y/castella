@@ -59,6 +59,10 @@ from castella.chart.transform import ChartTransform, ViewBounds
 from castella.chart.bar_chart import BarChart
 from castella.chart.line_chart import LineChart
 from castella.chart.pie_chart import PieChart
+from castella.chart.scatter_chart import ScatterChart, PointShape
+from castella.chart.area_chart import AreaChart
+from castella.chart.stacked_bar_chart import StackedBarChart
+from castella.chart.gauge_chart import GaugeChart, GaugeStyle, GaugeThreshold, DonutChart
 
 __all__ = [
     # Data points
@@ -116,4 +120,12 @@ __all__ = [
     "BarChart",
     "LineChart",
     "PieChart",
+    "ScatterChart",
+    "PointShape",
+    "AreaChart",
+    "StackedBarChart",
+    "GaugeChart",
+    "GaugeStyle",
+    "GaugeThreshold",
+    "DonutChart",
 ]
