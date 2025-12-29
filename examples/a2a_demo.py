@@ -1,17 +1,23 @@
 """A2A Protocol Demo
 
 This example demonstrates A2A (Agent-to-Agent) protocol integration:
-1. Creating an A2A server (agent)
-2. Connecting to an A2A agent
-3. Displaying agent information with AgentCardView
 
-Run the server:
+1. A2A Server: Uses python-a2a directly (Castella focuses on UI layer)
+2. A2A Client: Uses python-a2a directly for protocol handling
+3. Castella UI: AgentCardView displays agent information
+
+Castella's value-add for A2A:
+- AgentCardView: Display agent cards in Desktop/Web/Terminal
+- A2UIRenderer: Render A2UI JSON responses as Castella widgets
+- (Coming soon) AgentChat: Full chat UI for agent interaction
+
+Run the server (python-a2a):
     uv run python examples/a2a_demo.py --server
 
-Run the client:
+Run the client (python-a2a):
     uv run python examples/a2a_demo.py --client
 
-Run the UI demo (uses mock data):
+Run the UI demo (Castella AgentCardView):
     uv run python examples/a2a_demo.py
 """
 
@@ -19,8 +25,8 @@ import sys
 
 
 def run_server():
-    """Run a sample A2A server."""
-    from castella.a2a import A2AServer, skill
+    """Run a sample A2A server using python-a2a directly."""
+    from python_a2a import A2AServer, TaskState, TaskStatus, run_server, skill
 
     class WeatherAgent(A2AServer):
         """A sample weather agent."""
@@ -31,9 +37,8 @@ def run_server():
             tags=["weather", "current"],
             examples=["What's the weather in Tokyo?"],
         )
-        def get_weather(self, message: str) -> str:
-            # Extract location from message (simple implementation)
-            return "Weather: Sunny, 22°C, Humidity 45%"
+        def get_weather(self, location: str = "unknown") -> str:
+            return f"Weather in {location}: Sunny, 22°C, Humidity 45%"
 
         @skill(
             name="forecast",
@@ -41,40 +46,65 @@ def run_server():
             tags=["weather", "forecast"],
             examples=["3-day forecast for London"],
         )
-        def forecast(self, message: str) -> str:
-            return "Forecast: Sunny → Cloudy → Rainy over the next 3 days"
+        def forecast(self, location: str = "unknown") -> str:
+            return f"Forecast for {location}: Sunny → Cloudy → Rainy over the next 3 days"
 
         @skill(
             name="alerts",
             description="Get weather alerts for a region",
             tags=["weather", "alerts", "emergency"],
         )
-        def alerts(self, message: str) -> str:
-            return "No active weather alerts"
+        def alerts(self, region: str = "your area") -> str:
+            return f"No active weather alerts in {region}"
 
-    agent = WeatherAgent(
+        def handle_task(self, task):
+            """Handle incoming tasks and route to appropriate skill."""
+            # Extract message text from task
+            message_data = task.message or {}
+            content = message_data.get("content", {})
+            text = content.get("text", "") if isinstance(content, dict) else str(content)
+
+            # Simple keyword-based routing
+            text_lower = text.lower()
+            if "forecast" in text_lower:
+                response = self.forecast()
+            elif "alert" in text_lower:
+                response = self.alerts()
+            elif "weather" in text_lower:
+                response = self.get_weather()
+            else:
+                response = self.get_weather()
+
+            # Set task response
+            task.artifacts = [{"parts": [{"type": "text", "text": response}]}]
+            task.status = TaskStatus(state=TaskState.COMPLETED)
+            return task
+
+    weather_agent = WeatherAgent(
         name="Weather Agent",
         description="Provides weather information including current conditions, forecasts, and alerts",
         version="1.0.0",
+        url="http://localhost:8080",
     )
 
     print("Starting Weather Agent...")
     print("Connect with: A2AClient('http://localhost:8080')")
-    agent.run(port=8080)
+    run_server(weather_agent, port=8080)
 
 
 def run_client():
-    """Run a sample A2A client."""
-    from castella.a2a import A2AClient
+    """Run a sample A2A client using python-a2a directly."""
+    from python_a2a import A2AClient
 
     print("Connecting to A2A agent at http://localhost:8080...")
 
     try:
         client = A2AClient("http://localhost:8080")
-        print(f"Connected to: {client.name}")
-        print(f"Description: {client.description}")
-        print(f"Version: {client.version}")
-        print(f"Skills: {[s.name for s in client.skills]}")
+        card = client.agent_card
+        print(f"Connected to: {card.name}")
+        print(f"Description: {card.description}")
+        print(f"Version: {card.version}")
+        print(f"Skills: {[s.name for s in card.skills]}")
         print()
 
         # Ask questions
@@ -94,12 +124,11 @@ def run_client():
 
 def run_ui_demo():
     """Run UI demo with mock agent card."""
-    from castella import run_app
+    from castella import App, Column, Text
     from castella.a2a.types import AgentCard, AgentSkill
     from castella.agent import AgentCardView
-    from castella.column import Column
     from castella.core import SizePolicy
-    from castella.text import Text
+    from castella.frame import Frame
 
     # Create mock agent cards for demo
     weather_card = AgentCard(
@@ -161,14 +190,14 @@ def run_ui_demo():
         .height(32)
         .height_policy(SizePolicy.FIXED),
         Text("Connected Agents:")
-        .text_color(theme.colors.text_secondary)
+        .text_color(theme.colors.text_info)
         .height(24)
         .height_policy(SizePolicy.FIXED),
         AgentCardView(weather_card, show_url=True),
         AgentCardView(travel_card, show_url=True),
     )
 
-    run_app(ui, title="A2A Demo")
+    App(Frame("A2A Demo", 800, 600), ui).run()
 
 
 def main():

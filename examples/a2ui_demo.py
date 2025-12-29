@@ -7,8 +7,9 @@ Run with:
     uv run python examples/a2ui_demo.py
 """
 
-from castella import run_app
+from castella import App
 from castella.a2ui import A2UIRenderer, UserAction
+from castella.frame import Frame
 
 
 def main():
@@ -125,7 +126,7 @@ All components render natively on **Desktop**, **Web**, and **Terminal**!
     widget = renderer.render_json(a2ui_json)
 
     # Run the app
-    run_app(widget, title="A2UI Demo")
+    App(Frame("A2UI Demo", 800, 600), widget).run()
 
 
 if __name__ == "__main__":
