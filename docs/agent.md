@@ -222,7 +222,8 @@ jsonl = '''
 {"updateComponents": {"surfaceId": "main", "components": [{"id": "text1", "component": "Text", "text": {"literalString": "Hello!"}}]}}
 '''
 surface = renderer.handle_jsonl(jsonl)
-widget = surface.root_widget
+if surface:
+    widget = surface.root_widget
 ```
 
 #### Streaming from Files
@@ -275,16 +276,21 @@ For building custom chat UIs, Castella provides lower-level components.
 ### ChatMessage
 
 ```python
-from castella.agent import ChatMessage, ChatMessageData
+from castella.agent import ChatMessage
 
-# Create message data
-msg = ChatMessageData(
+# Create message widget
+widget = ChatMessage(
     role="assistant",
     content="Hello! How can I help you?",
 )
 
-# Create message widget
-widget = ChatMessage(msg)
+# With optional parameters
+widget = ChatMessage(
+    role="assistant",
+    content="Hello!",
+    show_timestamp=True,
+    show_role_label=True,
+)
 ```
 
 ### ChatInput
@@ -292,10 +298,20 @@ widget = ChatMessage(msg)
 ```python
 from castella.agent import ChatInput
 
-def on_send(text: str):
+def handle_send(text: str):
     print(f"User sent: {text}")
 
-input_widget = ChatInput(on_send=on_send, placeholder="Type a message...")
+# Basic usage
+input_widget = ChatInput(on_submit=handle_send)
+
+# With all options
+input_widget = ChatInput(
+    on_submit=handle_send,
+    placeholder="Type a message...",
+    send_label="Send",
+    min_height=40,
+    max_height=120,
+)
 ```
 
 ### ChatView
@@ -308,7 +324,15 @@ messages = ListState([
     ChatMessageData(role="system", content="Welcome!"),
 ])
 
+# Basic usage
 view = ChatView(messages)
+
+# With all options
+view = ChatView(
+    messages,
+    show_timestamps=False,
+    auto_scroll=True,
+)
 ```
 
 ### ChatContainer

@@ -265,6 +265,182 @@ RadioButtons(
 ).on_change(lambda i: selected.set(i))
 ```
 
+## Slider
+
+Range input widget for numeric values.
+
+```python
+from castella import Slider, SliderState
+
+# Basic usage
+slider = Slider(value=50, min_val=0, max_val=100)
+slider.on_change(lambda v: print(f"Value: {v}"))
+
+# With state for reactive updates
+state = SliderState(value=25, min_val=0, max_val=100)
+slider = Slider(state)
+
+# Access value
+print(state.value())   # 25
+print(state.ratio())   # 0.25 (normalized 0-1)
+state.set(75)          # Set new value
+```
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `value` or `state` | int/float or SliderState | required | Initial value or state |
+| `min_val` | int/float | 0 | Minimum value |
+| `max_val` | int/float | 100 | Maximum value |
+| `kind` | Kind | NORMAL | Visual style |
+
+## Tabs
+
+Tabbed navigation widget for organizing content.
+
+```python
+from castella import Tabs, TabsState, TabItem, Text
+
+# Create tabs with TabsState
+tabs_state = TabsState([
+    TabItem(id="home", label="Home", content=Text("Home content")),
+    TabItem(id="settings", label="Settings", content=Text("Settings content")),
+], selected_id="home")
+
+tabs = Tabs(tabs_state).on_change(lambda id: print(f"Tab: {id}"))
+
+# Or use fluent API
+tabs = (
+    Tabs()
+    .add_tab("home", "Home", Text("Home content"))
+    .add_tab("settings", "Settings", Text("Settings content"))
+)
+
+# Programmatic selection
+tabs_state.select("settings")
+```
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `state` | TabsState | None | Tabs state with items |
+| `tab_height` | int | 40 | Height of tab bar |
+
+### TabItem Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | str | Unique tab identifier |
+| `label` | str | Tab button label |
+| `content` | Widget | Content widget |
+
+## Modal
+
+Modal dialog overlay for focused interactions.
+
+```python
+from castella import Modal, ModalState, Column, Button, Text
+
+# Create modal state
+modal_state = ModalState()
+
+# Create modal with content
+modal = Modal(
+    content=Column(
+        Text("Modal Title", font_size=18),
+        Text("This is the modal content."),
+        Button("Close").on_click(lambda _: modal_state.close()),
+    ),
+    state=modal_state,
+    title="My Modal",
+)
+
+# Include modal in your view (uses z-index for overlay)
+def view(self):
+    return Box(
+        main_content.z_index(1),
+        modal,  # Rendered on top when open
+    )
+
+# Open/close programmatically
+modal_state.open()
+modal_state.close()
+```
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `content` | Widget | required | Modal content widget |
+| `state` | ModalState | required | Modal state (open/close) |
+| `title` | str | None | Optional title bar |
+| `width` | int | 400 | Modal width |
+| `height` | int | 300 | Modal height |
+| `close_on_backdrop_click` | bool | True | Close when clicking backdrop |
+| `show_close_button` | bool | True | Show X button in title bar |
+
+### ModalState Methods
+
+| Method | Description |
+|--------|-------------|
+| `open()` | Open the modal |
+| `close()` | Close the modal |
+| `is_open` | Property: current state |
+
+## DateTimeInput
+
+Date and/or time picker widget.
+
+```python
+from castella import DateTimeInput, DateTimeInputState
+
+# Date only
+state = DateTimeInputState(
+    value="2024-12-25",
+    enable_date=True,
+    enable_time=False
+)
+date_input = DateTimeInput(state=state, label="Birthday")
+
+# Date and time
+state = DateTimeInputState(
+    value="2024-12-25T14:30:00",
+    enable_date=True,
+    enable_time=True
+)
+datetime_input = DateTimeInput(state=state, label="Appointment")
+
+# Time only
+state = DateTimeInputState(
+    value="14:30:00",
+    enable_date=False,
+    enable_time=True
+)
+time_input = DateTimeInput(state=state, label="Start Time")
+```
+
+### DateTimeInputState Methods
+
+| Method | Description |
+|--------|-------------|
+| `set(value)` | Set the value (ISO format string) |
+| `to_iso()` | Get value as ISO format string |
+| `to_display_string()` | Get human-readable string |
+| `open_picker()` | Open the picker popup |
+| `close_picker()` | Close the picker popup |
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `state` | DateTimeInputState | None | State object |
+| `label` | str | None | Field label |
+| `value` | str | None | Initial value (ISO format) |
+| `enable_date` | bool | True | Show date picker |
+| `enable_time` | bool | False | Show time picker |
+
 ## Image
 
 Display images from files.
@@ -407,6 +583,10 @@ For more widgets and examples, see:
 | `Switch` | Toggle switch |
 | `CheckBox` | Checkbox |
 | `RadioButtons` | Radio button group |
+| `Slider` | Range input slider |
+| `Tabs` | Tabbed navigation |
+| `Modal` | Modal dialog overlay |
+| `DateTimeInput` | Date/time picker |
 | `Image` | Image display |
 | `NetImage` | Image from URL |
 | `AsyncNetImage` | Async image loading |
