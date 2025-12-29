@@ -966,7 +966,9 @@ class App:
 
     def redraw(self, p: Painter, completely: bool) -> None:
         # Clear entire canvas first to remove any remnants
-        bg_color = self._style.fill.color if self._style.fill else None
+        # Get current theme's canvas color for proper dark/light mode support
+        bg_color = get_theme().app.bg_color
+        self._style = Style(fill=FillStyle(color=bg_color))
         p.clear_all(bg_color)
         p.style(self._style)
         p.fill_rect(
