@@ -548,8 +548,19 @@ class MultilineInput(Widget):
         return self
 
     def is_scrollable(self) -> bool:
-        """Return True when content exceeds visible area."""
-        return self._content_height > self._size.height
+        """Return True when widget can potentially scroll."""
+        # Always return True so wheel events are received
+        # Actual scrolling is handled in mouse_wheel based on content size
+        return True
+
+    def dispatch_to_scrollable(
+        self, p: Point, is_direction_x: bool
+    ) -> tuple["Widget | None", "Point | None"]:
+        """Return self if this widget can handle scroll events at point p."""
+        if not is_direction_x and self.contain(p):
+            # Handle vertical scrolling
+            return self, p
+        return None, None
 
     def mouse_down(self, ev: MouseEvent) -> None:
         """Handle mouse down for scrollbar dragging or cursor positioning."""

@@ -40,11 +40,10 @@ class MarkdownEditor(Component):
     def __init__(self):
         super().__init__()
         self._text_state = MultilineInputState(INITIAL_MARKDOWN.strip())
+        # Attach state to component - preview updates when editing finishes
         self._text_state.attach(self)
 
     def view(self):
-        current_text = self._text_state.value()
-
         return Row(
             # Editor panel (left)
             Column(
@@ -66,7 +65,7 @@ class MarkdownEditor(Component):
                 Text("Preview").height(30),
                 Box(
                     Markdown(
-                        current_text,
+                        self._text_state.value(),
                         base_font_size=13,
                         padding=10,
                         on_link_click=lambda url: print(f"Link: {url}"),
