@@ -369,6 +369,8 @@ class Widget(ABC):
             Style(
                 fill=FillStyle(color=widget_style.bg_color),
                 stroke=StrokeStyle(color=widget_style.border_color),
+                border_radius=widget_style.border_radius,
+                shadow=widget_style.shadow,
             ),
             Style(
                 fill=FillStyle(color=widget_style.text_color),

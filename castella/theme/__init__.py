@@ -55,7 +55,18 @@ from .core import (
     generate_widget_styles_for_kind,
 )
 from .manager import ThemeManager, ThemeObserver
-from .presets import DARK_PALETTE, DARK_THEME, LIGHT_PALETTE, LIGHT_THEME
+from .presets import (
+    CUPERTINO_DARK_PALETTE,
+    CUPERTINO_DARK_THEME,
+    CUPERTINO_LIGHT_PALETTE,
+    CUPERTINO_LIGHT_THEME,
+    CUPERTINO_SPACING,
+    CUPERTINO_TYPOGRAPHY,
+    DARK_PALETTE,
+    DARK_THEME,
+    LIGHT_PALETTE,
+    LIGHT_THEME,
+)
 from .tokens import ColorPalette, Spacing, Typography
 
 __all__ = [
@@ -77,6 +88,12 @@ __all__ = [
     "LIGHT_THEME",
     "DARK_PALETTE",
     "LIGHT_PALETTE",
+    "CUPERTINO_DARK_THEME",
+    "CUPERTINO_LIGHT_THEME",
+    "CUPERTINO_DARK_PALETTE",
+    "CUPERTINO_LIGHT_PALETTE",
+    "CUPERTINO_SPACING",
+    "CUPERTINO_TYPOGRAPHY",
     # Style generators
     "generate_widget_style",
     "generate_widget_styles_for_kind",

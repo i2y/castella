@@ -85,3 +85,102 @@ LIGHT_THEME = Theme(
     spacing=Spacing(),
     code_pygments_style="default",
 )
+
+
+# Cupertino Dark palette (Apple-inspired design)
+CUPERTINO_DARK_PALETTE = ColorPalette(
+    # Background colors - System grays
+    bg_canvas="#1e1e1e",  # Window background
+    bg_primary="#2d2d2d",  # Primary content background
+    bg_secondary="#3d3d3d",  # Secondary content background
+    bg_tertiary="#4a4a4a",  # Tertiary/elevated background (buttons)
+    bg_overlay="#5a5a5a",  # Overlay/hover state
+    bg_info="#1a3a5c",  # Info background (blue tint)
+    bg_danger="#5c1a1a",  # Danger background (red tint)
+    bg_success="#1a5c2e",  # Success background (green tint)
+    bg_warning="#5c4a1a",  # Warning background (yellow tint)
+    bg_pushed="#555555",  # Pressed state
+    bg_selected="#0a84ff",  # Selection (System Blue)
+    # Foreground/Text colors
+    fg="#ffffff",  # Primary label
+    text_primary="#ffffff",  # Primary text
+    text_info="#64d2ff",  # Info text (System Cyan)
+    text_danger="#ff6961",  # Danger text (System Red)
+    text_success="#30d158",  # Success text (System Green)
+    text_warning="#ffd60a",  # Warning text (System Yellow)
+    # Border colors
+    border_primary="#48484a",  # Separator color
+    border_secondary="#636366",  # Secondary separator
+    border_info="#0a84ff",  # Info border (System Blue)
+    border_danger="#ff453a",  # Danger border (System Red)
+    border_success="#32d74b",  # Success border (System Green)
+    border_warning="#ffd60a",  # Warning border (System Yellow)
+)
+
+# Cupertino Light palette (Apple-inspired design)
+CUPERTINO_LIGHT_PALETTE = ColorPalette(
+    # Background colors - System grays (light)
+    bg_canvas="#f5f5f7",  # Window background
+    bg_primary="#ffffff",  # Primary content background
+    bg_secondary="#f2f2f7",  # Secondary content background
+    bg_tertiary="#e5e5ea",  # Tertiary/elevated background (buttons)
+    bg_overlay="#d1d1d6",  # Overlay/hover state
+    bg_info="#e3f2fd",  # Info background (blue tint)
+    bg_danger="#ffebee",  # Danger background (red tint)
+    bg_success="#e8f5e9",  # Success background (green tint)
+    bg_warning="#fff8e1",  # Warning background (yellow tint)
+    bg_pushed="#c7c7cc",  # Pressed state
+    bg_selected="#007aff",  # Selection (System Blue)
+    # Foreground/Text colors
+    fg="#000000",  # Primary label
+    text_primary="#000000",  # Primary text
+    text_info="#007aff",  # Info text (System Blue)
+    text_danger="#ff3b30",  # Danger text (System Red)
+    text_success="#34c759",  # Success text (System Green)
+    text_warning="#ff9500",  # Warning text (System Orange)
+    # Border colors
+    border_primary="#c6c6c8",  # Separator color
+    border_secondary="#aeaeb2",  # Secondary separator
+    border_info="#007aff",  # Info border (System Blue)
+    border_danger="#ff3b30",  # Danger border (System Red)
+    border_success="#34c759",  # Success border (System Green)
+    border_warning="#ff9500",  # Warning border (System Orange)
+)
+
+# Cupertino spacing with rounded corners
+CUPERTINO_SPACING = Spacing(
+    padding_sm=4,
+    padding_md=8,
+    padding_lg=16,
+    margin_sm=4,
+    margin_md=8,
+    margin_lg=16,
+    border_radius=8,  # macOS uses ~8px for controls
+    border_width=0.5,  # Thin borders
+)
+
+# Cupertino typography
+CUPERTINO_TYPOGRAPHY = Typography(
+    font_family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif",
+    font_family_mono="'SF Mono', Menlo, Monaco, monospace",
+    base_size=13,  # macOS standard text size
+    scale_ratio=1.2,
+)
+
+CUPERTINO_DARK_THEME = Theme(
+    name="cupertino-dark",
+    is_dark=True,
+    colors=CUPERTINO_DARK_PALETTE,
+    typography=CUPERTINO_TYPOGRAPHY,
+    spacing=CUPERTINO_SPACING,
+    code_pygments_style="monokai",
+)
+
+CUPERTINO_LIGHT_THEME = Theme(
+    name="cupertino-light",
+    is_dark=False,
+    colors=CUPERTINO_LIGHT_PALETTE,
+    typography=CUPERTINO_TYPOGRAPHY,
+    spacing=CUPERTINO_SPACING,
+    code_pygments_style="default",
+)

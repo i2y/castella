@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, TypeAlias
 from pydantic import BaseModel
 
 from castella.models.font import Font
+from castella.models.style import Shadow
 
 from .tokens import ColorPalette, Spacing, Typography
 
@@ -30,6 +31,8 @@ class WidgetStyle:
     border_color: str = "#FFFFFF"
     text_color: str = "#FFFFFF"
     text_font: Font = Font()
+    border_radius: float = 0.0
+    shadow: Shadow | None = None
 
 
 WidgetStyles: TypeAlias = dict[str, WidgetStyle]
@@ -105,18 +108,19 @@ class Theme(BaseModel):
 
         class_name = widget.__class__.__name__.lower()
         font = Font(family=self.typography.font_family, size=self.typography.base_size)
+        radius = self.spacing.border_radius
 
         # Generate styles based on widget type
         if class_name in ("text", "simpletext", "multilinetext", "markdown"):
             return deepcopy(generate_text_styles(self.colors, font))
         elif class_name in ("input", "multilineinput"):
-            return deepcopy(generate_input_styles(self.colors, font))
+            return deepcopy(generate_input_styles(self.colors, font, radius))
         elif class_name == "button":
-            return deepcopy(generate_button_styles(self.colors, font))
+            return deepcopy(generate_button_styles(self.colors, font, radius))
         elif class_name == "switch":
-            return deepcopy(generate_switch_styles(self.colors, font))
+            return deepcopy(generate_switch_styles(self.colors, font, radius))
         elif class_name == "checkbox":
-            return deepcopy(generate_checkbox_styles(self.colors, font))
+            return deepcopy(generate_checkbox_styles(self.colors, font, radius))
         elif class_name in ("layout", "row", "column", "box"):
             return deepcopy(generate_layout_styles(self.colors))
         else:
@@ -178,7 +182,7 @@ class Theme(BaseModel):
     def input(self) -> WidgetStyles:
         """Get input styles."""
         font = Font(family=self.typography.font_family, size=self.typography.base_size)
-        return generate_input_styles(self.colors, font)
+        return generate_input_styles(self.colors, font, self.spacing.border_radius)
 
     @property
     def multilineinput(self) -> WidgetStyles:
@@ -194,13 +198,13 @@ class Theme(BaseModel):
     def button(self) -> WidgetStyles:
         """Get button styles."""
         font = Font(family=self.typography.font_family, size=self.typography.base_size)
-        return generate_button_styles(self.colors, font)
+        return generate_button_styles(self.colors, font, self.spacing.border_radius)
 
     @property
     def switch(self) -> WidgetStyles:
         """Get switch styles."""
         font = Font(family=self.typography.font_family, size=self.typography.base_size)
-        return generate_switch_styles(self.colors, font)
+        return generate_switch_styles(self.colors, font, self.spacing.border_radius)
 
     @property
     def checkbox(self) -> WidgetStyles:
@@ -216,6 +220,8 @@ def generate_widget_style(
     font: Font = Font(),
     use_tertiary_bg: bool = False,
     use_secondary_bg: bool = False,
+    border_radius: float = 0.0,
+    shadow: Shadow | None = None,
 ) -> WidgetStyle:
     """Generate a WidgetStyle based on Kind and AppearanceState.
 
@@ -226,6 +232,8 @@ def generate_widget_style(
         font: Font to use
         use_tertiary_bg: Use bg_tertiary instead of kind-based bg (for buttons)
         use_secondary_bg: Use bg_secondary instead of kind-based bg (for inputs)
+        border_radius: Border radius for rounded corners
+        shadow: Drop shadow configuration
     """
     kind_map = {
         Kind.NORMAL: ("bg_primary", "border_primary", "text_primary"),
@@ -265,6 +273,8 @@ def generate_widget_style(
         border_color=border,
         text_color=text,
         text_font=font,
+        border_radius=border_radius,
+        shadow=shadow,
     )
 
 
@@ -278,6 +288,8 @@ def generate_widget_styles_for_kind(
     include_selected: bool = False,
     use_tertiary_bg: bool = False,
     use_secondary_bg: bool = False,
+    border_radius: float = 0.0,
+    shadow: Shadow | None = None,
 ) -> WidgetStyles:
     """Generate all state variants for a given Kind."""
     styles: WidgetStyles = {}
@@ -291,6 +303,8 @@ def generate_widget_styles_for_kind(
         font=font,
         use_tertiary_bg=use_tertiary_bg,
         use_secondary_bg=use_secondary_bg,
+        border_radius=border_radius,
+        shadow=shadow,
     )
 
     if include_hover:
@@ -301,6 +315,8 @@ def generate_widget_styles_for_kind(
             font=font,
             use_tertiary_bg=use_tertiary_bg,
             use_secondary_bg=use_secondary_bg,
+            border_radius=border_radius,
+            shadow=shadow,
         )
 
     if include_pushed:
@@ -311,6 +327,8 @@ def generate_widget_styles_for_kind(
             font=font,
             use_tertiary_bg=use_tertiary_bg,
             use_secondary_bg=use_secondary_bg,
+            border_radius=border_radius,
+            shadow=shadow,
         )
 
     if include_selected:
@@ -321,32 +339,58 @@ def generate_widget_styles_for_kind(
             font=font,
             use_tertiary_bg=use_tertiary_bg,
             use_secondary_bg=use_secondary_bg,
+            border_radius=border_radius,
+            shadow=shadow,
         )
 
     return styles
 
 
-def generate_text_styles(colors: ColorPalette, font: Font = Font()) -> WidgetStyles:
+def generate_text_styles(
+    colors: ColorPalette,
+    font: Font = Font(),
+    border_radius: float = 0.0,
+    shadow: Shadow | None = None,
+) -> WidgetStyles:
     """Generate styles for text widgets (Text, SimpleText, MultilineText)."""
-    styles: WidgetStyles = {}
-    for kind in Kind:
-        styles.update(generate_widget_styles_for_kind(colors, kind, font=font))
-    return styles
-
-
-def generate_input_styles(colors: ColorPalette, font: Font = Font()) -> WidgetStyles:
-    """Generate styles for input widgets (Input, MultilineInput)."""
     styles: WidgetStyles = {}
     for kind in Kind:
         styles.update(
             generate_widget_styles_for_kind(
-                colors, kind, font=font, use_secondary_bg=True
+                colors, kind, font=font, border_radius=border_radius, shadow=shadow
             )
         )
     return styles
 
 
-def generate_button_styles(colors: ColorPalette, font: Font = Font()) -> WidgetStyles:
+def generate_input_styles(
+    colors: ColorPalette,
+    font: Font = Font(),
+    border_radius: float = 0.0,
+    shadow: Shadow | None = None,
+) -> WidgetStyles:
+    """Generate styles for input widgets (Input, MultilineInput)."""
+    styles: WidgetStyles = {}
+    for kind in Kind:
+        styles.update(
+            generate_widget_styles_for_kind(
+                colors,
+                kind,
+                font=font,
+                use_secondary_bg=True,
+                border_radius=border_radius,
+                shadow=shadow,
+            )
+        )
+    return styles
+
+
+def generate_button_styles(
+    colors: ColorPalette,
+    font: Font = Font(),
+    border_radius: float = 0.0,
+    shadow: Shadow | None = None,
+) -> WidgetStyles:
     """Generate styles for Button widget."""
     styles: WidgetStyles = {}
     # Buttons only support NORMAL kind with hover and pushed states
@@ -358,12 +402,19 @@ def generate_button_styles(colors: ColorPalette, font: Font = Font()) -> WidgetS
             include_hover=True,
             include_pushed=True,
             use_tertiary_bg=True,
+            border_radius=border_radius,
+            shadow=shadow,
         )
     )
     return styles
 
 
-def generate_switch_styles(colors: ColorPalette, font: Font = Font()) -> WidgetStyles:
+def generate_switch_styles(
+    colors: ColorPalette,
+    font: Font = Font(),
+    border_radius: float = 0.0,
+    shadow: Shadow | None = None,
+) -> WidgetStyles:
     """Generate styles for Switch widget."""
     return {
         "normal": WidgetStyle(
@@ -371,26 +422,41 @@ def generate_switch_styles(colors: ColorPalette, font: Font = Font()) -> WidgetS
             border_color=colors.border_primary,
             text_color=colors.fg,
             text_font=font,
+            border_radius=border_radius,
+            shadow=shadow,
         ),
         "normal_selected": WidgetStyle(
             bg_color=colors.bg_selected,
             border_color=colors.border_primary,
             text_color=colors.fg,
             text_font=font,
+            border_radius=border_radius,
+            shadow=shadow,
         ),
     }
 
 
-def generate_checkbox_styles(colors: ColorPalette, font: Font = Font()) -> WidgetStyles:
+def generate_checkbox_styles(
+    colors: ColorPalette,
+    font: Font = Font(),
+    border_radius: float = 0.0,
+    shadow: Shadow | None = None,
+) -> WidgetStyles:
     """Generate styles for Checkbox widget."""
-    return generate_switch_styles(colors, font)
+    return generate_switch_styles(colors, font, border_radius, shadow)
 
 
-def generate_layout_styles(colors: ColorPalette) -> WidgetStyles:
+def generate_layout_styles(
+    colors: ColorPalette,
+    border_radius: float = 0.0,
+    shadow: Shadow | None = None,
+) -> WidgetStyles:
     """Generate styles for layout widgets (Column, Row, Box)."""
     return {
         "normal": WidgetStyle(
             bg_color=colors.bg_primary,
             border_color=colors.border_primary,
+            border_radius=border_radius,
+            shadow=shadow,
         ),
     }

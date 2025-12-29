@@ -40,6 +40,17 @@ class TextAlign(str, Enum):
     RIGHT = "right"
 
 
+class Shadow(BaseModel):
+    """Drop shadow style for widgets."""
+
+    model_config = ConfigDict(frozen=True)
+
+    color: str = Field(default="#00000040")  # Semi-transparent black
+    offset_x: float = Field(default=0.0)
+    offset_y: float = Field(default=2.0)
+    blur_radius: float = Field(default=4.0)
+
+
 class FillStyle(BaseModel):
     """Fill style for shapes."""
 
@@ -75,6 +86,8 @@ class Style(BaseModel):
     line: LineStyle = Field(default_factory=LineStyle)
     font: Font = Field(default_factory=Font)
     padding: int = Field(default=EM, ge=0)
+    border_radius: float = Field(default=0.0, ge=0.0)
+    shadow: Shadow | None = Field(default=None)
 
     def with_fill_color(self, color: str) -> Style:
         return self.model_copy(update={"fill": FillStyle(color=color)})
