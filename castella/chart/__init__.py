@@ -64,6 +64,16 @@ from castella.chart.area_chart import AreaChart
 from castella.chart.stacked_bar_chart import StackedBarChart
 from castella.chart.gauge_chart import GaugeChart, GaugeStyle, GaugeThreshold, DonutChart
 
+# ASCII charts for terminal
+from castella.chart.ascii import (
+    ASCIIBarChart,
+    ASCIIBarData,
+    ASCIIPieChart,
+    ASCIIPieData,
+    ASCIILineChart,
+    ASCIIGaugeChart,
+)
+
 __all__ = [
     # Data points
     "DataPoint",
@@ -128,4 +138,11 @@ __all__ = [
     "GaugeStyle",
     "GaugeThreshold",
     "DonutChart",
+    # ASCII charts (terminal)
+    "ASCIIBarChart",
+    "ASCIIBarData",
+    "ASCIIPieChart",
+    "ASCIIPieData",
+    "ASCIILineChart",
+    "ASCIIGaugeChart",
 ]
