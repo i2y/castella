@@ -9,22 +9,56 @@ except ImportError:
 from pyscript.ffi import create_proxy  # type: ignore
 
 from castella import core
+from castella.models.style import Shadow
 
 
-def code2rgb(color_code):  # TODO alpha
+def code2rgb(color_code):
     r = int(color_code[1:3], 16)
     g = int(color_code[3:5], 16)
     b = int(color_code[5:7], 16)
     return (r, g, b, 1.0)
 
 
+def code2rgba(color_code: str) -> tuple[int, int, int, float]:
+    """Parse hex color code with optional alpha channel."""
+    r = int(color_code[1:3], 16)
+    g = int(color_code[3:5], 16)
+    b = int(color_code[5:7], 16)
+    if len(color_code) >= 9:
+        a = int(color_code[7:9], 16) / 255.0
+    else:
+        a = 1.0
+    return (r, g, b, a)
+
+
 def to_ck_color(color: str) -> int:
     return window.CK.Color(*code2rgb(color))
+
+
+def to_ck_color_with_alpha(color: str) -> int:
+    """Convert hex color (with optional alpha) to CanvasKit color."""
+    return window.CK.Color(*code2rgba(color))
 
 
 def to_ck_rect(rect: core.Rect):
     return window.CK.XYWHRect(
         rect.origin.x, rect.origin.y, rect.size.width - 1, rect.size.height - 1
+    )
+
+
+def to_ck_stroke_rect(rect: core.Rect, stroke_width: float):
+    """Create a CanvasKit rect for stroke drawing.
+
+    Strokes are drawn centered on the rect edge. To keep the stroke fully
+    within the widget bounds (avoiding clipping at boundaries with adjacent
+    widgets), we inset by the full stroke width so the outer edge of the
+    stroke stays inside the clip region.
+    """
+    return window.CK.XYWHRect(
+        rect.origin.x + stroke_width,
+        rect.origin.y + stroke_width,
+        rect.size.width - 2 * stroke_width - 1,
+        rect.size.height - 2 * stroke_width - 1,
     )
 
 
@@ -37,24 +71,77 @@ class Painter:
         self._style_stack = []
         self._images = {}
 
-    def clear_all(self) -> None:
+    def clear_all(self, color: Optional[str] = None) -> None:
+        if color is not None:
+            paint = window.CK.Paint.new()
+            paint.setColor(to_ck_color(color))
+            self._canvas.drawPaint(paint)
         self._frame.clear()
 
     def fill_rect(self, rect: core.Rect) -> None:
         style = cast(core.Style, self._style)
+
+        # Draw shadow first (behind the shape)
+        if style.shadow is not None:
+            self._draw_shadow(rect, style.shadow, style.border_radius)
+
         paint = window.CK.Paint.new()
         paint.setColor(to_ck_color(style.fill.color))
         paint.setStyle(window.CK.PaintStyle.Fill)
+        if style.border_radius > 0:
+            paint.setAntiAlias(True)
         sr = to_ck_rect(rect)
-        self._canvas.drawRect(sr, paint)
+
+        if style.border_radius > 0:
+            rrect = window.CK.RRectXY(sr, style.border_radius, style.border_radius)
+            self._canvas.drawRRect(rrect, paint)
+        else:
+            self._canvas.drawRect(sr, paint)
 
     def stroke_rect(self, rect: core.Rect) -> None:
         style = cast(core.Style, self._style)
+        stroke_width = style.line.width
         paint = window.CK.Paint.new()
         paint.setColor(to_ck_color(style.stroke.color))
         paint.setStyle(window.CK.PaintStyle.Stroke)
-        sr = to_ck_rect(rect)
-        self._canvas.drawRect(sr, paint)
+        paint.setStrokeWidth(stroke_width)
+        if style.border_radius > 0:
+            paint.setAntiAlias(True)
+        sr = to_ck_stroke_rect(rect, stroke_width)
+
+        if style.border_radius > 0:
+            rrect = window.CK.RRectXY(sr, style.border_radius, style.border_radius)
+            self._canvas.drawRRect(rrect, paint)
+        else:
+            self._canvas.drawRect(sr, paint)
+
+    def _draw_shadow(
+        self, rect: core.Rect, shadow: Shadow, border_radius: float = 0.0
+    ) -> None:
+        """Draw a drop shadow behind a rectangle."""
+        paint = window.CK.Paint.new()
+        paint.setColor(to_ck_color_with_alpha(shadow.color))
+        paint.setStyle(window.CK.PaintStyle.Fill)
+        paint.setAntiAlias(True)
+        paint.setMaskFilter(
+            window.CK.MaskFilter.MakeBlur(
+                window.CK.BlurStyle.Normal, shadow.blur_radius / 2, True
+            )
+        )
+
+        # Offset rectangle for shadow
+        shadow_rect = window.CK.XYWHRect(
+            rect.origin.x + shadow.offset_x,
+            rect.origin.y + shadow.offset_y,
+            rect.size.width - 1,
+            rect.size.height - 1,
+        )
+
+        if border_radius > 0:
+            rrect = window.CK.RRectXY(shadow_rect, border_radius, border_radius)
+            self._canvas.drawRRect(rrect, paint)
+        else:
+            self._canvas.drawRect(shadow_rect, paint)
 
     def fill_circle(self, circle: core.Circle) -> None:
         style = cast(core.Style, self._style)
@@ -90,8 +177,10 @@ class Painter:
         self._canvas.clipRect(
             to_ck_rect(
                 core.Rect(
-                    core.Point(0, 0),
-                    core.Size(rect.size.width + 1, rect.size.height + 1),
+                    origin=core.Point(x=0, y=0),
+                    size=core.Size(
+                        width=rect.size.width + 1, height=rect.size.height + 1
+                    ),
                 )
             ),
             window.CK.ClipOp.Intersect,
@@ -161,7 +250,7 @@ class Painter:
 
     def measure_np_array_as_an_image(self, array: "np.ndarray") -> core.Size:
         height, width, _ = array.shape
-        return core.Size(width, height)
+        return core.Size(width=width, height=height)
 
     def draw_np_array_as_an_image(
         self, array: "np.ndarray", x: float, y: float

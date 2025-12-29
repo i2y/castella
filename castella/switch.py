@@ -22,8 +22,8 @@ class Switch(Widget):
         self._callback = lambda _: ...
         super().__init__(
             state=selected if isinstance(selected, SimpleValue) else State(selected),
-            size=Size(0, 0),
-            pos=Point(0, 0),
+            size=Size(width=0, height=0),
+            pos=Point(x=0, y=0),
             pos_policy=None,
             width_policy=SizePolicy.EXPANDING,
             height_policy=SizePolicy.EXPANDING,
@@ -50,9 +50,9 @@ class Switch(Widget):
     def _draw_background(self, p: Painter) -> None:
         s = self.get_size()
         r = s.height / 2 - 0.5
-        left_circle = Circle(center=Point(r, r), radius=r)
-        center_rect = Rect(origin=Point(r, 0), size=s - Size(r * 2, 0))
-        right_circle = Circle(center=Point(s.width - r, r), radius=r)
+        left_circle = Circle(center=Point(x=r, y=r), radius=r)
+        center_rect = Rect(origin=Point(x=r, y=0), size=s - Size(width=r * 2, height=0))
+        right_circle = Circle(center=Point(x=s.width - r, y=r), radius=r)
 
         state = cast(SimpleValue[bool], self._state)
         if state.value():
@@ -71,9 +71,9 @@ class Switch(Widget):
         state = cast(SimpleValue[bool], self._state)
         p.style(self._fg_style)
         if state.value():
-            knob = Circle(center=Point(w - r, r), radius=inner_r)
+            knob = Circle(center=Point(x=w - r, y=r), radius=inner_r)
         else:
-            knob = Circle(center=Point(r, r), radius=inner_r)
+            knob = Circle(center=Point(x=r, y=r), radius=inner_r)
         p.fill_circle(knob)
 
     def width_policy(self, sp: SizePolicy) -> Self:

@@ -1,4 +1,3 @@
-from dataclasses import replace
 from typing import Any, Callable, Self, cast
 
 from castella.core import (
@@ -35,8 +34,8 @@ class CheckBox(Widget):
         self._appearance_state = AppearanceState.NORMAL
         super().__init__(
             state=checked if isinstance(checked, State) else State(checked),
-            size=Size(0, 0),
-            pos=Point(0, 0),
+            size=Size(width=0, height=0),
+            pos=Point(x=0, y=0),
             pos_policy=None,
             width_policy=SizePolicy.EXPANDING,
             height_policy=SizePolicy.EXPANDING,
@@ -64,7 +63,7 @@ class CheckBox(Widget):
 
         size = self.get_size()
         if self._is_circle:
-            center = Point(size.width / 2, size.height / 2)
+            center = Point(x=size.width / 2, y=size.height / 2)
             circle = Circle(center=center, radius=size.width / 2)
             p.style(self._style)
             p.fill_circle(circle)
@@ -77,14 +76,14 @@ class CheckBox(Widget):
                 p.style(self._checked_style)
                 p.fill_circle(inner_circle)
         else:
-            rect = Rect(origin=Point(0, 0), size=size)
+            rect = Rect(origin=Point(x=0, y=0), size=size)
             p.style(self._style)
             p.fill_rect(rect)
             p.stroke_rect(rect)
             if state.value():
                 inner_rect = Rect(
-                    origin=Point(size.width * 0.2, size.height * 0.2),
-                    size=Size(size.width * 0.6, size.height * 0.6),
+                    origin=Point(x=size.width * 0.2, y=size.height * 0.2),
+                    size=Size(width=size.width * 0.6, height=size.height * 0.6),
                 )
                 p.style(self._checked_style)
                 p.fill_rect(inner_rect)
@@ -101,30 +100,32 @@ class CheckBox(Widget):
         font_family, font_size = determine_font(
             width,
             height,
-            replace(
-                text_style,
-                font=Font(
-                    self._text_style.font.family,
-                    self._text_style.font.size,
-                    FontSizePolicy.EXPANDING,
-                ),
+            text_style.model_copy(
+                update={
+                    "font": Font(
+                        family=self._text_style.font.family,
+                        size=self._text_style.font.size,
+                        size_policy=FontSizePolicy.EXPANDING,
+                    )
+                }
             ),
             label,
         )
         p.style(
-            replace(
-                text_style,
-                font=Font(
-                    font_family,
-                    font_size,
-                    FontSizePolicy.EXPANDING,
-                ),
+            text_style.model_copy(
+                update={
+                    "font": Font(
+                        family=font_family,
+                        size=font_size,
+                        size_policy=FontSizePolicy.EXPANDING,
+                    )
+                }
             ),
         )
 
         pos = Point(
-            width / 2 - p.measure_text(label) / 2,
-            height / 2 + p.get_font_metrics().cap_height / 2,
+            x=width / 2 - p.measure_text(label) / 2,
+            y=height / 2 + p.get_font_metrics().cap_height / 2,
         )
 
         p.fill_text(

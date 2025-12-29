@@ -8,6 +8,7 @@ import skia
 
 from castella import core
 from castella.font import FontSlant, FontWeight
+from castella.models.style import Shadow
 
 
 def _code2rgb(color_code):
@@ -17,13 +18,47 @@ def _code2rgb(color_code):
     return (r, g, b)
 
 
+def _code2rgba(color_code: str) -> tuple[int, int, int, int]:
+    """Parse hex color code with optional alpha channel."""
+    r = int(color_code[1:3], 16)
+    g = int(color_code[3:5], 16)
+    b = int(color_code[5:7], 16)
+    if len(color_code) >= 9:
+        a = int(color_code[7:9], 16)
+    else:
+        a = 255
+    return (r, g, b, a)
+
+
 def _to_skia_color(color: str) -> int:
     return skia.ColorSetRGB(*_code2rgb(color))
+
+
+def _to_skia_color_with_alpha(color: str) -> int:
+    """Convert hex color (with optional alpha) to Skia color."""
+    r, g, b, a = _code2rgba(color)
+    return skia.ColorSetARGB(a, r, g, b)
 
 
 def _to_skia_rect(rect: core.Rect) -> skia.Rect:
     return skia.Rect.MakeXYWH(
         rect.origin.x, rect.origin.y, rect.size.width - 1, rect.size.height - 1
+    )
+
+
+def _to_skia_stroke_rect(rect: core.Rect, stroke_width: float) -> skia.Rect:
+    """Create a Skia rect for stroke drawing.
+
+    Strokes are drawn centered on the rect edge. To keep the stroke fully
+    within the widget bounds (avoiding clipping at boundaries with adjacent
+    widgets), we inset by the full stroke width so the outer edge of the
+    stroke stays inside the clip region.
+    """
+    return skia.Rect.MakeXYWH(
+        rect.origin.x + stroke_width,
+        rect.origin.y + stroke_width,
+        rect.size.width - 2 * stroke_width - 1,
+        rect.size.height - 2 * stroke_width - 1,
     )
 
 
@@ -58,26 +93,74 @@ class Painter:
         self._style: Optional[core.Style] = None
         self._style_stack = []
 
-    def clear_all(self) -> None:
+    def clear_all(self, color: Optional[str] = None) -> None:
+        if color is not None:
+            self._canvas.clear(_to_skia_color(color))
         self._frame.clear()
 
     def fill_rect(self, rect: core.Rect) -> None:
         style = cast(core.Style, self._style)
+
+        # Draw shadow first (behind the shape)
+        if style.shadow is not None:
+            self._draw_shadow(rect, style.shadow, style.border_radius)
+
         paint = skia.Paint(
             Color=_to_skia_color(style.fill.color),
             Style=skia.Paint.kFill_Style,
+            AntiAlias=style.border_radius > 0,
         )
         sr = _to_skia_rect(rect)
-        self._canvas.drawRect(sr, paint)
+
+        if style.border_radius > 0:
+            rrect = skia.RRect.MakeRectXY(sr, style.border_radius, style.border_radius)
+            self._canvas.drawRRect(rrect, paint)
+        else:
+            self._canvas.drawRect(sr, paint)
 
     def stroke_rect(self, rect: core.Rect) -> None:
         style = cast(core.Style, self._style)
+        stroke_width = style.line.width
         paint = skia.Paint(
             Color=_to_skia_color(style.stroke.color),
             Style=skia.Paint.kStroke_Style,
+            AntiAlias=style.border_radius > 0,
         )
-        sr = _to_skia_rect(rect)
-        self._canvas.drawRect(sr, paint)
+        paint.setStrokeWidth(stroke_width)
+        sr = _to_skia_stroke_rect(rect, stroke_width)
+
+        if style.border_radius > 0:
+            rrect = skia.RRect.MakeRectXY(sr, style.border_radius, style.border_radius)
+            self._canvas.drawRRect(rrect, paint)
+        else:
+            self._canvas.drawRect(sr, paint)
+
+    def _draw_shadow(
+        self, rect: core.Rect, shadow: Shadow, border_radius: float = 0.0
+    ) -> None:
+        """Draw a drop shadow behind a rectangle."""
+        paint = skia.Paint(
+            Color=_to_skia_color_with_alpha(shadow.color),
+            Style=skia.Paint.kFill_Style,
+            AntiAlias=True,
+        )
+        paint.setMaskFilter(
+            skia.MaskFilter.MakeBlur(skia.kNormal_BlurStyle, shadow.blur_radius / 2)
+        )
+
+        # Offset rectangle for shadow
+        shadow_rect = skia.Rect.MakeXYWH(
+            rect.origin.x + shadow.offset_x,
+            rect.origin.y + shadow.offset_y,
+            rect.size.width - 1,
+            rect.size.height - 1,
+        )
+
+        if border_radius > 0:
+            rrect = skia.RRect.MakeRectXY(shadow_rect, border_radius, border_radius)
+            self._canvas.drawRRect(rrect, paint)
+        else:
+            self._canvas.drawRect(shadow_rect, paint)
 
     def fill_circle(self, circle: core.Circle) -> None:
         style = cast(core.Style, self._style)
@@ -116,8 +199,10 @@ class Painter:
         self._canvas.clipRect(
             _to_skia_rect(
                 core.Rect(
-                    core.Point(0, 0),
-                    core.Size(rect.size.width + 1, rect.size.height + 1),
+                    origin=core.Point(x=0, y=0),
+                    size=core.Size(
+                        width=rect.size.width + 1, height=rect.size.height + 1
+                    ),
                 )
             )
         )
@@ -167,7 +252,7 @@ class Painter:
             image = _get_cached_image(file_path)
         else:
             image = skia.Image.open(file_path)
-        return core.Size(image.width(), image.height())
+        return core.Size(width=image.width(), height=image.height())
 
     def draw_net_image(self, url: str, rect: core.Rect, use_cache: bool = True) -> None:
         if use_cache:
@@ -181,11 +266,11 @@ class Painter:
             image = _get_cached_net_image(url)
         else:
             image = _get_net_image(url)
-        return core.Size(image.width(), image.height())
+        return core.Size(width=image.width(), height=image.height())
 
     def measure_np_array_as_an_image(self, array: np.ndarray) -> core.Size:
         height, width, _ = array.shape
-        return core.Size(width, height)
+        return core.Size(width=width, height=height)
 
     def get_net_image_async(self, name: str, url: str, callback) -> None:
         raise NotImplementedError()

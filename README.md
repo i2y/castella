@@ -10,16 +10,44 @@ The primary final goal of Castella is to provide features for Python programmers
 - The core part as a UI framework of Castella is written in only Python. It's not a wrapper for existing something written in other programing languages. "pure Python cross-platform UI framework" specifies things like the above.
 - Castella allows pythonista to define UI declaratively in Python.
 - Castella provides hot-reloading or hot-restarting on development.
-- Dark mode is supported. If the runtime environment is in dark mode, Castella app's UI appearance will automatically be styled in dark mode.
+- Comprehensive theme system with design tokens (colors, typography, spacing).
+- Built-in themes: Tokyo Night (default), Cupertino, Material Design 3, and classic Castella themes.
+- Dark/light mode with automatic system detection and runtime switching.
+- Rounded corners and shadows support for modern UI aesthetics.
+- Custom themes via `Theme.derive()` for partial overrides or full `ColorPalette` customization.
+- Rich markdown rendering with syntax highlighting and LaTeX math support.
+- Multi-line text editor with scrolling and cursor positioning.
+- Native interactive charts (Bar, Line, Pie, Scatter, Area, Stacked Bar, Gauge) with tooltips, hover, and click events.
+- ASCII charts for terminal environments (Bar, Pie, Line, Gauge).
 - Castella utilizes GPU via dependent libraries.
+- Z-index support enables layered UIs with modals, popups, and overlays.
+- **A2A Protocol support** - Connect to AI agents via Google's Agent-to-Agent protocol.
+- **A2UI Protocol support** - Render agent-generated UIs natively across all platforms.
+- **A2UI Streaming** - Progressive UI rendering with JSONL, SSE, and WebSocket support.
+- **AgentChat** - Build chat interfaces with AI agents in just 3 lines of code.
 
 ## Dependencies
 - For desktop platforms, Castella is standing on existing excellent python bindings for window management library (GLFW or SDL2) and 2D graphics library (Skia).
 - For web browsers, Castella is standing on awesome Pyodide/PyScript and CanvasKit (Wasm version of Skia).
 - For terminals, Castella is standing on prompt_toolkit.
 
-## Installation
-https://i2y.github.io/castella/getting-started/
+## Quick Start
+
+```bash
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create a new project
+uv init my-app && cd my-app
+
+# Add Castella with GLFW backend
+uv add "castella[glfw]"
+
+# Run your app
+uv run python your_app.py
+```
+
+For detailed installation instructions (SDL2, TUI, web), see the [Getting Started Guide](https://i2y.github.io/castella/getting-started/).
 
 ## An example of code using Castella
 
@@ -52,6 +80,25 @@ class Counter(Component):
 App(Frame("Counter", 800, 600), Counter()).run()
 ```
 [Watch a very short demo video](docs/videos/demo.mp4)
+
+## Agent Chat Example
+
+Build a chat UI for AI agents in just 3 lines:
+
+```python
+from castella.agent import AgentChat
+
+# Connect to an A2A-compatible agent
+chat = AgentChat.from_a2a("http://localhost:8080")
+chat.run()
+
+# Or use a custom handler
+chat = AgentChat(
+    handler=lambda msg: f"You said: {msg}",
+    title="My Bot",
+)
+chat.run()
+```
 
 You can see some other examples in [examples](examples) directory.
 

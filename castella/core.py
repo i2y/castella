@@ -1,154 +1,65 @@
-import os
-import sys
+"""Castella core module - widgets, layouts, and application framework."""
+
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from asyncio import Future
 from collections.abc import Iterable
 from copy import deepcopy
-from dataclasses import dataclass, replace
-from enum import Enum, auto
+from dataclasses import replace
 from typing import (
     Any,
     Callable,
     Generator,
     Generic,
-    List,
     Optional,
     Protocol,
     Self,
-    TypeAlias,
     TypeVar,
-    Union,
     runtime_checkable,
 )
 
 from pydantic import BaseModel
 
-from castella.font import EM, Font, FontMetrics, FontSizePolicy
+# Re-exports for backward compatibility
+from castella.models.font import EM, Font, FontMetrics, FontSizePolicy  # noqa: F401
 
+# Import from new modules
+from castella.models.geometry import Point, Size, Rect, Circle
+from castella.models.style import (
+    SizePolicy,
+    PositionPolicy,
+    FillStyle,
+    StrokeStyle,
+    Style,
+    TextAlign,  # noqa: F401
+)
+from castella.models.events import (
+    KeyAction,  # noqa: F401
+    KeyCode,  # noqa: F401
+    MouseEvent,
+    WheelEvent,
+    InputCharEvent,
+    InputKeyEvent,
+    UpdateEvent,
+)
 
 try:
     import numpy as np
 except ImportError:
     pass
 
-from . import color
-
-
-@dataclass(slots=True)
-class Point:
-    x: float
-    y: float
-
-    def __add__(self, other: "Point") -> "Point":
-        return Point(self.x + other.x, self.y + other.y)
-
-    def __sub__(self, other: "Point") -> "Point":
-        return Point(self.x - other.x, self.y - other.y)
-
-
-@dataclass(slots=True)
-class Size:
-    width: float
-    height: float
-
-    def __add__(self, other: "Size") -> "Size":
-        return Size(self.width + other.width, self.height + other.height)
-
-    def __sub__(self, other: "Size") -> "Size":
-        return Size(self.width - other.width, self.height - other.height)
-
-
-@dataclass(slots=True, frozen=True)
-class Rect:
-    origin: Point
-    size: Size
-
-    def contain(self, p: Point) -> bool:
-        return (self.origin.x <= p.x <= self.origin.x + self.size.width) and (
-            self.origin.y <= p.y <= self.origin.y + self.size.height
-        )
-
-    def intersect(self, other: "Rect") -> Optional["Rect"]:
-        x1 = max(self.origin.x, other.origin.x)
-        y1 = max(self.origin.y, other.origin.y)
-        x2 = min(self.origin.x + self.size.width, other.origin.x + other.size.width)
-        y2 = min(self.origin.y + self.size.height, other.origin.y + other.size.height)
-        return Rect(Point(x1, y1), Size(x2 - x1, y2 - y1))
-
-
-@dataclass(slots=True, frozen=True)
-class Circle:
-    center: Point
-    radius: float
-
-    def contain(self, p: Point) -> bool:
-        c = self.center
-        return ((p.x - c.x) ** 2 + (p.y - c.y) ** 2) < self.radius**2
-
-
-class SizePolicy(Enum):
-    FIXED = auto()
-    EXPANDING = auto()
-    CONTENT = auto()
-
-
-@dataclass(slots=True, frozen=True)
-class NewSizePolicy:
-    width: SizePolicy
-    height: SizePolicy
-
-
-class PositionPolicy(Enum):
-    FIXED = auto()
-    CENTER = auto()
-
-
-@dataclass(slots=True, frozen=True)
-class FillStyle:
-    color: str = "black"
-
-
-@dataclass(slots=True, frozen=True)
-class StrokeStyle:
-    color: str = "black"
-
-
-class LineCap(Enum):
-    BUTT = auto()
-    ROUND = auto()
-    SQUARE = auto()
-
-
-@dataclass(slots=True, frozen=True)
-class LineStyle:
-    width: float = 1.0
-    cap: LineCap = LineCap.BUTT
-
-
-@dataclass(slots=True, frozen=True)
-class Style:
-    fill: FillStyle = FillStyle()
-    stroke: StrokeStyle = StrokeStyle()
-    line: LineStyle = LineStyle()
-    font: Font = Font()
-    padding: int = EM  # currently this value has the meaning only for Text and Button
-
-
-@dataclass(slots=True, frozen=True)
-class TextStyle:
-    color: str
-    fontFamilies: List[str]
-    fontSize: float
-
-
-class TextAlign(Enum):
-    LEFT = auto()
-    CENTER = auto()
-    RIGHT = auto()
+from .theme import (
+    Theme,
+    ThemeManager,
+    WidgetStyle,
+    Kind,
+    AppearanceState,
+)
 
 
 class Painter(Protocol):
-    def clear_all(self) -> None: ...
+    def clear_all(self, color: Optional[str] = None) -> None: ...
 
     def fill_rect(self, rect: Rect) -> None: ...
 
@@ -210,57 +121,6 @@ class Painter(Protocol):
 @runtime_checkable
 class CaretDrawable(Protocol):
     def draw_caret(self, pos: Point, height: int) -> None: ...
-
-
-W = TypeVar("W", bound="Widget")
-
-
-@dataclass(slots=True)
-class MouseEvent(Generic[W]):
-    pos: Point
-    target: Optional[W] = None
-
-    def translate(self, p: Point) -> "MouseEvent":
-        return MouseEvent(self.pos - p, self.target)
-
-
-@dataclass(slots=True, frozen=True)
-class WheelEvent:
-    pos: Point
-    x_offset: float
-    y_offset: float
-
-
-@dataclass(slots=True, frozen=True)
-class InputCharEvent:
-    char: str
-
-
-class KeyCode(Enum):
-    BACKSPACE = auto()
-    LEFT = auto()
-    RIGHT = auto()
-    UP = auto()
-    DOWN = auto()
-    PAGE_UP = auto()
-    PAGE_DOWN = auto()
-    DELETE = auto()
-    UNKNOWN = auto()
-
-
-class KeyAction(Enum):
-    PRESS = auto()
-    REPEAT = auto()
-    RELEASE = auto()
-    UNKNOWN = auto()
-
-
-@dataclass(slots=True, frozen=True)
-class InputKeyEvent:
-    key: KeyCode
-    scancode: int
-    action: KeyAction
-    mods: int
 
 
 class Frame(Protocol):
@@ -368,19 +228,14 @@ class SimpleValue(Observable, Protocol[V]):
     def value(self) -> V: ...
 
 
-from dataclasses import dataclass, MISSING, make_dataclass, field
-
-from typing import get_type_hints
-
-
 def get_zero_value(type_hint):
-    if type_hint == int:
+    if type_hint is int:
         return 0
-    elif type_hint == float:
+    elif type_hint is float:
         return 0.0
-    elif type_hint == bool:
+    elif type_hint is bool:
         return False
-    elif type_hint == str:
+    elif type_hint is str:
         return ""
     elif hasattr(type_hint, "__origin__") and type_hint.__origin__ is list:
         return []
@@ -396,14 +251,14 @@ class Model(BaseModel):
 
     def __init__(self, **data):
         super().__init__(**data)
-        for name in self.__fields__:
+        for name in self.model_fields:
             value = getattr(self, name)
             if not isinstance(value, State):
                 wrapped_value = State(value)
                 super().__setattr__(name, wrapped_value)
 
     def __setattr__(self, name, value):
-        if name in self.__fields__:
+        if name in self.model_fields:
             current_value = getattr(self, name, None)
             if isinstance(current_value, State):
                 current_value.set(value)
@@ -434,6 +289,7 @@ class Widget(ABC):
         self._width_policy = width_policy
         self._height_policy = height_policy
         self._flex = 1
+        self._z_index: int = 1
         self._dirty = True
         self._enable_to_detach = True
         self._parent: Self | None = None
@@ -511,8 +367,10 @@ class Widget(ABC):
     ) -> tuple[Style, Style]:
         return (
             Style(
-                FillStyle(color=widget_style.bg_color),
-                StrokeStyle(color=widget_style.border_color),
+                fill=FillStyle(color=widget_style.bg_color),
+                stroke=StrokeStyle(color=widget_style.border_color),
+                border_radius=widget_style.border_radius,
+                shadow=widget_style.shadow,
             ),
             Style(
                 fill=FillStyle(color=widget_style.text_color),
@@ -529,7 +387,9 @@ class Widget(ABC):
 
     def dispatch(self, p: Point) -> tuple[Optional["Widget"], Point | None]:
         if self.contain(p):
-            return self, p
+            # Return position relative to this widget's origin
+            local_p = Point(x=p.x - self._pos.x, y=p.y - self._pos.y)
+            return self, local_p
         else:
             return None, None
 
@@ -559,6 +419,16 @@ class Widget(ABC):
         if self._enable_to_detach:
             for o in self._observable:
                 o.detach(self)
+        # Clear any App-level references to this widget to prevent
+        # ghost redraws after the widget is removed from the tree
+        app = App.get()
+        if app is not None:
+            if app._mouse_overed is self:
+                app._mouse_overed = None
+            if app._focused is self:
+                app._focused = None
+            if app._downed is self:
+                app._downed = None
 
     def freeze(self) -> None:
         self._enable_to_detach = False
@@ -579,6 +449,10 @@ class Widget(ABC):
         pass
 
     def mouse_wheel(self, ev: WheelEvent) -> None:
+        pass
+
+    def cursor_pos(self, ev: MouseEvent) -> None:
+        """Called when cursor moves within the widget."""
         pass
 
     def input_char(self, ev: InputCharEvent) -> None:
@@ -666,6 +540,7 @@ class Widget(ABC):
         parent = self._parent
         root = None
         while parent is not None:
+            # Any scrollable parent or Box with multiple children needs complete redraw
             if parent.is_scrollable() or isinstance(parent, StatefulComponent):
                 root = parent
             parent = parent._parent
@@ -682,6 +557,7 @@ class Widget(ABC):
                 or isinstance(self, StatefulComponent),
             )
         else:
+            # Force complete redraw for proper z-index handling
             App.get().post_update(root, True)
 
     def model(self, state: Observable) -> None:
@@ -714,6 +590,17 @@ class Widget(ABC):
         self._flex = flex
         return self
 
+    def get_z_index(self) -> int:
+        """Get the z-index of this widget (default: 1)."""
+        return self._z_index
+
+    def z_index(self, z: int) -> Self:
+        """Set the z-index of this widget. Must be a positive integer."""
+        if z < 1:
+            raise ValueError("z_index must be a positive integer (>= 1)")
+        self._z_index = z
+        return self
+
     def parent(self, parent: Self) -> None:
         self._parent = parent
 
@@ -738,7 +625,7 @@ class Widget(ABC):
         return (
             self.width_policy(SizePolicy.FIXED)
             .height_policy(SizePolicy.FIXED)
-            .resize(Size(width, height))
+            .resize(Size(width=width, height=height))
         )
 
     def fit_parent(self) -> Self:
@@ -885,284 +772,76 @@ class ListState(list, State[T]):
         self.notify()
 
 
-def _is_darkmode() -> bool:
-    if os.getenv("CASTELLA_DARK_MODE") == "true":
-        return True
+class ScrollState(ObservableBase):
+    """Observable scroll position state that persists across view rebuilds.
 
-    if os.getenv("CASTELLA_DARK_MODE") == "false":
-        return False
+    Use this to preserve scroll position when a Component re-renders.
 
-    if "pyodide" in sys.modules:
-        import js  # type: ignore
+    Example:
+        class MyComponent(Component):
+            def __init__(self):
+                super().__init__()
+                self._items = ListState([...])
+                self._items.attach(self)
+                self._scroll = ScrollState()  # Survives re-renders
 
-        return js.window.matchMedia("(prefers-color-scheme: dark)").matches
+            def view(self):
+                return Box(
+                    Column(*[Text(item) for item in self._items]),
+                    scroll_state=self._scroll,  # Pass to Box
+                )
+    """
 
-    import darkdetect
+    def __init__(self, x: int = 0, y: int = 0):
+        super().__init__()
+        self._x = x
+        self._y = y
 
-    is_light = darkdetect.isLight()
-    return not (is_light is not None and is_light)
+    @property
+    def x(self) -> int:
+        """Get horizontal scroll position."""
+        return self._x
 
+    @x.setter
+    def x(self, value: int) -> None:
+        """Set horizontal scroll position."""
+        if self._x != value:
+            self._x = value
+            self.notify()
 
-def _get_color_schema() -> dict[str, str]:
-    if _is_darkmode():
-        return _dark_color_schema
-    else:
-        return _light_color_schema
+    @property
+    def y(self) -> int:
+        """Get vertical scroll position."""
+        return self._y
 
+    @y.setter
+    def y(self, value: int) -> None:
+        """Set vertical scroll position."""
+        if self._y != value:
+            self._y = value
+            self.notify()
 
-_light_color_schema = color.COLOR_SCHEMA[color.PredefinedSchema.LIGHT.value]
-_dark_color_schema = color.COLOR_SCHEMA[color.PredefinedSchema.DARK.value]
-
-
-def set_light_color_schema(schema: dict[str, str]) -> None:
-    global _light_color_schema
-    _light_color_schema = schema
-
-
-def set_dark_color_schema(schema: dict[str, str]) -> None:
-    global _dark_color_schema
-    _dark_color_schema = schema
-
-
-@dataclass(slots=True, frozen=True)
-class WidgetStyle:
-    bg_color: str = "#000000"
-    border_color: str = "#FFFFFF"
-    text_color: str = "#FFFFFF"
-    text_font: Font = Font()
-
-
-# WidgetStyles = NewType('WidgetStyles', Mapping[str, WidgetStyle])
-WidgetStyles: TypeAlias = dict[str, WidgetStyle]
-
-
-class Kind(Enum):
-    NORMAL = "normal"
-    INFO = "info"
-    SUCCESS = "success"
-    WARNING = "warning"
-    DANGER = "danger"
-
-
-class AppearanceState(Enum):
-    NORMAL = ""
-    HOVER = "_hover"
-    SELECTED = "_selected"
-    DISABLED = "_disabled"
-    PUSHED = "_pushed"
-
-
-@dataclass(slots=True, frozen=True)
-class Theme:
-    app: WidgetStyle
-    scrollbar: WidgetStyle
-    scrollbox: WidgetStyle
-    layout: WidgetStyles
-    row: WidgetStyles
-    text: WidgetStyles
-    simpletext: WidgetStyles
-    multilinetext: WidgetStyles
-    input: WidgetStyles
-    button: WidgetStyles
-    switch: WidgetStyles
-    checkbox: WidgetStyles
-
-    def get_widget_styles(self, widget: Widget) -> WidgetStyles:
-        class_name = widget.__class__.__name__.lower()
-        return deepcopy(getattr(self, class_name)) if hasattr(self, class_name) else {}
-
-
-def _get_theme() -> Theme:
-    color_schema = _get_color_schema()
-    return Theme(
-        app=WidgetStyle(
-            bg_color=color_schema["bg-canvas"],
-            text_font=Font(family=""),  # expects system default font family
-        ),
-        layout={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-primary"],
-                border_color=color_schema["border-primary"],
-            ),
-        },
-        row={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-primary"],
-                border_color=color_schema["border-primary"],
-            ),
-        },
-        scrollbar=WidgetStyle(
-            bg_color=color_schema["bg-secondary"],
-            border_color=color_schema["border-secondary"],
-        ),
-        scrollbox=WidgetStyle(
-            bg_color=color_schema["border-secondary"],
-        ),
-        text={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-primary"],
-                border_color=color_schema["border-primary"],
-                text_color=color_schema["text-primary"],
-            ),
-            "info": WidgetStyle(
-                bg_color=color_schema["bg-info"],
-                border_color=color_schema["border-info"],
-                text_color=color_schema["text-info"],
-            ),
-            "success": WidgetStyle(
-                bg_color=color_schema["bg-success"],
-                border_color=color_schema["border-success"],
-                text_color=color_schema["text-success"],
-            ),
-            "warning": WidgetStyle(
-                bg_color=color_schema["bg-warning"],
-                border_color=color_schema["border-warning"],
-                text_color=color_schema["text-warning"],
-            ),
-            "danger": WidgetStyle(
-                bg_color=color_schema["bg-danger"],
-                border_color=color_schema["border-danger"],
-                text_color=color_schema["text-danger"],
-            ),
-        },
-        simpletext={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-primary"],
-                border_color=color_schema["border-primary"],
-                text_color=color_schema["text-primary"],
-            ),
-            "info": WidgetStyle(
-                bg_color=color_schema["bg-info"],
-                border_color=color_schema["border-info"],
-                text_color=color_schema["text-info"],
-            ),
-            "success": WidgetStyle(
-                bg_color=color_schema["bg-success"],
-                border_color=color_schema["border-success"],
-                text_color=color_schema["text-success"],
-            ),
-            "warning": WidgetStyle(
-                bg_color=color_schema["bg-warning"],
-                border_color=color_schema["border-warning"],
-                text_color=color_schema["text-warning"],
-            ),
-            "danger": WidgetStyle(
-                bg_color=color_schema["bg-danger"],
-                border_color=color_schema["border-danger"],
-                text_color=color_schema["text-danger"],
-            ),
-        },
-        multilinetext={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-primary"],
-                border_color=color_schema["bg-primary"],
-                text_color=color_schema["text-primary"],
-            ),
-            "info": WidgetStyle(
-                bg_color=color_schema["bg-info"],
-                border_color=color_schema["border-info"],
-                text_color=color_schema["text-info"],
-            ),
-            "success": WidgetStyle(
-                bg_color=color_schema["bg-success"],
-                border_color=color_schema["border-success"],
-                text_color=color_schema["text-success"],
-            ),
-            "warning": WidgetStyle(
-                bg_color=color_schema["bg-warning"],
-                border_color=color_schema["border-warning"],
-                text_color=color_schema["text-warning"],
-            ),
-            "danger": WidgetStyle(
-                bg_color=color_schema["bg-danger"],
-                border_color=color_schema["border-danger"],
-                text_color=color_schema["text-danger"],
-            ),
-        },
-        input={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-secondary"],
-                border_color=color_schema["border-primary"],
-                text_color=color_schema["text-primary"],
-            ),
-            "info": WidgetStyle(
-                bg_color=color_schema["bg-info"],
-                border_color=color_schema["border-info"],
-                text_color=color_schema["text-info"],
-            ),
-            "success": WidgetStyle(
-                bg_color=color_schema["bg-success"],
-                border_color=color_schema["border-success"],
-                text_color=color_schema["text-success"],
-            ),
-            "warning": WidgetStyle(
-                bg_color=color_schema["bg-warning"],
-                border_color=color_schema["border-warning"],
-                text_color=color_schema["text-warning"],
-            ),
-            "danger": WidgetStyle(
-                bg_color=color_schema["bg-danger"],
-                border_color=color_schema["border-danger"],
-                text_color=color_schema["text-danger"],
-            ),
-        },
-        button={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-tertiary"],
-                border_color=color_schema["border-primary"],
-                text_color=color_schema["text-primary"],
-            ),
-            "normal_hover": WidgetStyle(
-                bg_color=color_schema["bg-overlay"],
-                border_color=color_schema["border-primary"],
-                text_color=color_schema["text-primary"],
-            ),
-            "normal_pushed": WidgetStyle(
-                bg_color=color_schema["bg-pushed"],
-                border_color=color_schema["border-secondary"],
-                text_color=color_schema["text-primary"],
-            ),
-        },
-        switch={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-tertiary"],
-                text_color=color_schema["fg"],
-            ),
-            "normal_selected": WidgetStyle(
-                bg_color=color_schema["bg-selected"],
-                text_color=color_schema["fg"],
-            ),
-        },
-        checkbox={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-tertiary"],
-                text_color=color_schema["fg"],
-            ),
-            "normal_selected": WidgetStyle(
-                bg_color=color_schema["bg-selected"],
-                text_color=color_schema["fg"],
-            ),
-        },
-    )
-
-
-_theme = None
+    def set(self, x: int | None = None, y: int | None = None) -> None:
+        """Set scroll position (x and/or y)."""
+        changed = False
+        if x is not None and self._x != x:
+            self._x = x
+            changed = True
+        if y is not None and self._y != y:
+            self._y = y
+            changed = True
+        if changed:
+            self.notify()
 
 
 def get_theme() -> Theme:
-    global _theme
-    if _theme is None:
-        _theme = _get_theme()
-    return _theme
-
-
-def set_theme(theme: Theme) -> None:
-    global _theme
-    _theme = theme
+    """Get the current theme from the ThemeManager."""
+    return ThemeManager().current
 
 
 def replace_font_size(style: Style, size: float, policy: FontSizePolicy) -> Style:
-    return replace(style, font=replace(style.font, size=size, size_policy=policy))
+    new_font = style.font.model_copy(update={"size": int(size), "size_policy": policy})
+    return style.model_copy(update={"font": new_font})
 
 
 def determine_font(
@@ -1187,35 +866,26 @@ def determine_font(
 SCROLL_BAR_SIZE = EM
 
 
-@dataclass(slots=True, frozen=True)
-class UpdateEvent:
-    target: Union[Widget, "App"]
-    completely: bool = False
-
-
 class App:
-    _instance: Self
+    _instance: Self | None = None
 
     _default_font_family = get_theme().app.text_font.family
 
     def __new__(cls, _frame: Frame, _widget: Widget):
-        if not hasattr(cls, "_instance"):
+        if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
     def __init__(self, frame: Frame, widget: Widget):
-        self._mouse_overed_layer = None
         self._frame = frame
+        self._root_widget = widget
         self._downed: Widget | None = None
         self._focused: Widget | None = None
         self._mouse_overed: Widget | None = None
-        self._layers: list[Widget] = []
-        self._layerPositions: list[PositionPolicy] = []
         self._style = Style(fill=FillStyle(color=get_theme().app.bg_color))
-        self.push_layer(widget, PositionPolicy.FIXED)
 
     @classmethod
-    def get(cls) -> Self:
+    def get(cls) -> Self | None:
         return cls._instance
 
     @classmethod
@@ -1227,25 +897,8 @@ class App:
     def get_default_font_family(cls) -> str:
         return cls._default_font_family
 
-    def push_layer(self, l: Widget, p: PositionPolicy) -> Self:
-        if len(self._layers) > 0:
-            self.cursor_pos(MouseEvent(Point(-1, -1)))
-        self._layers.append(l)
-        self._layerPositions.append(p)
-        self._frame.post_update(UpdateEvent(self, True))
-        return self
-
-    def pop_layer(self) -> Self:
-        self._layers.pop()
-        self._layerPositions.pop()
-        self._frame.post_update(UpdateEvent(self, True))
-        return self
-
-    def peek_layer(self) -> tuple[Widget, PositionPolicy]:
-        return self._layers[-1], self._layerPositions[-1]
-
     def mouse_down(self, ev: MouseEvent) -> None:
-        target, p = self.peek_layer()[0].dispatch(ev.pos)
+        target, p = self._root_widget.dispatch(ev.pos)
         if target is not None and p is not None:
             ev.target = target
             self._prev_abs_pos = ev.pos
@@ -1253,40 +906,46 @@ class App:
             self._prev_rel_pos = ev.pos
             target.mouse_down(ev)
             self._downed = target
-        else:
-            if len(self._layers) > 1:
-                self.pop_layer()
 
     def mouse_up(self, ev: MouseEvent) -> None:
         if self._downed is None:
             return
 
+        # Save reference before callbacks that may trigger view rebuild
+        # and clear _downed via widget.detach()
+        downed = self._downed
         try:
             if self._focused is not None:
                 self._focused.unfocused()
 
-            self._focused = self._downed
+            self._focused = downed
             self._focused.focused()
 
-            ev.target = self._downed
-            diff = ev.pos - self._prev_abs_pos
+            ev.target = downed
+            # Re-dispatch to get correct local coordinates for the target widget
+            target, local_p = self._root_widget.dispatch(ev.pos)
+            if local_p is not None and target is downed:
+                # Mouse is still over the original target - use local coords
+                ev.pos = local_p
+            else:
+                # Mouse moved away - use delta approach as fallback
+                diff = ev.pos - self._prev_abs_pos
+                ev.pos = self._prev_rel_pos + diff
             self._prev_abs_pos = ev.pos
-            ev.pos = self._prev_rel_pos + diff
             self._prev_rel_pos = ev.pos
-            self._downed.mouse_up(ev)
+            downed.mouse_up(ev)
         finally:
             self._downed = None
 
     def mouse_wheel(self, ev: WheelEvent) -> None:
-        target, _ = self.peek_layer()[0].dispatch_to_scrollable(
+        target, _ = self._root_widget.dispatch_to_scrollable(
             ev.pos, abs(ev.x_offset) > abs(ev.y_offset)
         )
         if target is not None:
             target.mouse_wheel(ev)
 
     def cursor_pos(self, ev: MouseEvent) -> None:
-        layer = self.peek_layer()[0]
-        target, p = layer.dispatch(ev.pos)
+        target, p = self._root_widget.dispatch(ev.pos)
         if target is None:
             if self._mouse_overed is not None:
                 self._mouse_overed.mouse_out()
@@ -1294,14 +953,15 @@ class App:
         elif self._downed is None:
             if self._mouse_overed is None:
                 self._mouse_overed = target
-                self._mouse_overed_layer = layer
                 target.mouse_over()
             elif self._mouse_overed is not target:
-                if self._mouse_overed_layer is layer:
-                    self._mouse_overed.mouse_out()
+                self._mouse_overed.mouse_out()
                 self._mouse_overed = target
-                self._mouse_overed_layer = layer
                 target.mouse_over()
+            # Call cursor_pos on target widget with relative position
+            if p is not None:
+                rel_ev = MouseEvent(pos=p)
+                target.cursor_pos(rel_ev)
         elif (
             target is self._downed or self._downed.dispatch(ev.pos)[0] is not None
         ) and p is not None:
@@ -1322,27 +982,29 @@ class App:
         self._focused.input_key(ev)
 
     def redraw(self, p: Painter, completely: bool) -> None:
-        # self._downed = None
-        # self._focused = None
-        # self._mouse_overed = None
-        # self._mouse_overed_layer = None
-
+        # Clear entire canvas first to remove any remnants
+        # Get current theme's canvas color for proper dark/light mode support
+        bg_color = get_theme().app.bg_color
+        self._style = Style(fill=FillStyle(color=bg_color))
+        p.clear_all(bg_color)
         p.style(self._style)
-        p.fill_rect(Rect(origin=Point(0, 0), size=self._frame.get_size() + Size(1, 1)))
-        for i in range(len(self._layers)):
-            l = self._layers[i]
-            pos = self._layerPositions[i]
-            self._relocate_layout(l, pos)
-            if completely or l.is_dirty():
-                p.save()
-                p.translate(l.get_pos())
-                p.clip(Rect(Point(0, 0), l.get_size()))
-                l.redraw(p, completely)
-                p.restore()
-                l.dirty(False)
+        p.fill_rect(
+            Rect(
+                origin=Point(x=0, y=0),
+                size=self._frame.get_size() + Size(width=1, height=1),
+            )
+        )
+        self._relocate_layout(self._root_widget)
+        if completely or self._root_widget.is_dirty():
+            p.save()
+            p.translate(self._root_widget.get_pos())
+            p.clip(Rect(origin=Point(x=0, y=0), size=self._root_widget.get_size()))
+            self._root_widget.redraw(p, completely)
+            p.restore()
+            self._root_widget.dirty(False)
         p.flush()
 
-    def _relocate_layout(self, w: Widget, p: PositionPolicy) -> None:
+    def _relocate_layout(self, w: Widget) -> None:
         if w is None:
             return
 
@@ -1361,19 +1023,10 @@ class App:
         else:
             width = latest_size.width
 
-        if p is PositionPolicy.FIXED:
-            pass
-        else:
-            w.move(
-                Point(
-                    int(self._frame.get_size().width / 2 - w.get_size().width / 2),
-                    int(self._frame.get_size().height / 2 - w.get_size().height / 2),
-                )
-            )
         w.resize(Size(width=width, height=height))
 
     def post_update(self, w: Widget, completely: bool = False) -> None:
-        self._frame.post_update(UpdateEvent(w, completely))
+        self._frame.post_update(UpdateEvent(target=w, completely=completely))
 
     def run(self) -> None:
         self._frame.on_mouse_down(self.mouse_down)
@@ -1402,14 +1055,6 @@ class App:
         self, text: str, callback: Callable[[Future], None]
     ) -> None:
         return self._frame.async_set_clipboard_text(text, callback)
-
-
-def show_popup(p: Widget):
-    App.get().push_layer(p, PositionPolicy.CENTER)
-
-
-def hide_popup():
-    App.get().pop_layer()
 
 
 class Container(Protocol):
@@ -1459,7 +1104,11 @@ class Layout(Widget, ABC):
     def dispatch(self, p: Point) -> tuple[Widget | None, Point | None]:
         if self.contain_in_content_area(p):
             p = self._adjust_pos(p)
-            for c in self._children:
+            # Sort by z_index in reverse (higher z_index receives events first)
+            sorted_children = sorted(
+                self._children, key=lambda c: c.get_z_index(), reverse=True
+            )
+            for c in sorted_children:
                 target, adjusted_p = c.dispatch(p)
                 if target is not None:
                     return target, adjusted_p
@@ -1474,7 +1123,11 @@ class Layout(Widget, ABC):
     ) -> tuple[Widget | None, Point | None]:
         if self.contain_in_content_area(p):
             p = self._adjust_pos(p)
-            for c in self._children:
+            # Sort by z_index in reverse (higher z_index receives events first)
+            sorted_children = sorted(
+                self._children, key=lambda c: c.get_z_index(), reverse=True
+            )
+            for c in sorted_children:
                 target, adjusted_p = c.dispatch_to_scrollable(p, is_direction_x)
                 if target is not None:
                     return target, adjusted_p
@@ -1491,7 +1144,7 @@ class Layout(Widget, ABC):
     def has_scrollbar(self, is_direction_x: bool) -> bool: ...
 
     def _adjust_pos(self, p: Point) -> Point:
-        return p + Point(0, 0)
+        return p + Point(x=0, y=0)
 
     def contain_in_content_area(self, p: Point) -> bool:
         return (self._pos.x < p.x < self._pos.x + self._size.width) and (
@@ -1499,9 +1152,21 @@ class Layout(Widget, ABC):
         )
 
     def redraw(self, p: Painter, completely: bool) -> None:
-        p.style(self._style)
+        # Get current theme's layout style for proper dark/light mode support
+        widget_style = get_theme().layout["normal"]
+        style = Style(
+            fill=FillStyle(color=widget_style.bg_color),
+            border_radius=widget_style.border_radius,
+            shadow=widget_style.shadow,
+        )
+        p.style(style)
         if completely or self.is_dirty():
-            p.fill_rect(Rect(origin=Point(0, 0), size=self.get_size() + Size(1, 1)))
+            p.fill_rect(
+                Rect(
+                    origin=Point(x=0, y=0),
+                    size=self.get_size() + Size(width=1, height=1),
+                )
+            )
         self._relocate_children(p)
         self._redraw_children(p, completely)
 
@@ -1509,11 +1174,13 @@ class Layout(Widget, ABC):
     def _relocate_children(self, p: Painter) -> None: ...
 
     def _redraw_children(self, p: Painter, completely: bool) -> None:
-        for c in self._children:
+        # Sort children by z_index (lower first, higher on top)
+        sorted_children = sorted(self._children, key=lambda c: c.get_z_index())
+        for c in sorted_children:
             if completely or c.is_dirty():
                 p.save()
                 p.translate((c.get_pos() - self.get_pos()))
-                p.clip(Rect(Point(0, 0), c.get_size()))
+                p.clip(Rect(origin=Point(x=0, y=0), size=c.get_size()))
                 c.redraw(p, completely)
                 p.restore()
                 c.dirty(False)
@@ -1555,9 +1222,9 @@ class Component(Layout, ABC):
     def __init__(self):
         super().__init__(
             state=None,
-            pos=Point(0, 0),
+            pos=Point(x=0, y=0),
             pos_policy=None,
-            size=Size(0, 0),
+            size=Size(width=0, height=0),
             width_policy=SizePolicy.EXPANDING,
             height_policy=SizePolicy.EXPANDING,
         )
@@ -1572,7 +1239,7 @@ class Component(Layout, ABC):
             return
 
         child = self._children[0]
-        child.resize(replace(self.get_size()))
+        child.resize(self.get_size().model_copy())
 
     def _move_children(self):
         child = self._children[0]
@@ -1589,17 +1256,25 @@ class Component(Layout, ABC):
             self.remove(self._child)
             self._child.detach()
             self._child = None
-        super().on_notify(event)
+        # Force complete redraw since the widget tree structure may have changed
+        self.dirty(True)
+        app = App.get()
+        if app is not None:
+            # Post update to App for full unclipped redraw
+            app._root_widget.dirty(True)
+            app._frame.post_update(UpdateEvent(target=app, completely=True))
 
     def redraw(self, p: Painter, completely: bool) -> None:
         if self._child is None:
             self._child = self.view()
             self.add(self._child)
+            # Force complete redraw when view changes
+            completely = True
         super().redraw(p, completely)
 
     def measure(self, p: Painter) -> Size:
         if self._child is None:
-            return Size(0, 0)
+            return Size(width=0, height=0)
         return self._child.measure(p)
 
 

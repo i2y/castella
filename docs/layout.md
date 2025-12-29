@@ -43,12 +43,21 @@ Row(
 </div>
 
 ### Box
-Box takes only one child. If the child size is bigger than the parent box, the parent box provides scrollbars automatically.
+Box can take one or more children. All children are stacked at the same position, rendered in z-index order (lower first, higher on top). This enables creating overlays, modals, and layered UIs.
+
+If a child's size is bigger than the parent box, the parent box provides scrollbars automatically.
 (By the way, if you set scrollable=True for Column or Row, a scrollbar will appear when the child elements do not fit within the view.)
 
 ```python
+# Simple scrollable content
 Box(
   Text("Content", font_size=24).fixed_size(400, 400),
+)
+
+# Overlapping widgets with z-index
+Box(
+  Column(...).z_index(1),   # Background content
+  Column(...).z_index(10),  # Modal on top
 )
 ```
 
@@ -131,3 +140,15 @@ Row(
 </div>
 
 In this example, the first element is displayed at the specified fixed size. The remaining two child elements share the remaining width in 2:1 ratio.
+
+## Z-Index (Stacking Order)
+
+Widgets can be layered using the `z_index()` method. Higher values appear on top and receive input events first.
+
+```python
+main_content = Column(...).z_index(1)
+modal = Column(...).z_index(10)  # Appears on top
+return Box(main_content, modal)
+```
+
+For detailed information and examples, see [Z-Index and Layering](z-index.md).

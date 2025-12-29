@@ -1,4 +1,3 @@
-from dataclasses import replace
 from typing import Any, Callable, Self, cast
 
 from castella.core import (
@@ -42,19 +41,20 @@ class Button(Widget):
     def __init__(
         self,
         text: str,
+        kind: Kind = Kind.NORMAL,
         align: TextAlign = TextAlign.CENTER,
         font_size: int = EM,
     ):
         self._on_click = lambda _: ...
         self._align = align
-        self._kind = Kind.NORMAL
+        self._kind = kind
         self._appearance_state = AppearanceState.NORMAL
         self._font_size = font_size
         self._font_size_policy = FontSizePolicy.FIXED
         super().__init__(
             state=ButtonState(text),
-            size=Size(0, 0),
-            pos=Point(0, 0),
+            size=Size(width=0, height=0),
+            pos=Point(x=0, y=0),
             pos_policy=None,
             width_policy=SizePolicy.EXPANDING,
             height_policy=SizePolicy.EXPANDING,
@@ -107,6 +107,12 @@ class Button(Widget):
         self._on_click = callback
         return self
 
+    def kind(self, kind: Kind) -> Self:
+        """Set the button's semantic kind for styling."""
+        self._kind = kind
+        self._on_update_widget_styles()
+        return self
+
     def get_label(self) -> str:
         state: ButtonState = cast(ButtonState, self._state)
         return state.get_text()
@@ -114,7 +120,7 @@ class Button(Widget):
     def redraw(self, p: Painter, _: bool) -> None:
         state: ButtonState = cast(ButtonState, self._state)
 
-        rect = Rect(origin=Point(0, 0), size=self.get_size())
+        rect = Rect(origin=Point(x=0, y=0), size=self.get_size())
         if state.is_pushed():
             p.style(self._pushed_style)
             p.fill_rect(rect)
@@ -129,41 +135,43 @@ class Button(Widget):
         font_family, font_size = determine_font(
             width,
             height,
-            replace(
-                self._text_style,
-                font=Font(
-                    self._text_style.font.family,
-                    self._text_style.font.size,
-                    self._font_size_policy,
-                ),
+            self._text_style.model_copy(
+                update={
+                    "font": Font(
+                        family=self._text_style.font.family,
+                        size=self._text_style.font.size,
+                        size_policy=self._font_size_policy,
+                    )
+                }
             ),
             state.get_text(),
         )
         p.style(
-            replace(
-                self._text_style,
-                font=Font(
-                    font_family,
-                    font_size,
-                    self._font_size_policy,
-                ),
+            self._text_style.model_copy(
+                update={
+                    "font": Font(
+                        family=font_family,
+                        size=font_size,
+                        size_policy=self._font_size_policy,
+                    )
+                }
             ),
         )
 
         if self._align is TextAlign.CENTER:
             pos = Point(
-                width / 2 - p.measure_text(str(state.get_text())) / 2,
-                height / 2 + p.get_font_metrics().cap_height / 2,
+                x=width / 2 - p.measure_text(str(state.get_text())) / 2,
+                y=height / 2 + p.get_font_metrics().cap_height / 2,
             )
         elif self._align is TextAlign.RIGHT:
             pos = Point(
-                width - p.measure_text(str(state.get_text())) - self._style.padding,
-                height / 2 + p.get_font_metrics().cap_height / 2,
+                x=width - p.measure_text(str(state.get_text())) - self._style.padding,
+                y=height / 2 + p.get_font_metrics().cap_height / 2,
             )
         else:
             pos = Point(
-                self._style.padding,
-                height / 2 + p.get_font_metrics().cap_height / 2,
+                x=self._style.padding,
+                y=height / 2 + p.get_font_metrics().cap_height / 2,
             )
 
         p.fill_text(
@@ -197,8 +205,8 @@ class Button(Widget):
         p.style(self._text_style)
         state: ButtonState = cast(ButtonState, self._state)
         s = Size(
-            p.measure_text(state.get_text()) + 2 * self._style.padding,
-            self._text_style.font.size,
+            width=p.measure_text(state.get_text()) + 2 * self._style.padding,
+            height=self._text_style.font.size,
         )
         p.restore()
         return s

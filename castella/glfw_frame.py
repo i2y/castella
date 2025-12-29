@@ -1,20 +1,37 @@
+"""GLFW-based frame implementation."""
+
+from __future__ import annotations
+
 import platform
-import threading
-from queue import SimpleQueue
-from typing import Callable, cast
+from typing import TYPE_CHECKING, Callable
 
 import glfw
 import skia
-from OpenGL import GL, version
+from OpenGL import GL
 
-from castella import core
-from castella import skia_painter as painter
+from castella.frame.base import BaseFrame
+from castella.models.geometry import Point, Size
+from castella.models.events import (
+    InputCharEvent,
+    InputKeyEvent,
+    KeyAction,
+    KeyCode,
+    MouseEvent,
+    WheelEvent,
+)
+
+if TYPE_CHECKING:
+    from castella.protocols.painter import BasePainter
 
 
-class Frame:
+class Frame(BaseFrame):
+    """GLFW window frame with OpenGL/Skia rendering."""
+
     def __init__(
         self, title: str = "castella", width: float = 500, height: float = 500
     ):
+        super().__init__(title, width, height)
+
         if not glfw.init():
             raise RuntimeError("glfw.init() failed")
 
@@ -22,7 +39,12 @@ class Frame:
         glfw.window_hint(glfw.DOUBLEBUFFER, glfw.FALSE)
         if platform.system() == "Darwin":
             glfw.window_hint(glfw.COCOA_RETINA_FRAMEBUFFER, glfw.FALSE)
-        window = glfw.create_window(width, height, title, None, None)
+            # Request OpenGL 3.2 Core Profile for macOS (required for GLSL 1.50+)
+            glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
+            glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 2)
+            glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, glfw.TRUE)
+            glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
+        window = glfw.create_window(int(width), int(height), title, None, None)
 
         if not window:
             glfw.terminate()
@@ -31,21 +53,22 @@ class Frame:
         glfw.make_context_current(window)
         self.window = window
         GL.glClear(GL.GL_COLOR_BUFFER_BIT)
-        glfw.set_mouse_button_callback(window, self.mouse_button)
-        glfw.set_scroll_callback(window, self.mouse_wheel)
-        glfw.set_cursor_pos_callback(window, self.cursor_pos)
-        glfw.set_char_callback(window, self.input_char)
-        glfw.set_key_callback(window, self.input_key)
 
-        self._size = core.Size(width, height)
+        # Set up callbacks
+        glfw.set_mouse_button_callback(window, self._mouse_button)
+        glfw.set_scroll_callback(window, self._mouse_wheel)
+        glfw.set_cursor_pos_callback(window, self._cursor_pos)
+        glfw.set_char_callback(window, self._input_char)
+        glfw.set_key_callback(window, self._input_key)
+
         self.context = skia.GrDirectContext.MakeGL()
         self._update_surface_and_painter()
 
-        self._update_event_queue = SimpleQueue()
-
     def _update_surface_and_painter(self) -> None:
+        """Create/recreate the Skia surface for the current window size."""
+        from castella import skia_painter as painter
+
         (fb_width, fb_height) = glfw.get_framebuffer_size(self.window)
-        # GL.glViewport(0, 0, int(fb_width), int(fb_height))
         backend_render_target = skia.GrBackendRenderTarget(
             fb_width,
             fb_height,
@@ -64,103 +87,70 @@ class Frame:
         self.surface = surface
         self.painter = painter.Painter(self, self.surface)
 
-    def mouse_button(self, window, button, action, mods):
+    def _signal_main_thread(self) -> None:
+        """Signal main thread via GLFW empty event."""
+        glfw.post_empty_event()
+
+    # ========== GLFW Callbacks ==========
+
+    def _mouse_button(self, window, button, action, mods):
         if button != glfw.MOUSE_BUTTON_LEFT:
             return
         pos = glfw.get_cursor_pos(window)
         if action == glfw.PRESS:
-            self._callback_on_mouse_down(core.MouseEvent(core.Point(*pos)))
+            self._callback_on_mouse_down(MouseEvent(pos=Point(x=pos[0], y=pos[1])))
         elif action == glfw.RELEASE:
-            self._callback_on_mouse_up(core.MouseEvent(core.Point(*pos)))
+            self._callback_on_mouse_up(MouseEvent(pos=Point(x=pos[0], y=pos[1])))
 
-    def on_mouse_down(self, handler: Callable[[core.MouseEvent], None]) -> None:
-        self._callback_on_mouse_down = handler
-
-    def on_mouse_up(self, handler: Callable[[core.MouseEvent], None]) -> None:
-        self._callback_on_mouse_up = handler
-
-    def mouse_wheel(self, window, x_offset: float, y_offset: float):
+    def _mouse_wheel(self, window, x_offset: float, y_offset: float):
+        pos = glfw.get_cursor_pos(self.window)
         self._callback_on_mouse_wheel(
-            core.WheelEvent(
-                pos=core.Point(*glfw.get_cursor_pos(self.window)),
+            WheelEvent(
+                pos=Point(x=pos[0], y=pos[1]),
                 x_offset=-x_offset * 20,
                 y_offset=-y_offset * 20,
             )
         )
 
-    def on_mouse_wheel(self, handler: Callable[[core.WheelEvent], None]) -> None:
-        self._callback_on_mouse_wheel = handler
+    def _cursor_pos(self, window, x: float, y: float) -> None:
+        self._callback_on_cursor_pos(MouseEvent(pos=Point(x=x, y=y)))
 
-    def cursor_pos(self, window, x: float, y: float) -> None:
-        self._callback_on_cursor_pos(core.MouseEvent(core.Point(x, y)))
+    def _input_char(self, window, char: int) -> None:
+        self._callback_on_input_char(InputCharEvent(char=chr(char)))
 
-    def on_cursor_pos(self, handler: Callable[[core.MouseEvent], None]) -> None:
-        self._callback_on_cursor_pos = handler
-
-    def input_char(self, window, char: int) -> None:
-        self._callback_on_input_char(core.InputCharEvent(chr(char)))
-
-    def on_input_char(self, handler: Callable[[core.InputCharEvent], None]) -> None:
-        self._callback_on_input_char = handler
-
-    def input_key(
+    def _input_key(
         self, window, key: int, scancode: int, action: int, mods: int
     ) -> None:
         self._callback_on_input_key(
-            core.InputKeyEvent(
-                convert_to_key_code(key), scancode, convert_to_key_action(action), mods
+            InputKeyEvent(
+                key=_convert_to_key_code(key),
+                scancode=scancode,
+                action=_convert_to_key_action(action),
+                mods=mods,
             )
         )
 
-    def on_input_key(self, handler: Callable[[core.InputKeyEvent], None]) -> None:
-        self._callback_on_input_key = handler
+    # ========== Redraw Handler Override ==========
 
-    def on_redraw(self, handler: Callable[[core.Painter, bool], None]) -> None:
-        callback = lambda window, w, h: self._on_redraw(window, w, h, handler)
-        self._on_load = callback
-        glfw.set_window_size_callback(self.window, callback)
+    def on_redraw(self, handler: Callable[["BasePainter", bool], None]) -> None:
+        """Register redraw handler and set up window resize callback."""
+        self._callback_on_redraw = handler
+        self._on_load = self._on_resize
+        glfw.set_window_size_callback(self.window, self._on_resize)
 
-    def _on_redraw(
-        self, window, w, h, handler: Callable[[core.Painter, bool], None]
-    ) -> None:
-        self._size = core.Size(w, h)
+    def _on_resize(self, window, w: int, h: int) -> None:
+        """Handle window resize."""
+        self._size = Size(width=w, height=h)
         self._update_surface_and_painter()
-        handler(self.painter, True)
+        self._callback_on_redraw(self.painter, True)
 
-    def get_painter(self) -> core.Painter:
+    # ========== Abstract Method Implementations ==========
+
+    def get_painter(self) -> "BasePainter":
         return self.painter
 
-    def get_size(self) -> core.Size:
+    def get_size(self) -> Size:
         return self._size
-
-    def post_update(self, ev: core.UpdateEvent) -> None:
-        if threading.current_thread() is not threading.main_thread():
-            self._update_event_queue.put(ev)
-            glfw.post_empty_event()
-        else:
-            self._post_update(ev)
-
-    def _post_update(self, ev: core.UpdateEvent) -> None:
-        if ev.target is None:
-            return
-
-        if isinstance(ev.target, core.App):
-            pos = core.Point(0, 0)
-            clippedRect = None
-        else:
-            w: core.Widget = cast(core.Widget, ev.target)
-            pos = w.get_pos()
-            clippedRect = core.Rect(core.Point(0, 0), w.get_size())
-
-        self.painter.save()
-        try:
-            self.painter.translate(pos)
-            if clippedRect is not None:
-                self.painter.clip(clippedRect)
-            ev.target.redraw(self.painter, ev.completely)
-            self.painter.flush()
-        finally:
-            self.painter.restore()
 
     def flush(self) -> None:
         GL.glFlush()
@@ -169,8 +159,7 @@ class Frame:
         GL.glClear(GL.GL_COLOR_BUFFER_BIT)
 
     def run(self) -> None:
-        if threading.current_thread() is not threading.main_thread():
-            raise RuntimeError("run method must be called from main thread")
+        self._ensure_main_thread()
 
         try:
             on_load = True
@@ -178,13 +167,15 @@ class Frame:
                 glfw.wait_events()
                 if on_load:
                     size = self._size
-                    self._on_load(self.window, size.width, size.height)
+                    self._on_load(self.window, int(size.width), int(size.height))
                     on_load = False
-                if not self._update_event_queue.empty():
-                    self._post_update(self._update_event_queue.get_nowait())
+                # Process any pending updates from background threads
+                self._process_pending_updates()
         finally:
             glfw.terminate()
             self.context.abandonContext()
+
+    # ========== Clipboard ==========
 
     def get_clipboard_text(self) -> str:
         return glfw.get_clipboard_string(self.window).decode("utf-8")
@@ -192,42 +183,49 @@ class Frame:
     def set_clipboard_text(self, text: str) -> None:
         glfw.set_clipboard_string(self.window, text)
 
-    def async_get_clipboard_text(self, callback: Callable) -> None:
-        raise NotImplementedError("async_get_clipboard_text")
 
-    def async_set_clipboard_text(self, text: str, callback: Callable) -> None:
-        raise NotImplementedError("async_set_clipboard_text")
+# ========== Key Code Converters ==========
 
 
-def convert_to_key_code(glfw_key_code: int) -> core.KeyCode:
+def _convert_to_key_code(glfw_key_code: int) -> KeyCode:
     match glfw_key_code:
         case glfw.KEY_BACKSPACE:
-            return core.KeyCode.BACKSPACE
+            return KeyCode.BACKSPACE
         case glfw.KEY_LEFT:
-            return core.KeyCode.LEFT
+            return KeyCode.LEFT
         case glfw.KEY_RIGHT:
-            return core.KeyCode.RIGHT
+            return KeyCode.RIGHT
         case glfw.KEY_UP:
-            return core.KeyCode.UP
+            return KeyCode.UP
         case glfw.KEY_DOWN:
-            return core.KeyCode.DOWN
+            return KeyCode.DOWN
         case glfw.KEY_PAGE_UP:
-            return core.KeyCode.PAGE_UP
+            return KeyCode.PAGE_UP
         case glfw.KEY_PAGE_DOWN:
-            return core.KeyCode.PAGE_DOWN
+            return KeyCode.PAGE_DOWN
         case glfw.KEY_DELETE:
-            return core.KeyCode.DELETE
+            return KeyCode.DELETE
+        case glfw.KEY_ENTER:
+            return KeyCode.ENTER
+        case glfw.KEY_TAB:
+            return KeyCode.TAB
+        case glfw.KEY_ESCAPE:
+            return KeyCode.ESCAPE
+        case glfw.KEY_HOME:
+            return KeyCode.HOME
+        case glfw.KEY_END:
+            return KeyCode.END
         case _:
-            return core.KeyCode.UNKNOWN
+            return KeyCode.UNKNOWN
 
 
-def convert_to_key_action(glfw_key_action: int) -> core.KeyAction:
+def _convert_to_key_action(glfw_key_action: int) -> KeyAction:
     match glfw_key_action:
         case glfw.PRESS:
-            return core.KeyAction.PRESS
+            return KeyAction.PRESS
         case glfw.RELEASE:
-            return core.KeyAction.RELEASE
+            return KeyAction.RELEASE
         case glfw.REPEAT:
-            return core.KeyAction.REPEAT
+            return KeyAction.REPEAT
         case _:
-            return core.KeyAction.UNKNOWN
+            return KeyAction.UNKNOWN

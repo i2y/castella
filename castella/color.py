@@ -1,6 +1,8 @@
 from enum import Enum
 
 
+# Legacy COLOR_SCHEMA - kept for backward compatibility
+# New code should use castella.theme.DARK_PALETTE / LIGHT_PALETTE
 COLOR_SCHEMA = (
     # Castella Dark Theme
     {
