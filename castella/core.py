@@ -387,7 +387,9 @@ class Widget(ABC):
 
     def dispatch(self, p: Point) -> tuple[Optional["Widget"], Point | None]:
         if self.contain(p):
-            return self, p
+            # Return position relative to this widget's origin
+            local_p = Point(x=p.x - self._pos.x, y=p.y - self._pos.y)
+            return self, local_p
         else:
             return None, None
 
@@ -447,6 +449,10 @@ class Widget(ABC):
         pass
 
     def mouse_wheel(self, ev: WheelEvent) -> None:
+        pass
+
+    def cursor_pos(self, ev: MouseEvent) -> None:
+        """Called when cursor moves within the widget."""
         pass
 
     def input_char(self, ev: InputCharEvent) -> None:
@@ -916,9 +922,16 @@ class App:
             self._focused.focused()
 
             ev.target = downed
-            diff = ev.pos - self._prev_abs_pos
+            # Re-dispatch to get correct local coordinates for the target widget
+            target, local_p = self._root_widget.dispatch(ev.pos)
+            if local_p is not None and target is downed:
+                # Mouse is still over the original target - use local coords
+                ev.pos = local_p
+            else:
+                # Mouse moved away - use delta approach as fallback
+                diff = ev.pos - self._prev_abs_pos
+                ev.pos = self._prev_rel_pos + diff
             self._prev_abs_pos = ev.pos
-            ev.pos = self._prev_rel_pos + diff
             self._prev_rel_pos = ev.pos
             downed.mouse_up(ev)
         finally:
@@ -945,6 +958,10 @@ class App:
                 self._mouse_overed.mouse_out()
                 self._mouse_overed = target
                 target.mouse_over()
+            # Call cursor_pos on target widget with relative position
+            if p is not None:
+                rel_ev = MouseEvent(pos=p)
+                target.cursor_pos(rel_ev)
         elif (
             target is self._downed or self._downed.dispatch(ev.pos)[0] is not None
         ) and p is not None:
