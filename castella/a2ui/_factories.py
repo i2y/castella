@@ -13,6 +13,7 @@ from castella.a2ui.types import (
     ButtonComponent,
     CardComponent,
     CheckBoxComponent,
+    ChoicePickerComponent,
     ColumnComponent,
     DataBinding,
     DateTimeInputComponent,
@@ -20,6 +21,7 @@ from castella.a2ui.types import (
     Distribution,
     ExplicitChildren,
     ImageComponent,
+    ListComponent,
     LiteralBoolean,
     LiteralNumber,
     LiteralString,
@@ -28,6 +30,7 @@ from castella.a2ui.types import (
     RowComponent,
     SliderComponent,
     TabsComponent,
+    TemplateChildren,
     TextComponent,
     TextFieldComponent,
     TextUsageHint,
@@ -509,6 +512,121 @@ def create_markdown(
         str(content),
         base_font_size=component.base_font_size,
     )
+
+    # Apply flex weight if specified
+    if component.weight is not None:
+        widget = widget.flex(int(component.weight))
+
+    return widget
+
+
+def create_choice_picker(
+    component: ChoicePickerComponent,
+    data_model: dict[str, Any],
+    action_handler: ActionHandler,
+) -> Widget:
+    """Create a choice picker widget from an A2UI ChoicePicker component.
+
+    Uses RadioButtons for single selection, or a Column of CheckBoxes for multiple.
+    """
+    from castella.column import Column
+    from castella.radio_buttons import RadioButtons
+    from castella.checkbox import CheckBox
+
+    # Get label
+    label = resolve_value(component.label, data_model, "")
+
+    # Get choices
+    choices = []
+    for choice in component.choices:
+        choice_value = resolve_value(choice, data_model, "")
+        choices.append(str(choice_value))
+
+    # Get selected value(s)
+    selected = resolve_value(component.selected, data_model, None)
+
+    if component.allow_multiple:
+        # Multiple selection - use CheckBoxes
+        checkboxes = []
+        selected_set = set(selected) if isinstance(selected, list) else set()
+
+        for choice in choices:
+            is_checked = choice in selected_set
+            cb = CheckBox(
+                checked=is_checked,
+                on_label=choice,
+                off_label=choice,
+            )
+
+            # Set up data binding if selected is a binding
+            if isinstance(component.selected, DataBinding):
+                path = component.selected.path
+
+                def make_handler(choice_val: str, current_selected: set) -> Callable:
+                    def handler(event: Any) -> None:
+                        # Toggle selection
+                        if choice_val in current_selected:
+                            current_selected.discard(choice_val)
+                        else:
+                            current_selected.add(choice_val)
+                        action_handler(
+                            "__data_update__",
+                            component.id,
+                            {"path": path, "value": list(current_selected)},
+                        )
+                    return handler
+
+                cb = cb.on_click(make_handler(choice, selected_set))
+
+            checkboxes.append(cb.fixed_height(30))
+
+        widget = Column(*checkboxes)
+    else:
+        # Single selection - use RadioButtons
+        from castella.radio_buttons import RadioButtonsState
+
+        initial_idx = 0
+        if selected and selected in choices:
+            initial_idx = choices.index(selected)
+
+        state = RadioButtonsState(labels=choices, selected_index=initial_idx)
+        widget = RadioButtons(state)
+
+        # Set up data binding if selected is a binding
+        if isinstance(component.selected, DataBinding):
+            path = component.selected.path
+
+            def on_select(idx: int) -> None:
+                action_handler(
+                    "__data_update__",
+                    component.id,
+                    {"path": path, "value": choices[idx] if idx < len(choices) else None},
+                )
+
+            widget = widget.on_select(on_select)
+
+    # Apply flex weight if specified
+    if component.weight is not None:
+        widget = widget.flex(int(component.weight))
+
+    return widget
+
+
+def create_list(
+    component: ListComponent,
+    data_model: dict[str, Any],
+    action_handler: ActionHandler,
+) -> Widget:
+    """Create a scrollable Column widget from an A2UI List component.
+
+    Note: List children are created dynamically based on TemplateChildren.
+    The renderer will populate children after all components are created.
+    """
+    from castella.column import Column
+
+    # Create a scrollable column for the list
+    # Children will be added by the renderer based on TemplateChildren
+    widget = Column(scrollable=True)
 
     # Apply flex weight if specified
     if component.weight is not None:

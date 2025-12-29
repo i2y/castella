@@ -17,6 +17,7 @@ from castella.a2ui.types import (
     Component,
     CreateSurface,
     ExplicitChildren,
+    ListComponent,
     RowComponent,
     ServerMessage,
     TemplateChildren,
@@ -120,6 +121,7 @@ class A2UIRenderer:
         self._catalog = catalog or get_default_catalog()
         self._surfaces: dict[str, A2UISurface] = {}
         self._on_action = on_action
+        self._pending_initial_data: dict[str, Any] | None = None
 
     def _action_handler(
         self, action_name: str, source_component_id: str, context: dict[str, Any]
@@ -196,6 +198,11 @@ class A2UIRenderer:
         # Create a temporary surface to hold data model
         temp_surface = A2UISurface(surface_id, None)  # type: ignore
 
+        # Apply initial data if provided (for TemplateChildren/List support)
+        if self._pending_initial_data:
+            for path, value in self._pending_initial_data.items():
+                temp_surface.update_data(path, value)
+
         # Create all widgets first
         widgets: dict[str, Widget] = {}
         for component in components:
@@ -209,7 +216,7 @@ class A2UIRenderer:
 
         # Connect children for layout components
         for component in components:
-            self._connect_children(component, widgets, component_map)
+            self._connect_children(component, widgets, component_map, temp_surface)
 
         # Create the final surface
         root_widget = widgets[root_id]
@@ -225,11 +232,14 @@ class A2UIRenderer:
         component: Component,
         widgets: dict[str, Widget],
         component_map: dict[str, Component],
+        surface: A2UISurface,
     ) -> None:
         """Connect child widgets to parent layout widgets."""
         children_spec = None
 
         if isinstance(component, (RowComponent, ColumnComponent, CardComponent)):
+            children_spec = component.children
+        elif isinstance(component, ListComponent):
             children_spec = component.children
 
         if children_spec is None:
@@ -247,8 +257,13 @@ class A2UIRenderer:
                     self._add_child_to_parent(parent_widget, child_widget)
 
         elif isinstance(children_spec, TemplateChildren):
-            # TODO: Handle template children with data binding
-            pass
+            # Handle template children with data binding
+            self._render_template_children(
+                parent_widget,
+                children_spec,
+                component_map,
+                surface,
+            )
 
     def _add_child_to_parent(self, parent: Widget, child: Widget) -> None:
         """Add a child widget to a parent layout widget."""
@@ -259,6 +274,90 @@ class A2UIRenderer:
 
         if isinstance(parent, (Column, Row, Box)):
             parent.add(child)
+
+    def _render_template_children(
+        self,
+        parent_widget: Widget,
+        template_spec: TemplateChildren,
+        component_map: dict[str, Component],
+        surface: A2UISurface,
+    ) -> None:
+        """Render template children based on array data.
+
+        For each item in the data array at `path`, creates a widget from
+        the template component with that item as scoped data.
+
+        Args:
+            parent_widget: The parent widget to add children to
+            template_spec: The TemplateChildren specification
+            component_map: Map of component IDs to component definitions
+            surface: The current surface (for data model access)
+        """
+        from castella.a2ui.types import DataBinding
+
+        # Get array data from data model
+        array_data = resolve_value(
+            DataBinding(path=template_spec.path),
+            surface.data_model,
+            default=[],
+        )
+
+        if not isinstance(array_data, list):
+            return
+
+        # Get template component
+        template_component = component_map.get(template_spec.component_id)
+        if template_component is None:
+            return
+
+        # Render a widget for each item in the array
+        for idx, item in enumerate(array_data):
+            # Create scoped data model for this item
+            # The item becomes the root of relative paths
+            scoped_data = surface.data_model.copy()
+
+            # Add the current item at a special scope path
+            # This allows relative paths like "name" to resolve to item["name"]
+            if isinstance(item, dict):
+                # Merge item data at root level for relative path access
+                scoped_data.update(item)
+                # Also store at indexed path for absolute access
+                item_path = template_spec.path.lstrip("/")
+                if item_path:
+                    parts = item_path.split("/")
+                    current = scoped_data
+                    for part in parts[:-1]:
+                        if part not in current:
+                            current[part] = {}
+                        current = current[part]
+                    if parts:
+                        if parts[-1] not in current:
+                            current[parts[-1]] = []
+                        if isinstance(current[parts[-1]], list) and idx < len(current[parts[-1]]):
+                            pass  # Already there
+            else:
+                # Primitive value - store as "_item"
+                scoped_data["_item"] = item
+
+            # Create widget from template with scoped data
+            widget = self._catalog.create(
+                template_component,
+                scoped_data,
+                self._action_handler,
+            )
+
+            # For List items, ensure they have CONTENT or FIXED height
+            # (scrollable containers can't have EXPANDING children)
+            from castella.core import SizePolicy
+
+            if hasattr(widget, "_height_policy"):
+                current_policy = widget._height_policy
+                if current_policy == SizePolicy.EXPANDING:
+                    # Set fixed height for list items (default item height)
+                    widget = widget.fixed_height(40)
+
+            # Add to parent
+            self._add_child_to_parent(parent_widget, widget)
 
     def _handle_update_components(self, msg: UpdateComponents) -> A2UISurface | None:
         """Update components in an existing surface."""
@@ -299,6 +398,7 @@ class A2UIRenderer:
         components: list[Component],
         root_id: str | None = None,
         surface_id: str = "default",
+        initial_data: dict[str, Any] | None = None,
     ) -> Widget:
         """Convenience method to render a list of components.
 
@@ -306,10 +406,14 @@ class A2UIRenderer:
             components: List of A2UI components
             root_id: ID of the root component (defaults to first component)
             surface_id: Surface ID to use
+            initial_data: Initial data model values (for TemplateChildren/List)
 
         Returns:
             The root widget
         """
+        # Store initial data temporarily for _handle_create_surface
+        self._pending_initial_data = initial_data
+
         message = ServerMessage(
             createSurface=CreateSurface(
                 surfaceId=surface_id,
@@ -318,6 +422,10 @@ class A2UIRenderer:
             )
         )
         surface = self.handle_message(message)
+
+        # Clear pending data
+        self._pending_initial_data = None
+
         if surface is None:
             raise ValueError("Failed to create surface")
         return surface.root_widget
@@ -326,29 +434,40 @@ class A2UIRenderer:
         self,
         json_data: dict[str, Any],
         surface_id: str = "default",
+        initial_data: dict[str, Any] | None = None,
     ) -> Widget:
         """Render A2UI JSON directly.
 
         Args:
             json_data: A2UI JSON with "components" and optional "rootId"
             surface_id: Surface ID to use
+            initial_data: Initial data model values (for TemplateChildren/List)
 
         Returns:
             The root widget
         """
         components_data = json_data.get("components", [])
         root_id = json_data.get("rootId")
+        # Also check for data in json_data
+        data_from_json = json_data.get("data", {})
+        merged_data = {**data_from_json, **(initial_data or {})}
 
         # Parse components
         from castella.a2ui.types import (
             ButtonComponent,
             CardComponent,
             CheckBoxComponent,
+            ChoicePickerComponent,
             ColumnComponent,
+            DateTimeInputComponent,
             DividerComponent,
             ImageComponent,
+            ListComponent as ListComp,
             MarkdownComponent,
+            ModalComponent,
             RowComponent,
+            SliderComponent,
+            TabsComponent,
             TextComponent,
             TextFieldComponent,
         )
@@ -358,11 +477,17 @@ class A2UIRenderer:
             "Button": ButtonComponent,
             "TextField": TextFieldComponent,
             "CheckBox": CheckBoxComponent,
+            "Slider": SliderComponent,
+            "DateTimeInput": DateTimeInputComponent,
+            "ChoicePicker": ChoicePickerComponent,
             "Image": ImageComponent,
             "Divider": DividerComponent,
             "Row": RowComponent,
             "Column": ColumnComponent,
             "Card": CardComponent,
+            "List": ListComp,
+            "Tabs": TabsComponent,
+            "Modal": ModalComponent,
             "Markdown": MarkdownComponent,
         }
 
@@ -374,4 +499,4 @@ class A2UIRenderer:
                 component = component_class.model_validate(comp_data)
                 components.append(component)
 
-        return self.render_components(components, root_id, surface_id)
+        return self.render_components(components, root_id, surface_id, merged_data)
