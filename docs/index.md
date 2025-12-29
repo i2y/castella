@@ -10,9 +10,16 @@ The primary final goal of Castella is to provide features for Python programmers
 - The core part as a UI framework of Castella is written in only Python. It's not a wrapper for existing something written in other programing languages. "pure Python cross-platform UI framework" specifies things like the above.
 - Castella allows pythonista to define UI declaratively in Python.
 - Castella provides hot-reloading or hot-restarting on development.
-- Dark mode is supported. If the runtime environment is in dark mode, Castella app's UI appearance will automatically be styled in dark mode.
+- Comprehensive theme system with design tokens (colors, typography, spacing).
+- Built-in themes: Tokyo Night (default), Cupertino, Material Design 3, and classic Castella themes.
+- Dark/light mode with automatic system detection and runtime switching.
+- Rich markdown rendering with syntax highlighting and LaTeX math support.
+- Native interactive charts (Bar, Line, Pie, Scatter, Area, Stacked Bar, Gauge) with tooltips, hover, and click events.
 - Castella utilizes GPU via dependent libraries.
 - Z-index support enables layered UIs with modals, popups, and overlays.
+- **A2A Protocol support** - Connect to AI agents via Google's Agent-to-Agent protocol with `A2AClient`.
+- **A2UI Protocol support** - Render agent-generated UIs with streaming (JSONL, SSE, WebSocket).
+- **AgentChat** - Build chat interfaces with AI agents in just 3 lines of code.
 
 ## Dependencies
 - For desktop platforms, Castella is standing on existing excellent python bindings for window management library (GLFW or SDL2) and 2D graphics library (Skia).

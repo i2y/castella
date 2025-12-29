@@ -17,13 +17,12 @@ The primary final goal of Castella is to provide features for Python programmers
 - Custom themes via `Theme.derive()` for partial overrides or full `ColorPalette` customization.
 - Rich markdown rendering with syntax highlighting and LaTeX math support.
 - Multi-line text editor with scrolling and cursor positioning.
-- Native interactive charts (Bar, Line, Pie, Scatter, Area, Stacked Bar, Gauge) with tooltips, hover, and click events.
+- Native interactive charts (Bar, Line, Pie, Scatter, Area, Stacked Bar, Gauge) with tooltips, hover, click events, and smooth curves.
 - ASCII charts for terminal environments (Bar, Pie, Line, Gauge).
 - Castella utilizes GPU via dependent libraries.
 - Z-index support enables layered UIs with modals, popups, and overlays.
-- **A2A Protocol support** - Connect to AI agents via Google's Agent-to-Agent protocol.
-- **A2UI Protocol support** - Render agent-generated UIs natively across all platforms.
-- **A2UI Streaming** - Progressive UI rendering with JSONL, SSE, and WebSocket support.
+- **A2A Protocol support** - Connect to AI agents via Google's Agent-to-Agent protocol with `A2AClient`.
+- **A2UI Protocol support** - Render agent-generated UIs with streaming (JSONL, SSE, WebSocket).
 - **AgentChat** - Build chat interfaces with AI agents in just 3 lines of code.
 
 ## Dependencies

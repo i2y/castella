@@ -140,8 +140,11 @@ chart = LineChart(
     show_points=True,     # Show data points
     point_radius=4.0,     # Point size
     line_width=2.0,       # Line thickness
-    smooth=False,         # Use straight lines (True for curves)
+    smooth=False,         # Use straight lines (True for Catmull-Rom splines)
 )
+
+# Smooth curves using Catmull-Rom spline interpolation
+smooth_chart = LineChart(data, smooth=True)
 ```
 
 ### PieChart
