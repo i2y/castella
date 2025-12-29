@@ -21,6 +21,37 @@ from castella.chart.scales import LinearScale
 from castella.chart.models import NumericChartData, NumericSeries
 
 
+def _catmull_rom_point(p0: Point, p1: Point, p2: Point, p3: Point, t: float) -> Point:
+    """Calculate a point on a Catmull-Rom spline.
+
+    Args:
+        p0: Control point before the segment.
+        p1: Start point of the segment.
+        p2: End point of the segment.
+        p3: Control point after the segment.
+        t: Parameter from 0 to 1.
+
+    Returns:
+        Point on the spline at parameter t.
+    """
+    t2 = t * t
+    t3 = t2 * t
+
+    x = 0.5 * (
+        (2 * p1.x)
+        + (-p0.x + p2.x) * t
+        + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2
+        + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3
+    )
+    y = 0.5 * (
+        (2 * p1.y)
+        + (-p0.y + p2.y) * t
+        + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2
+        + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3
+    )
+    return Point(x=x, y=y)
+
+
 class LineChart(BaseChart):
     """Interactive line chart widget.
 
@@ -58,7 +89,7 @@ class LineChart(BaseChart):
             show_points: Whether to show point markers.
             point_radius: Radius of point markers.
             line_width: Width of lines.
-            smooth: Whether to use smooth curves (not yet implemented).
+            smooth: Whether to use smooth curves (Catmull-Rom splines).
             fill_area: Whether to fill the area under the line.
             **kwargs: Additional arguments passed to BaseChart.
         """
@@ -217,11 +248,13 @@ class LineChart(BaseChart):
             points.append(Point(x=screen_x, y=screen_y))
 
         # Draw lines between points
-        line_style = Style(fill=FillStyle(color=color))
-        p.style(line_style)
-
-        for i in range(len(points) - 1):
-            self._draw_line(p, points[i], points[i + 1], color, self._line_width)
+        if self._smooth and len(points) >= 2:
+            self._draw_smooth_curve(p, points, color, self._line_width)
+        else:
+            line_style = Style(fill=FillStyle(color=color))
+            p.style(line_style)
+            for i in range(len(points) - 1):
+                self._draw_line(p, points[i], points[i + 1], color, self._line_width)
 
         # Draw points
         if self._show_points:
@@ -272,6 +305,42 @@ class LineChart(BaseChart):
             x = start.x + t * dx
             y = start.y + t * dy
             p.fill_circle(Circle(center=Point(x=x, y=y), radius=width / 2))
+
+    def _draw_smooth_curve(
+        self,
+        p: Painter,
+        points: list[Point],
+        color: str,
+        width: float,
+    ) -> None:
+        """Draw a smooth curve through points using Catmull-Rom splines.
+
+        Args:
+            p: The painter.
+            points: List of points to connect.
+            color: Line color.
+            width: Line width.
+        """
+        if len(points) < 2:
+            return
+
+        p.style(Style(fill=FillStyle(color=color)))
+
+        # Extend points for spline calculation (duplicate first and last)
+        extended = [points[0]] + points + [points[-1]]
+
+        for i in range(len(points) - 1):
+            p0 = extended[i]
+            p1 = extended[i + 1]
+            p2 = extended[i + 2]
+            p3 = extended[i + 3]
+
+            # Draw circles along the curve segment
+            steps = 20  # segments per curve section
+            for j in range(steps + 1):
+                t = j / steps
+                pt = _catmull_rom_point(p0, p1, p2, p3, t)
+                p.fill_circle(Circle(center=pt, radius=width / 2))
 
     def _render_grid(
         self,

@@ -37,6 +37,7 @@ class ChartTheme:
         border_color: Border color.
         tooltip_bg: Tooltip background color.
         tooltip_border: Tooltip border color.
+        tooltip_text: Tooltip text color.
         series_colors: List of colors for data series.
         is_dark: Whether this is a dark theme.
     """
@@ -50,6 +51,7 @@ class ChartTheme:
     border_color: str = "#d1d5db"
     tooltip_bg: str = "#1f2937"
     tooltip_border: str = "#374151"
+    tooltip_text: str = "#ffffff"
     series_colors: list[str] = field(
         default_factory=lambda: list(DEFAULT_SERIES_COLORS)
     )
@@ -79,6 +81,11 @@ class ChartTheme:
         # Use border_secondary as a secondary text color (lighter/dimmer)
         text_secondary = palette.border_primary
 
+        # Tooltip text should contrast with tooltip_bg
+        # For dark themes, bg_secondary is dark so use light text
+        # For light themes, bg_secondary is light so tooltip_bg is dark, use light text
+        tooltip_text = palette.text_primary if is_dark else "#ffffff"
+
         return cls(
             background=palette.bg_primary,
             axis_color=palette.border_primary,
@@ -89,6 +96,7 @@ class ChartTheme:
             border_color=palette.border_primary,
             tooltip_bg=palette.bg_secondary,
             tooltip_border=palette.border_primary,
+            tooltip_text=tooltip_text,
             series_colors=series_colors,
             is_dark=is_dark,
         )
@@ -134,6 +142,7 @@ class ChartTheme:
             border_color=self.border_color,
             tooltip_bg=self.tooltip_bg,
             tooltip_border=self.tooltip_border,
+            tooltip_text=self.tooltip_text,
             series_colors=colors,
             is_dark=self.is_dark,
         )

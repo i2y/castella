@@ -15,6 +15,7 @@ from castella.core import (
     SizePolicy,
     Style,
     FillStyle,
+    StrokeStyle,
     MouseEvent,
     WheelEvent,
 )
@@ -71,7 +72,7 @@ class BaseChart(Widget):
 
     Provides common functionality:
     - Hit testing infrastructure
-    - Tooltip display (placeholder for now)
+    - Tooltip display on hover
     - Zoom/pan support
     - Theme integration
     - Event callbacks
@@ -416,6 +417,9 @@ class BaseChart(Widget):
         self._render_chart(p, self._layout)
         p.restore()
 
+        # Draw tooltip on top of everything
+        self._render_tooltip(p)
+
     def _draw_background(self, p: Painter) -> None:
         """Draw chart background."""
         if self._layout is None:
@@ -445,6 +449,69 @@ class BaseChart(Widget):
         y = self._layout.title_area.origin.y + 24
 
         p.fill_text(self._title, Point(x=x, y=y), None)
+
+    def _render_tooltip(self, p: Painter) -> None:
+        """Render tooltip for hovered element."""
+        if not self._hovered_element or not self._enable_tooltip:
+            return
+
+        element = self._hovered_element
+        anchor = self._get_element_anchor(element)
+
+        # Format value (handle int vs float)
+        if isinstance(element.value, float) and element.value != int(element.value):
+            value_str = f"{element.value:.2f}"
+        else:
+            value_str = str(
+                int(element.value)
+                if isinstance(element.value, float)
+                else element.value
+            )
+
+        # Build tooltip text
+        text = f"{element.label}: {value_str}" if element.label else value_str
+
+        # Measure text (need to set style first for correct measurement)
+        font = Font(size=12)
+        p.style(Style(font=font))
+        text_width = p.measure_text(text)
+        text_height = 14
+        padding = 8
+
+        # Calculate tooltip dimensions
+        tooltip_width = text_width + padding * 2
+        tooltip_height = text_height + padding * 2
+
+        # Position above anchor, centered horizontally
+        x = anchor.x - tooltip_width / 2
+        y = anchor.y - tooltip_height - 8
+
+        # Clamp to chart bounds
+        size = self.get_size()
+        x = max(4, min(x, size.width - tooltip_width - 4))
+        y = max(4, y)
+
+        # Draw tooltip background (rounded rect)
+        bg_rect = Rect(
+            origin=Point(x=x, y=y),
+            size=Size(width=tooltip_width, height=tooltip_height),
+        )
+        bg_style = Style(
+            fill=FillStyle(color=self._theme.tooltip_bg),
+            stroke=StrokeStyle(color=self._theme.tooltip_border),
+            border_radius=4,
+        )
+        p.style(bg_style)
+        p.fill_rect(bg_rect)
+        p.stroke_rect(bg_rect)
+
+        # Draw text
+        text_style = Style(
+            fill=FillStyle(color=self._theme.tooltip_text),
+            font=font,
+        )
+        p.style(text_style)
+        p.fill_text(text, Point(x=x + padding, y=y + padding + text_height - 2), None)
 
     # ========== Measurement ==========
 
