@@ -184,3 +184,102 @@ CUPERTINO_LIGHT_THEME = Theme(
     spacing=CUPERTINO_SPACING,
     code_pygments_style="default",
 )
+
+
+# Material Design 3 Dark palette
+MATERIAL_DARK_PALETTE = ColorPalette(
+    # Surface colors (dark theme uses elevated surfaces)
+    bg_canvas="#121212",  # Surface
+    bg_primary="#1e1e1e",  # Surface +1
+    bg_secondary="#232323",  # Surface +2
+    bg_tertiary="#2c2c2c",  # Surface +3 (buttons, cards)
+    bg_overlay="#383838",  # Surface +5 (hover)
+    bg_info="#1a237e",  # Info container (Indigo dark)
+    bg_danger="#b71c1c",  # Error container
+    bg_success="#1b5e20",  # Success container (Green dark)
+    bg_warning="#e65100",  # Warning container (Orange dark)
+    bg_pushed="#424242",  # Pressed state
+    bg_selected="#bb86fc",  # Primary (Purple)
+    # Text colors (on-surface)
+    fg="#e1e1e1",  # On-surface
+    text_primary="#e1e1e1",  # On-surface
+    text_info="#82b1ff",  # Info (Light blue)
+    text_danger="#cf6679",  # Error
+    text_success="#81c784",  # Success (Light green)
+    text_warning="#ffb74d",  # Warning (Orange light)
+    # Border/outline colors
+    border_primary="#444444",  # Outline
+    border_secondary="#666666",  # Outline variant
+    border_info="#536dfe",  # Info (Indigo)
+    border_danger="#cf6679",  # Error
+    border_success="#4caf50",  # Success (Green)
+    border_warning="#ff9800",  # Warning (Orange)
+)
+
+# Material Design 3 Light palette
+MATERIAL_LIGHT_PALETTE = ColorPalette(
+    # Surface colors
+    bg_canvas="#fefefe",  # Surface
+    bg_primary="#ffffff",  # Surface
+    bg_secondary="#f5f5f5",  # Surface variant
+    bg_tertiary="#e8e8e8",  # Surface container (buttons)
+    bg_overlay="#d0d0d0",  # Hover state
+    bg_info="#e8eaf6",  # Info container (Indigo light)
+    bg_danger="#ffebee",  # Error container
+    bg_success="#e8f5e9",  # Success container (Green light)
+    bg_warning="#fff3e0",  # Warning container (Orange light)
+    bg_pushed="#bdbdbd",  # Pressed state
+    bg_selected="#6200ee",  # Primary (Purple)
+    # Text colors
+    fg="#1c1b1f",  # On-surface
+    text_primary="#1c1b1f",  # On-surface
+    text_info="#3f51b5",  # Info (Indigo)
+    text_danger="#b00020",  # Error
+    text_success="#2e7d32",  # Success (Green)
+    text_warning="#e65100",  # Warning (Orange)
+    # Border/outline colors
+    border_primary="#c4c4c4",  # Outline
+    border_secondary="#e0e0e0",  # Outline variant
+    border_info="#3f51b5",  # Info (Indigo)
+    border_danger="#b00020",  # Error
+    border_success="#4caf50",  # Success (Green)
+    border_warning="#ff9800",  # Warning (Orange)
+)
+
+# Material spacing with rounded corners
+MATERIAL_SPACING = Spacing(
+    padding_sm=4,
+    padding_md=8,
+    padding_lg=16,
+    margin_sm=4,
+    margin_md=8,
+    margin_lg=16,
+    border_radius=12,  # Material 3 uses larger radius
+    border_width=1.0,
+)
+
+# Material typography (Roboto)
+MATERIAL_TYPOGRAPHY = Typography(
+    font_family="Roboto, 'Noto Sans', 'Segoe UI', sans-serif",
+    font_family_mono="'Roboto Mono', 'Fira Code', monospace",
+    base_size=14,  # Material default body size
+    scale_ratio=1.25,
+)
+
+MATERIAL_DARK_THEME = Theme(
+    name="material-dark",
+    is_dark=True,
+    colors=MATERIAL_DARK_PALETTE,
+    typography=MATERIAL_TYPOGRAPHY,
+    spacing=MATERIAL_SPACING,
+    code_pygments_style="monokai",
+)
+
+MATERIAL_LIGHT_THEME = Theme(
+    name="material-light",
+    is_dark=False,
+    colors=MATERIAL_LIGHT_PALETTE,
+    typography=MATERIAL_TYPOGRAPHY,
+    spacing=MATERIAL_SPACING,
+    code_pygments_style="default",
+)

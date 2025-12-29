@@ -66,6 +66,12 @@ from .presets import (
     DARK_THEME,
     LIGHT_PALETTE,
     LIGHT_THEME,
+    MATERIAL_DARK_PALETTE,
+    MATERIAL_DARK_THEME,
+    MATERIAL_LIGHT_PALETTE,
+    MATERIAL_LIGHT_THEME,
+    MATERIAL_SPACING,
+    MATERIAL_TYPOGRAPHY,
 )
 from .tokens import ColorPalette, Spacing, Typography
 
@@ -94,6 +100,12 @@ __all__ = [
     "CUPERTINO_LIGHT_PALETTE",
     "CUPERTINO_SPACING",
     "CUPERTINO_TYPOGRAPHY",
+    "MATERIAL_DARK_THEME",
+    "MATERIAL_LIGHT_THEME",
+    "MATERIAL_DARK_PALETTE",
+    "MATERIAL_LIGHT_PALETTE",
+    "MATERIAL_SPACING",
+    "MATERIAL_TYPOGRAPHY",
     # Style generators
     "generate_widget_style",
     "generate_widget_styles_for_kind",
