@@ -391,21 +391,25 @@ def generate_button_styles(
     border_radius: float = 0.0,
     shadow: Shadow | None = None,
 ) -> WidgetStyles:
-    """Generate styles for Button widget."""
+    """Generate styles for Button widget.
+
+    Generates styles for all Kinds (NORMAL, INFO, SUCCESS, WARNING, DANGER)
+    with hover and pushed states for each.
+    """
     styles: WidgetStyles = {}
-    # Buttons only support NORMAL kind with hover and pushed states
-    styles.update(
-        generate_widget_styles_for_kind(
-            colors,
-            Kind.NORMAL,
-            font=font,
-            include_hover=True,
-            include_pushed=True,
-            use_tertiary_bg=True,
-            border_radius=border_radius,
-            shadow=shadow,
+    for kind in Kind:
+        styles.update(
+            generate_widget_styles_for_kind(
+                colors,
+                kind,
+                font=font,
+                include_hover=True,
+                include_pushed=True,
+                use_tertiary_bg=(kind == Kind.NORMAL),  # Only NORMAL uses tertiary bg
+                border_radius=border_radius,
+                shadow=shadow,
+            )
         )
-    )
     return styles
 
 

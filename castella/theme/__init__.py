@@ -72,6 +72,12 @@ from .presets import (
     MATERIAL_LIGHT_THEME,
     MATERIAL_SPACING,
     MATERIAL_TYPOGRAPHY,
+    TOKYO_NIGHT_DARK_PALETTE,
+    TOKYO_NIGHT_DARK_THEME,
+    TOKYO_NIGHT_LIGHT_PALETTE,
+    TOKYO_NIGHT_LIGHT_THEME,
+    TOKYO_NIGHT_SPACING,
+    TOKYO_NIGHT_TYPOGRAPHY,
 )
 from .tokens import ColorPalette, Spacing, Typography
 
@@ -106,6 +112,12 @@ __all__ = [
     "MATERIAL_LIGHT_PALETTE",
     "MATERIAL_SPACING",
     "MATERIAL_TYPOGRAPHY",
+    "TOKYO_NIGHT_DARK_THEME",
+    "TOKYO_NIGHT_LIGHT_THEME",
+    "TOKYO_NIGHT_DARK_PALETTE",
+    "TOKYO_NIGHT_LIGHT_PALETTE",
+    "TOKYO_NIGHT_SPACING",
+    "TOKYO_NIGHT_TYPOGRAPHY",
     # Style generators
     "generate_widget_style",
     "generate_widget_styles_for_kind",

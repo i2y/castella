@@ -41,12 +41,13 @@ class Button(Widget):
     def __init__(
         self,
         text: str,
+        kind: Kind = Kind.NORMAL,
         align: TextAlign = TextAlign.CENTER,
         font_size: int = EM,
     ):
         self._on_click = lambda _: ...
         self._align = align
-        self._kind = Kind.NORMAL
+        self._kind = kind
         self._appearance_state = AppearanceState.NORMAL
         self._font_size = font_size
         self._font_size_policy = FontSizePolicy.FIXED
@@ -104,6 +105,12 @@ class Button(Widget):
 
     def on_click(self, callback: Callable[[MouseEvent], Any]) -> Self:
         self._on_click = callback
+        return self
+
+    def kind(self, kind: Kind) -> Self:
+        """Set the button's semantic kind for styling."""
+        self._kind = kind
+        self._on_update_widget_styles()
         return self
 
     def get_label(self) -> str:

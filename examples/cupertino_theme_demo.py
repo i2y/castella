@@ -101,14 +101,15 @@ class CupertinoThemeDemo(Component):
             ).height(50).height_policy(SizePolicy.FIXED),
 
             # Divider
-            Text("--- Buttons (with rounded corners) ---").height(35).height_policy(SizePolicy.FIXED),
+            Text("--- Button Kinds (semantic colors) ---").height(35).height_policy(SizePolicy.FIXED),
 
-            # Button showcase
+            # Button showcase with different Kinds
             Row(
-                Button("Default"),
-                Button("Click Me"),
-                Button("Another Button"),
-                Button("Submit"),
+                Button("Normal", kind=Kind.NORMAL),
+                Button("Info", kind=Kind.INFO),
+                Button("Success", kind=Kind.SUCCESS),
+                Button("Warning", kind=Kind.WARNING),
+                Button("Danger", kind=Kind.DANGER),
             ).height(50).height_policy(SizePolicy.FIXED),
 
             # Divider
