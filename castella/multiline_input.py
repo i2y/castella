@@ -3,19 +3,26 @@ from typing import Callable, Self, cast
 from castella.core import (
     AppearanceState,
     CaretDrawable,
+    FillStyle,
     FontSizePolicy,
     InputCharEvent,
     InputKeyEvent,
     KeyAction,
     KeyCode,
     Kind,
+    MouseEvent,
     ObservableBase,
     Painter,
     Point,
     Rect,
+    SCROLL_BAR_SIZE,
     Size,
     SizePolicy,
+    StrokeStyle,
+    Style,
+    WheelEvent,
     Widget,
+    get_theme,
     replace_font_size,
 )
 
@@ -30,6 +37,10 @@ class MultilineInputState(ObservableBase):
         self._row: int = len(self._lines) - 1
         self._col: int = len(self._lines[-1])
         self._target_col: int | None = None
+        # Scroll state (persists across widget re-creation)
+        self._scroll_y: int = 0
+        self._manual_scroll: bool = False
+        self._cursor_set_by_click: bool = False  # Flag to prevent cursor reset
 
     def value(self) -> str:
         """Return full text as a single string joined with newlines."""
@@ -73,9 +84,11 @@ class MultilineInputState(ObservableBase):
         if self._editing:
             return
         self._editing = True
-        self._row = len(self._lines) - 1
-        self._col = len(self._lines[-1])
-        self.notify()
+        # Only set cursor to end if not set by a click
+        if not self._cursor_set_by_click:
+            self._row = len(self._lines) - 1
+            self._col = len(self._lines[-1])
+        self._cursor_set_by_click = False  # Reset flag
 
     def finish_editing(self) -> None:
         """Exit editing mode."""
@@ -92,7 +105,7 @@ class MultilineInputState(ObservableBase):
         self._lines[self._row] = line[: self._col] + char + line[self._col :]
         self._col += len(char)
         self._target_col = None
-        self.notify()
+        # Don't call notify() - widget handles redraw, on_change handles external updates
 
     def insert_newline(self) -> None:
         """Insert newline at cursor, splitting current line."""
@@ -106,7 +119,7 @@ class MultilineInputState(ObservableBase):
         self._row += 1
         self._col = 0
         self._target_col = None
-        self.notify()
+        # Don't call notify() - widget handles redraw
 
     def delete_prev(self) -> None:
         """Delete character before cursor (backspace)."""
@@ -124,7 +137,7 @@ class MultilineInputState(ObservableBase):
             self._row -= 1
             self._col = len(prev_line)
         self._target_col = None
-        self.notify()
+        # Don't call notify() - widget handles redraw
 
     def delete_next(self) -> None:
         """Delete character at cursor (delete key)."""
@@ -138,7 +151,7 @@ class MultilineInputState(ObservableBase):
             self._lines[self._row] = line + next_line
             del self._lines[self._row + 1]
         self._target_col = None
-        self.notify()
+        # Don't call notify() - widget handles redraw
 
     def move_left(self) -> None:
         """Move cursor left."""
@@ -150,7 +163,7 @@ class MultilineInputState(ObservableBase):
             self._row -= 1
             self._col = len(self._lines[self._row])
         self._target_col = None
-        self.notify()
+        # Don't call notify() - widget handles redraw
 
     def move_right(self) -> None:
         """Move cursor right."""
@@ -163,7 +176,7 @@ class MultilineInputState(ObservableBase):
             self._row += 1
             self._col = 0
         self._target_col = None
-        self.notify()
+        # Don't call notify() - widget handles redraw
 
     def move_up(self) -> None:
         """Move cursor up one line."""
@@ -173,7 +186,7 @@ class MultilineInputState(ObservableBase):
             self._target_col = self._col
         self._row -= 1
         self._col = min(self._target_col, len(self._lines[self._row]))
-        self.notify()
+        # Don't call notify() - widget handles redraw
 
     def move_down(self) -> None:
         """Move cursor down one line."""
@@ -183,11 +196,20 @@ class MultilineInputState(ObservableBase):
             self._target_col = self._col
         self._row += 1
         self._col = min(self._target_col, len(self._lines[self._row]))
-        self.notify()
+        # Don't call notify() - widget handles redraw
 
 
 class MultilineInput(Widget):
     """Multi-line text input widget with optional word wrapping."""
+
+    # Scrollbar styles
+    _scrollbar_widget_style = get_theme().scrollbar
+    _scrollbox_widget_style = get_theme().scrollbox
+    _scrollbar_style = Style(
+        fill=FillStyle(color=_scrollbar_widget_style.bg_color),
+        stroke=StrokeStyle(color=_scrollbar_widget_style.border_color),
+    )
+    _scrollbox_style = Style(fill=FillStyle(color=_scrollbox_widget_style.bg_color))
 
     def __init__(
         self,
@@ -210,6 +232,12 @@ class MultilineInput(Widget):
         self._line_spacing = line_spacing
         self._wrap = wrap
         self._callback: Callable[[str], None] = lambda v: ...
+        self._content_height: float = 0  # Total content height (calculated in redraw)
+        self._scroll_box_y: Rect | None = None  # Scrollbar thumb rect
+        self._under_dragging_y = False
+        self._last_drag_pos: Point | None = None
+        self._last_display_lines: list[tuple[int, str, int]] | None = None  # For click handling
+        # Note: scroll_y and manual_scroll are stored in state to persist across re-renders
 
         super().__init__(
             state=state,
@@ -309,6 +337,7 @@ class MultilineInput(Widget):
         padding = self._padding
         line_spacing = self._line_spacing
         font_size = self._font_size
+        border_width = self._border_width
 
         p.style(self._rect_style)
         size = self.get_size()
@@ -319,8 +348,66 @@ class MultilineInput(Widget):
         p.style(self._text_style)
         cap_height = p.get_font_metrics().cap_height
 
-        line_width = size.width - (padding + self._border_width) * 2
+        # Calculate line width (account for scrollbar if needed later)
+        scrollbar_width = SCROLL_BAR_SIZE
+        line_width = size.width - (padding + border_width) * 2 - scrollbar_width
         display_lines = self._get_wrapped_lines(p, line_width)
+
+        # Calculate total content height
+        num_lines = len(display_lines)
+        self._content_height = (
+            font_size * num_lines
+            + line_spacing * max(0, num_lines - 1)
+            + padding * 2
+        )
+
+        # Calculate visible area height
+        visible_height = size.height - border_width * 2
+
+        # Determine if scrollbar is needed
+        needs_scrollbar = self._content_height > size.height
+
+        # Recalculate line width without scrollbar if not needed
+        if not needs_scrollbar:
+            line_width = size.width - (padding + border_width) * 2
+            display_lines = self._get_wrapped_lines(p, line_width)
+            num_lines = len(display_lines)
+            self._content_height = (
+                font_size * num_lines
+                + line_spacing * max(0, num_lines - 1)
+                + padding * 2
+            )
+            self._scroll_box_y = None
+            scrollbar_width = 0
+
+        # Store display_lines for click handling
+        self._last_display_lines = display_lines
+
+        # Auto-scroll to keep cursor visible when editing (but not if user manually scrolled)
+        if state.is_in_editing() and not state._manual_scroll:
+            display_idx, _ = self._find_cursor_display_pos(p, display_lines)
+            cursor_top = padding + display_idx * (font_size + line_spacing)
+            cursor_bottom = cursor_top + font_size
+
+            # Scroll up if cursor is above visible area
+            if cursor_top - state._scroll_y < 0:
+                state._scroll_y = max(0, cursor_top)
+            # Scroll down if cursor is below visible area
+            elif cursor_bottom - state._scroll_y > visible_height:
+                state._scroll_y = int(cursor_bottom - visible_height)
+
+        # Clamp scroll position
+        max_scroll = max(0, int(self._content_height - size.height))
+        state._scroll_y = max(0, min(state._scroll_y, max_scroll))
+
+        # Clip content area and apply scroll offset
+        content_width = size.width - border_width * 2 - scrollbar_width
+        p.save()
+        p.clip(Rect(
+            origin=Point(x=border_width, y=border_width),
+            size=Size(width=content_width, height=visible_height)
+        ))
+        p.translate(Point(x=0, y=-state._scroll_y))
 
         for display_idx, (_, text, _) in enumerate(display_lines):
             y = padding + font_size + display_idx * (font_size + line_spacing)
@@ -339,6 +426,41 @@ class MultilineInput(Widget):
                 p.fill_rect(
                     Rect(origin=caret_pos, size=Size(width=2, height=font_size))
                 )
+
+        p.restore()
+
+        # Draw scrollbar if needed
+        if needs_scrollbar:
+            p.save()
+            # Scrollbar track
+            p.style(MultilineInput._scrollbar_style)
+            scrollbar_x = size.width - scrollbar_width - border_width
+            p.fill_rect(
+                Rect(
+                    origin=Point(x=scrollbar_x, y=border_width),
+                    size=Size(width=scrollbar_width, height=visible_height),
+                )
+            )
+            # Scrollbar thumb
+            p.style(MultilineInput._scrollbox_style)
+            if self._content_height > 0:
+                thumb_height = max(
+                    20, (visible_height / self._content_height) * visible_height
+                )
+                scroll_range = self._content_height - size.height
+                if scroll_range > 0:
+                    thumb_y = (state._scroll_y / scroll_range) * (
+                        visible_height - thumb_height
+                    )
+                else:
+                    thumb_y = 0
+                scroll_box = Rect(
+                    origin=Point(x=scrollbar_x, y=border_width + thumb_y),
+                    size=Size(width=scrollbar_width, height=thumb_height),
+                )
+                self._scroll_box_y = scroll_box
+                p.fill_rect(scroll_box)
+            p.restore()
 
     def measure(self, p: Painter) -> Size:
         state = cast(MultilineInputState, self._state)
@@ -377,7 +499,9 @@ class MultilineInput(Widget):
 
     def focused(self) -> None:
         state = cast(MultilineInputState, self._state)
-        state.start_editing()
+        # Only start editing if not already (mouse_down may have started it)
+        if not state.is_in_editing():
+            state.start_editing()
 
     def unfocused(self) -> None:
         state = cast(MultilineInputState, self._state)
@@ -386,13 +510,18 @@ class MultilineInput(Widget):
     def input_char(self, ev: InputCharEvent) -> None:
         state = cast(MultilineInputState, self._state)
         state.insert(ev.char)
+        state._manual_scroll = False  # Reset manual scroll on input
         self._callback(state.raw_value())
+        # Request redraw without triggering component re-render
+        self.update(True)
 
     def input_key(self, ev: InputKeyEvent) -> None:
         if ev.action is KeyAction.RELEASE:
             return
 
         state = cast(MultilineInputState, self._state)
+        state._manual_scroll = False  # Reset manual scroll on any key input
+
         if ev.key is KeyCode.BACKSPACE:
             state.delete_prev()
             self._callback(state.raw_value())
@@ -410,8 +539,156 @@ class MultilineInput(Widget):
         elif ev.key is KeyCode.ENTER:
             state.insert_newline()
             self._callback(state.raw_value())
+        # Request redraw without triggering component re-render
+        self.update(True)
 
     def on_change(self, callback: Callable[[str], None]) -> Self:
         """Register callback for text changes."""
         self._callback = callback
         return self
+
+    def is_scrollable(self) -> bool:
+        """Return True when content exceeds visible area."""
+        return self._content_height > self._size.height
+
+    def mouse_down(self, ev: MouseEvent) -> None:
+        """Handle mouse down for scrollbar dragging or cursor positioning."""
+        # Check if click is on scrollbar
+        if self._scroll_box_y is not None and self._scroll_box_y.contain(ev.pos):
+            self._under_dragging_y = True
+            self._last_drag_pos = ev.pos
+            return
+
+        # Click in text area - position cursor
+        state = cast(MultilineInputState, self._state)
+        # Start editing if not already (click to focus)
+        if not state.is_in_editing():
+            state._editing = True  # Start editing without resetting cursor
+
+        # Calculate which display line was clicked
+        padding = self._padding
+        font_size = self._font_size
+        line_spacing = self._line_spacing
+        border_width = self._border_width
+
+        # Account for scroll offset
+        click_y = ev.pos.y + state._scroll_y - border_width
+
+        # Find the display line index
+        if click_y < padding:
+            display_line_idx = 0
+        else:
+            display_line_idx = int((click_y - padding) / (font_size + line_spacing))
+
+        # Mark that cursor will be set by click (prevents start_editing from resetting)
+        state._cursor_set_by_click = True
+
+        # Get display lines (need to recalculate here)
+        # Store last calculated display_lines in state for click handling
+        if not hasattr(self, '_last_display_lines') or self._last_display_lines is None:
+            # Can't calculate exact position, but flag is set to prevent cursor reset
+            self._dirty = True
+            if self._parent is not None:
+                self.ask_parent_to_render(True)
+            return
+
+        display_lines = self._last_display_lines
+        display_line_idx = max(0, min(display_line_idx, len(display_lines) - 1))
+
+        if display_line_idx < len(display_lines):
+            logical_row, text, start_col = display_lines[display_line_idx]
+
+            # Find column based on x position
+            click_x = ev.pos.x - padding - border_width
+            if click_x <= 0:
+                col = start_col
+            else:
+                # Find character position
+                col = start_col
+                for i in range(len(text) + 1):
+                    # We need a painter to measure, but we don't have one here
+                    # Use approximate calculation based on average char width
+                    char_width = font_size * 0.5  # Approximate (adjusted for typical fonts)
+                    if i * char_width >= click_x:
+                        col = start_col + max(0, i - 1)
+                        break
+                    col = start_col + i
+
+            # Update cursor position
+            state._row = logical_row
+            state._col = min(col, len(state.get_line(logical_row)))
+            state._target_col = None
+            state._manual_scroll = False  # Allow auto-scroll to cursor
+            # Don't call state.notify() - just redraw the widget
+            self._dirty = True
+            if self._parent is not None:
+                self.ask_parent_to_render(True)
+            else:
+                self.update(True)
+
+    def mouse_up(self, _: MouseEvent) -> None:
+        """Handle mouse up to stop scrollbar dragging."""
+        self._under_dragging_y = False
+        self._last_drag_pos = None
+
+    def mouse_drag(self, ev: MouseEvent) -> None:
+        """Handle mouse drag for scrollbar."""
+        if not self._under_dragging_y or self._last_drag_pos is None:
+            return
+
+        state = cast(MultilineInputState, self._state)
+        delta_y = ev.pos.y - self._last_drag_pos.y
+        self._last_drag_pos = ev.pos
+
+        if delta_y == 0:
+            return
+
+        # Calculate scroll based on drag distance
+        visible_height = self._size.height - self._border_width * 2
+        scroll_range = self._content_height - self._size.height
+        if scroll_range <= 0:
+            return
+
+        thumb_height = max(
+            20, (visible_height / self._content_height) * visible_height
+        )
+        track_range = visible_height - thumb_height
+        if track_range <= 0:
+            return
+
+        # Convert drag to scroll position
+        scroll_delta = (delta_y / track_range) * scroll_range
+        new_scroll = state._scroll_y + int(scroll_delta)
+        new_scroll = max(0, min(new_scroll, int(scroll_range)))
+
+        if new_scroll != state._scroll_y:
+            state._scroll_y = new_scroll
+            state._manual_scroll = True  # Mark as manual scroll
+            self._dirty = True
+            if self._parent is not None:
+                self.ask_parent_to_render(True)
+            else:
+                self.update(True)
+
+    def mouse_wheel(self, ev: WheelEvent) -> None:
+        """Handle mouse wheel for vertical scrolling."""
+        if ev.y_offset == 0:
+            return
+
+        state = cast(MultilineInputState, self._state)
+        max_scroll = max(0, int(self._content_height - self._size.height))
+        if max_scroll == 0:
+            return
+
+        # Scroll by wheel offset (negative y_offset means scroll down)
+        new_scroll = state._scroll_y + int(ev.y_offset)
+        new_scroll = max(0, min(new_scroll, max_scroll))
+
+        if new_scroll != state._scroll_y:
+            state._scroll_y = new_scroll
+            state._manual_scroll = True  # Mark as manual scroll
+            self._dirty = True
+            if self._parent is not None:
+                self.ask_parent_to_render(True)
+            else:
+                self.update(True)
