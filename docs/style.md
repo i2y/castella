@@ -13,10 +13,19 @@ The theme system is located in `castella.theme` and provides:
 
 ### Automatic Theming
 
-Castella automatically detects dark/light mode from the operating system and applies appropriate colors. Two built-in themes are provided:
+Castella automatically detects dark/light mode from the operating system and applies appropriate colors.
 
-- **DARK_THEME**: Neon-style colors on a dark background
-- **LIGHT_THEME**: Soft pastel colors on a light background
+### Built-in Themes
+
+Castella includes several professionally designed themes:
+
+| Theme | Style | Border Radius | Font |
+|-------|-------|---------------|------|
+| **Tokyo Night** (default) | Purple/blue aesthetic | 6px | JetBrains Mono |
+| **Cupertino** | Apple-inspired design | 8px | SF Pro / Helvetica Neue |
+| **Material Design 3** | Google's Material design | 12px | Roboto |
+| **Castella Dark** | Neon colors on dark | 0px | System default |
+| **Castella Light** | Soft pastels on light | 0px | System default |
 
 ### Environment Variables
 
@@ -73,6 +82,28 @@ manager.prefer_dark(False)
 
 # Return to automatic detection
 manager.prefer_dark(None)
+```
+
+### Using Different Built-in Themes
+
+```python
+from castella.theme import (
+    ThemeManager,
+    CUPERTINO_DARK_THEME, CUPERTINO_LIGHT_THEME,
+    MATERIAL_DARK_THEME, MATERIAL_LIGHT_THEME,
+    TOKYO_NIGHT_DARK_THEME, TOKYO_NIGHT_LIGHT_THEME,
+    DARK_THEME, LIGHT_THEME,  # Classic Castella themes
+)
+
+manager = ThemeManager()
+
+# Use Material Design theme
+manager.set_dark_theme(MATERIAL_DARK_THEME)
+manager.set_light_theme(MATERIAL_LIGHT_THEME)
+
+# Or Cupertino (Apple-style) theme
+manager.set_dark_theme(CUPERTINO_DARK_THEME)
+manager.set_light_theme(CUPERTINO_LIGHT_THEME)
 ```
 
 ## Custom Themes
@@ -162,13 +193,24 @@ manager.prefer_dark(True)
 Many widgets support the `kind` parameter for semantic coloring:
 
 ```python
-from castella import Text, Kind
+from castella import Text, Button, Kind
 
+# Text with different kinds
 Text("Normal text", kind=Kind.NORMAL)   # Default styling
 Text("Info message", kind=Kind.INFO)    # Cyan/blue tones
 Text("Success!", kind=Kind.SUCCESS)     # Green tones
 Text("Warning!", kind=Kind.WARNING)     # Yellow/amber tones
 Text("Error!", kind=Kind.DANGER)        # Red/pink tones
+
+# Buttons with different kinds
+Button("Normal", kind=Kind.NORMAL)      # Default button
+Button("Info", kind=Kind.INFO)          # Info-styled button
+Button("Success", kind=Kind.SUCCESS)    # Success-styled button
+Button("Warning", kind=Kind.WARNING)    # Warning-styled button
+Button("Danger", kind=Kind.DANGER)      # Danger-styled button
+
+# Fluent API also works
+Button("Delete").kind(Kind.DANGER)
 ```
 
 ### Available Kinds
@@ -277,46 +319,70 @@ Use `typography.heading_size(level)` to get computed heading sizes.
 
 ## Built-in Theme Colors
 
-### Dark Theme (DARK_PALETTE)
+### Tokyo Night (Default)
 
 ```python
+# Dark variant
 {
-    "bg_canvas": "#1e1e1e",
-    "fg": "#f8f8f2",
-    "text_info": "#00ffff",      # Neon cyan
-    "text_danger": "#ff6347",    # Neon red
-    "text_success": "#32cd32",   # Neon green
-    "text_warning": "#ffd700",   # Neon yellow
-    "border_primary": "#bd93f9", # Neon purple
+    "bg_canvas": "#1a1b26",      # Deep blue-black
+    "fg": "#c0caf5",             # Light purple-white
+    "text_info": "#7dcfff",      # Cyan
+    "text_danger": "#f7768e",    # Red
+    "text_success": "#9ece6a",   # Green
+    "text_warning": "#e0af68",   # Yellow
+    "border_primary": "#565f89", # Muted purple
 }
 ```
 
-### Light Theme (LIGHT_PALETTE)
+### Material Design 3
 
 ```python
+# Dark variant
 {
-    "bg_canvas": "#fff0f6",      # Light pink
-    "fg": "#212121",             # Dark text
-    "text_info": "#7e57c2",      # Purple
-    "text_danger": "#ec407a",    # Pink
-    "text_success": "#66bb6a",   # Light green
-    "text_warning": "#ffb300",   # Amber
-    "border_primary": "#ba68c8", # Light purple
+    "bg_canvas": "#121212",      # Material dark surface
+    "fg": "#e1e1e1",             # On-surface
+    "text_info": "#82b1ff",      # Light blue
+    "text_danger": "#cf6679",    # Error
+    "text_success": "#81c784",   # Light green
+    "text_warning": "#ffb74d",   # Orange
+    "border_primary": "#444444", # Outline
 }
 ```
 
-## Example: Theme Demo
+### Cupertino (Apple-style)
 
-Run the theme demo to see all features in action:
+```python
+# Dark variant
+{
+    "bg_canvas": "#1e1e1e",      # Window background
+    "fg": "#ffffff",             # Primary label
+    "text_info": "#64d2ff",      # System Cyan
+    "text_danger": "#ff6961",    # System Red
+    "text_success": "#30d158",   # System Green
+    "text_warning": "#ffd60a",   # System Yellow
+    "border_primary": "#48484a", # Separator
+}
+```
+
+## Example: Theme Demos
+
+Run the theme demos to see all features in action:
 
 ```bash
-uv run python examples/theme_demo.py
+# Tokyo Night theme demo (default)
+uv run python examples/tokyo_night_theme_demo.py
+
+# Cupertino (Apple-style) theme demo
+uv run python examples/cupertino_theme_demo.py
+
+# Material Design 3 theme demo
+uv run python examples/material_theme_demo.py
 ```
 
-This example demonstrates:
+These examples demonstrate:
 
 - Dark/light mode toggle
-- Custom theme application (Cyberpunk, Ocean themes)
-- Theme derivation
-- Widget showcase with different Kinds
+- Theme switching between different styles
+- Button Kind variants (Normal, Info, Success, Warning, Danger)
+- Rounded corners and modern UI aesthetics
 - Typography and spacing information display

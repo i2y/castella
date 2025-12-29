@@ -11,7 +11,9 @@ The primary final goal of Castella is to provide features for Python programmers
 - Castella allows pythonista to define UI declaratively in Python.
 - Castella provides hot-reloading or hot-restarting on development.
 - Comprehensive theme system with design tokens (colors, typography, spacing).
+- Built-in themes: Tokyo Night (default), Cupertino, Material Design 3, and classic Castella themes.
 - Dark/light mode with automatic system detection and runtime switching.
+- Rounded corners and shadows support for modern UI aesthetics.
 - Custom themes via `Theme.derive()` for partial overrides or full `ColorPalette` customization.
 - Rich markdown rendering with syntax highlighting and LaTeX math support.
 - Multi-line text editor with scrolling and cursor positioning.
