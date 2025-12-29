@@ -1135,7 +1135,14 @@ class Layout(Widget, ABC):
         )
 
     def redraw(self, p: Painter, completely: bool) -> None:
-        p.style(self._style)
+        # Get current theme's layout style for proper dark/light mode support
+        widget_style = get_theme().layout["normal"]
+        style = Style(
+            fill=FillStyle(color=widget_style.bg_color),
+            border_radius=widget_style.border_radius,
+            shadow=widget_style.shadow,
+        )
+        p.style(style)
         if completely or self.is_dirty():
             p.fill_rect(
                 Rect(
