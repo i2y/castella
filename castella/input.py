@@ -8,6 +8,7 @@ from castella.core import (
     KeyAction,
     KeyCode,
     Kind,
+    MouseEvent,
     ObservableBase,
     Painter,
     Point,
@@ -25,6 +26,7 @@ class InputState(ObservableBase):
         self._text = text
         self._editing = False
         self._caret = len(text)
+        self._caret_set_by_click = False
 
     def set(self, value: str) -> None:
         self._text = value
@@ -49,7 +51,9 @@ class InputState(ObservableBase):
         if self._editing:
             return
         self._editing = True
-        self._caret = len(self._text)
+        if not self._caret_set_by_click:
+            self._caret = len(self._text)
+        self._caret_set_by_click = False
         self.notify()
 
     def finish_editing(self) -> None:
@@ -96,6 +100,11 @@ class InputState(ObservableBase):
             self._caret += 1
             self.notify()
 
+    def set_caret_by_click(self, pos: int) -> None:
+        """Set caret position from a click event."""
+        self._caret = max(0, min(pos, len(self._text)))
+        self._caret_set_by_click = True
+
 
 class Input(Text):
     def __init__(
@@ -109,6 +118,9 @@ class Input(Text):
         else:
             super().__init__(InputState(text), Kind.NORMAL, align, font_size)
         self._callback = lambda v: ...
+        # For click-to-position calculation
+        self._last_font_size: float = 14.0
+        self._last_text_x: float = 0.0
 
     def redraw(self, p: Painter, _: bool) -> None:
         state: InputState = cast(InputState, self._state)
@@ -156,6 +168,10 @@ class Input(Text):
             max_width=width,
         )
 
+        # Store for click-to-position calculation
+        self._last_font_size = font_size
+        self._last_text_x = pos.x
+
         if state.is_in_editing():
             caret_pos_x = p.measure_text(str(state)[: state.get_caret_pos()])
             caret_pos = Point(
@@ -201,3 +217,23 @@ class Input(Text):
     def on_change(self, callback: Callable[[str], None]) -> Self:
         self._callback = callback
         return self
+
+    def mouse_down(self, ev: MouseEvent) -> None:
+        state: InputState = cast(InputState, self._state)
+        text = str(state)
+
+        # Calculate click position relative to text start
+        click_x = ev.pos.x - self._last_text_x
+
+        if click_x <= 0:
+            state.set_caret_by_click(0)
+            return
+
+        # Approximate character width
+        char_width = self._last_font_size * 0.5
+
+        # Calculate character position
+        char_pos = int(click_x / char_width)
+        char_pos = max(0, min(char_pos, len(text)))
+
+        state.set_caret_by_click(char_pos)

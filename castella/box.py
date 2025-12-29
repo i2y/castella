@@ -128,12 +128,16 @@ class Box(Layout):
         )
 
         if not needs_x_scroll or x_scroll_bar_height == 0:
-            self._scroll_x = 0
+            # Only reset scroll if no external state is provided
+            if self._scroll_state is None:
+                self._scroll_x = 0
             self._scroll_box_x = None
             x_scroll_bar_height = 0
 
         if not needs_y_scroll or y_scroll_bar_width == 0:
-            self._scroll_y = 0
+            # Only reset scroll if no external state is provided
+            if self._scroll_state is None:
+                self._scroll_y = 0
             self._scroll_box_y = None
             y_scroll_bar_width = 0
 

@@ -4,6 +4,7 @@ from castella import (
     Button,
     Column,
     Component,
+    ScrollState,
     StatefulComponent,
     Input,
     Row,
@@ -36,11 +37,13 @@ class NumList(StatefulComponent):
     def __init__(self, n: State[int]):
         super().__init__(n)
         self.num: State[int] = n
+        self._scroll = ScrollState()  # Preserves scroll position across re-renders
 
     def view(self):
         return Column(
             *(Text(i + 1).fixed_height(3 * EM) for i in range(self.num())),
             scrollable=True,
+            scroll_state=self._scroll,
         )
 
 

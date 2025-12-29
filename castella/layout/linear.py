@@ -181,8 +181,14 @@ class LinearLayout:
     # ========== Scrolling ==========
 
     def _reset_scroll_state(self) -> None:
-        """Reset scroll-related state."""
-        self._scroll_offset = 0
+        """Reset scroll-related state.
+
+        Note: If an external ScrollState is provided, we preserve the scroll offset
+        to maintain scroll position across view rebuilds.
+        """
+        # Only reset scroll offset if no external state is provided
+        if self._scroll_state is None:
+            self._scroll_offset = 0
         self._scroll_box = None
         self._under_dragging = False
         self._last_drag_pos = None
