@@ -10,7 +10,7 @@ Run with:
 import sys
 from datetime import datetime
 
-from castella import App, Column, Text, Button, Box, Row
+from castella import App, Column, Text, Button, Box, Row, ScrollState
 from castella.core import ListState, SizePolicy, Component, State
 from castella.frame import Frame
 from castella.markdown import Markdown
@@ -28,6 +28,8 @@ class SimpleChatDemo(Component):
         ])
         self._messages.attach(self)
         self._input_state = MultilineInputState("")
+        self._scroll_state = ScrollState()
+        self._scroll_state.attach(self)  # Trigger re-render on scroll change
 
     def _send_message(self, event=None):
         text = self._input_state.value().strip()
@@ -50,8 +52,9 @@ class SimpleChatDemo(Component):
 
         self._messages.append({"role": "assistant", "content": response})
 
-        # Clear input
+        # Clear input and scroll to bottom
         self._input_state.set("")
+        self._scroll_state.y = 999999  # Scroll to bottom
 
     def view(self):
         theme = ThemeManager().current
@@ -99,10 +102,11 @@ class SimpleChatDemo(Component):
             .height(32)
             .height_policy(SizePolicy.FIXED),
 
-            # Message area (scrollable)
+            # Message area (scrollable with preserved position)
             Column(
                 *msg_widgets,
                 scrollable=True,
+                scroll_state=self._scroll_state,
             ).bg_color(theme.colors.bg_primary),
 
             # Input area
