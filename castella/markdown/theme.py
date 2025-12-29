@@ -1,8 +1,12 @@
 """Theme configuration for Markdown rendering."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-from castella.core import _get_color_schema, _is_darkmode
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from castella.theme import Theme
 
 
 @dataclass
@@ -49,40 +53,64 @@ class MarkdownTheme:
     is_dark: bool
 
     @classmethod
-    def from_castella_theme(cls, dark_mode: bool | None = None) -> "MarkdownTheme":
-        """Create MarkdownTheme from current Castella theme."""
-        if dark_mode is None:
-            dark_mode = _is_darkmode()
+    def from_theme(cls, theme: "Theme | None" = None) -> "MarkdownTheme":
+        """Create MarkdownTheme from a Theme object.
 
-        colors = _get_color_schema()
+        Args:
+            theme: The theme to derive from. If None, uses current theme.
+        """
+        if theme is None:
+            from castella.theme import ThemeManager
+
+            theme = ThemeManager().current
+
+        colors = theme.colors
+        typography = theme.typography
+        spacing = theme.spacing
 
         return cls(
-            text_color=colors["text-primary"],
-            heading_color=colors["text-primary"],
-            link_color=colors["text-info"],
-            code_color=colors["text-warning"],
-            bg_color=colors["bg-primary"],
-            code_bg_color=colors["bg-tertiary"],
-            blockquote_bg_color=colors["bg-secondary"],
-            table_header_bg=colors["bg-tertiary"],
-            table_cell_bg=colors["bg-primary"],
-            text_font="",  # System default
-            code_font="monospace",
-            base_font_size=14,
-            h1_size=32,
-            h2_size=28,
-            h3_size=24,
-            h4_size=20,
-            h5_size=16,
-            h6_size=14,
-            code_pygments_style="monokai" if dark_mode else "default",
-            paragraph_spacing=12,
-            block_spacing=16,
-            list_indent=24,
-            blockquote_indent=20,
+            text_color=colors.text_primary,
+            heading_color=colors.text_primary,
+            link_color=colors.text_info,
+            code_color=colors.text_warning,
+            bg_color=colors.bg_primary,
+            code_bg_color=colors.bg_tertiary,
+            blockquote_bg_color=colors.bg_secondary,
+            table_header_bg=colors.bg_tertiary,
+            table_cell_bg=colors.bg_primary,
+            text_font=typography.font_family,
+            code_font=typography.font_family_mono,
+            base_font_size=typography.base_size,
+            h1_size=typography.heading_size(1),
+            h2_size=typography.heading_size(2),
+            h3_size=typography.heading_size(3),
+            h4_size=typography.heading_size(4),
+            h5_size=typography.heading_size(5),
+            h6_size=typography.heading_size(6),
+            code_pygments_style=theme.code_pygments_style,
+            paragraph_spacing=spacing.margin_md + 4,
+            block_spacing=spacing.margin_lg,
+            list_indent=spacing.padding_lg + 8,
+            blockquote_indent=spacing.padding_lg + 4,
             table_row_height=28,
-            is_dark=dark_mode,
+            is_dark=theme.is_dark,
         )
+
+    @classmethod
+    def from_castella_theme(cls, dark_mode: bool | None = None) -> "MarkdownTheme":
+        """Create MarkdownTheme from current Castella theme.
+
+        DEPRECATED: Use from_theme() instead.
+        """
+        from castella.theme import ThemeManager
+
+        theme = ThemeManager().current
+        if dark_mode is not None and dark_mode != theme.is_dark:
+            # If explicitly requesting different mode, derive appropriate theme
+            from castella.theme import DARK_THEME, LIGHT_THEME
+
+            theme = DARK_THEME if dark_mode else LIGHT_THEME
+        return cls.from_theme(theme)
 
     def get_heading_size(self, level: int) -> int:
         """Get font size for heading level."""

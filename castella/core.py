@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import os
-import sys
 from abc import ABC, abstractmethod
 from asyncio import Future
 from collections.abc import Iterable
 from copy import deepcopy
-from dataclasses import dataclass, replace
-from enum import Enum
+from dataclasses import replace
 from typing import (
     Any,
     Callable,
@@ -18,14 +15,14 @@ from typing import (
     Optional,
     Protocol,
     Self,
-    TypeAlias,
     TypeVar,
     runtime_checkable,
 )
 
 from pydantic import BaseModel
 
-from castella.models.font import EM, Font, FontMetrics, FontSizePolicy
+# Re-exports for backward compatibility
+from castella.models.font import EM, Font, FontMetrics, FontSizePolicy  # noqa: F401
 
 # Import from new modules
 from castella.models.geometry import Point, Size, Rect, Circle
@@ -35,11 +32,11 @@ from castella.models.style import (
     FillStyle,
     StrokeStyle,
     Style,
-    TextAlign,
+    TextAlign,  # noqa: F401
 )
 from castella.models.events import (
-    KeyAction,
-    KeyCode,
+    KeyAction,  # noqa: F401
+    KeyCode,  # noqa: F401
     MouseEvent,
     WheelEvent,
     InputCharEvent,
@@ -52,7 +49,13 @@ try:
 except ImportError:
     pass
 
-from . import color
+from .theme import (
+    Theme,
+    ThemeManager,
+    WidgetStyle,
+    Kind,
+    AppearanceState,
+)
 
 
 class Painter(Protocol):
@@ -823,336 +826,9 @@ class ScrollState(ObservableBase):
             self.notify()
 
 
-def _is_darkmode() -> bool:
-    if os.getenv("CASTELLA_DARK_MODE") == "true":
-        return True
-
-    if os.getenv("CASTELLA_DARK_MODE") == "false":
-        return False
-
-    if "pyodide" in sys.modules:
-        import js  # type: ignore
-
-        return js.window.matchMedia("(prefers-color-scheme: dark)").matches
-
-    import darkdetect
-
-    is_light = darkdetect.isLight()
-    return not (is_light is not None and is_light)
-
-
-def _get_color_schema() -> dict[str, str]:
-    if _is_darkmode():
-        return _dark_color_schema
-    else:
-        return _light_color_schema
-
-
-_light_color_schema = color.COLOR_SCHEMA[color.PredefinedSchema.LIGHT.value]
-_dark_color_schema = color.COLOR_SCHEMA[color.PredefinedSchema.DARK.value]
-
-
-def set_light_color_schema(schema: dict[str, str]) -> None:
-    global _light_color_schema
-    _light_color_schema = schema
-
-
-def set_dark_color_schema(schema: dict[str, str]) -> None:
-    global _dark_color_schema
-    _dark_color_schema = schema
-
-
-@dataclass(slots=True, frozen=True)
-class WidgetStyle:
-    bg_color: str = "#000000"
-    border_color: str = "#FFFFFF"
-    text_color: str = "#FFFFFF"
-    text_font: Font = Font()
-
-
-# WidgetStyles = NewType('WidgetStyles', Mapping[str, WidgetStyle])
-WidgetStyles: TypeAlias = dict[str, WidgetStyle]
-
-
-class Kind(Enum):
-    NORMAL = "normal"
-    INFO = "info"
-    SUCCESS = "success"
-    WARNING = "warning"
-    DANGER = "danger"
-
-
-class AppearanceState(Enum):
-    NORMAL = ""
-    HOVER = "_hover"
-    SELECTED = "_selected"
-    DISABLED = "_disabled"
-    PUSHED = "_pushed"
-
-
-@dataclass(slots=True, frozen=True)
-class Theme:
-    app: WidgetStyle
-    scrollbar: WidgetStyle
-    scrollbox: WidgetStyle
-    layout: WidgetStyles
-    row: WidgetStyles
-    text: WidgetStyles
-    simpletext: WidgetStyles
-    multilinetext: WidgetStyles
-    input: WidgetStyles
-    multilineinput: WidgetStyles
-    markdown: WidgetStyles
-    button: WidgetStyles
-    switch: WidgetStyles
-    checkbox: WidgetStyles
-
-    def get_widget_styles(self, widget: Widget) -> WidgetStyles:
-        class_name = widget.__class__.__name__.lower()
-        return deepcopy(getattr(self, class_name)) if hasattr(self, class_name) else {}
-
-
-def _get_theme() -> Theme:
-    color_schema = _get_color_schema()
-    return Theme(
-        app=WidgetStyle(
-            bg_color=color_schema["bg-canvas"],
-            text_font=Font(family=""),  # expects system default font family
-        ),
-        layout={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-primary"],
-                border_color=color_schema["border-primary"],
-            ),
-        },
-        row={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-primary"],
-                border_color=color_schema["border-primary"],
-            ),
-        },
-        scrollbar=WidgetStyle(
-            bg_color=color_schema["bg-secondary"],
-            border_color=color_schema["border-secondary"],
-        ),
-        scrollbox=WidgetStyle(
-            bg_color=color_schema["border-secondary"],
-        ),
-        text={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-primary"],
-                border_color=color_schema["border-primary"],
-                text_color=color_schema["text-primary"],
-            ),
-            "info": WidgetStyle(
-                bg_color=color_schema["bg-info"],
-                border_color=color_schema["border-info"],
-                text_color=color_schema["text-info"],
-            ),
-            "success": WidgetStyle(
-                bg_color=color_schema["bg-success"],
-                border_color=color_schema["border-success"],
-                text_color=color_schema["text-success"],
-            ),
-            "warning": WidgetStyle(
-                bg_color=color_schema["bg-warning"],
-                border_color=color_schema["border-warning"],
-                text_color=color_schema["text-warning"],
-            ),
-            "danger": WidgetStyle(
-                bg_color=color_schema["bg-danger"],
-                border_color=color_schema["border-danger"],
-                text_color=color_schema["text-danger"],
-            ),
-        },
-        simpletext={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-primary"],
-                border_color=color_schema["border-primary"],
-                text_color=color_schema["text-primary"],
-            ),
-            "info": WidgetStyle(
-                bg_color=color_schema["bg-info"],
-                border_color=color_schema["border-info"],
-                text_color=color_schema["text-info"],
-            ),
-            "success": WidgetStyle(
-                bg_color=color_schema["bg-success"],
-                border_color=color_schema["border-success"],
-                text_color=color_schema["text-success"],
-            ),
-            "warning": WidgetStyle(
-                bg_color=color_schema["bg-warning"],
-                border_color=color_schema["border-warning"],
-                text_color=color_schema["text-warning"],
-            ),
-            "danger": WidgetStyle(
-                bg_color=color_schema["bg-danger"],
-                border_color=color_schema["border-danger"],
-                text_color=color_schema["text-danger"],
-            ),
-        },
-        multilinetext={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-primary"],
-                border_color=color_schema["bg-primary"],
-                text_color=color_schema["text-primary"],
-            ),
-            "info": WidgetStyle(
-                bg_color=color_schema["bg-info"],
-                border_color=color_schema["border-info"],
-                text_color=color_schema["text-info"],
-            ),
-            "success": WidgetStyle(
-                bg_color=color_schema["bg-success"],
-                border_color=color_schema["border-success"],
-                text_color=color_schema["text-success"],
-            ),
-            "warning": WidgetStyle(
-                bg_color=color_schema["bg-warning"],
-                border_color=color_schema["border-warning"],
-                text_color=color_schema["text-warning"],
-            ),
-            "danger": WidgetStyle(
-                bg_color=color_schema["bg-danger"],
-                border_color=color_schema["border-danger"],
-                text_color=color_schema["text-danger"],
-            ),
-        },
-        input={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-secondary"],
-                border_color=color_schema["border-primary"],
-                text_color=color_schema["text-primary"],
-            ),
-            "info": WidgetStyle(
-                bg_color=color_schema["bg-info"],
-                border_color=color_schema["border-info"],
-                text_color=color_schema["text-info"],
-            ),
-            "success": WidgetStyle(
-                bg_color=color_schema["bg-success"],
-                border_color=color_schema["border-success"],
-                text_color=color_schema["text-success"],
-            ),
-            "warning": WidgetStyle(
-                bg_color=color_schema["bg-warning"],
-                border_color=color_schema["border-warning"],
-                text_color=color_schema["text-warning"],
-            ),
-            "danger": WidgetStyle(
-                bg_color=color_schema["bg-danger"],
-                border_color=color_schema["border-danger"],
-                text_color=color_schema["text-danger"],
-            ),
-        },
-        multilineinput={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-secondary"],
-                border_color=color_schema["border-primary"],
-                text_color=color_schema["text-primary"],
-            ),
-            "info": WidgetStyle(
-                bg_color=color_schema["bg-info"],
-                border_color=color_schema["border-info"],
-                text_color=color_schema["text-info"],
-            ),
-            "success": WidgetStyle(
-                bg_color=color_schema["bg-success"],
-                border_color=color_schema["border-success"],
-                text_color=color_schema["text-success"],
-            ),
-            "warning": WidgetStyle(
-                bg_color=color_schema["bg-warning"],
-                border_color=color_schema["border-warning"],
-                text_color=color_schema["text-warning"],
-            ),
-            "danger": WidgetStyle(
-                bg_color=color_schema["bg-danger"],
-                border_color=color_schema["border-danger"],
-                text_color=color_schema["text-danger"],
-            ),
-        },
-        markdown={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-primary"],
-                border_color=color_schema["border-primary"],
-                text_color=color_schema["text-primary"],
-            ),
-            "info": WidgetStyle(
-                bg_color=color_schema["bg-info"],
-                border_color=color_schema["border-info"],
-                text_color=color_schema["text-info"],
-            ),
-            "success": WidgetStyle(
-                bg_color=color_schema["bg-success"],
-                border_color=color_schema["border-success"],
-                text_color=color_schema["text-success"],
-            ),
-            "warning": WidgetStyle(
-                bg_color=color_schema["bg-warning"],
-                border_color=color_schema["border-warning"],
-                text_color=color_schema["text-warning"],
-            ),
-            "danger": WidgetStyle(
-                bg_color=color_schema["bg-danger"],
-                border_color=color_schema["border-danger"],
-                text_color=color_schema["text-danger"],
-            ),
-        },
-        button={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-tertiary"],
-                border_color=color_schema["border-primary"],
-                text_color=color_schema["text-primary"],
-            ),
-            "normal_hover": WidgetStyle(
-                bg_color=color_schema["bg-overlay"],
-                border_color=color_schema["border-primary"],
-                text_color=color_schema["text-primary"],
-            ),
-            "normal_pushed": WidgetStyle(
-                bg_color=color_schema["bg-pushed"],
-                border_color=color_schema["border-secondary"],
-                text_color=color_schema["text-primary"],
-            ),
-        },
-        switch={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-tertiary"],
-                text_color=color_schema["fg"],
-            ),
-            "normal_selected": WidgetStyle(
-                bg_color=color_schema["bg-selected"],
-                text_color=color_schema["fg"],
-            ),
-        },
-        checkbox={
-            "normal": WidgetStyle(
-                bg_color=color_schema["bg-tertiary"],
-                text_color=color_schema["fg"],
-            ),
-            "normal_selected": WidgetStyle(
-                bg_color=color_schema["bg-selected"],
-                text_color=color_schema["fg"],
-            ),
-        },
-    )
-
-
-_theme = None
-
-
 def get_theme() -> Theme:
-    global _theme
-    if _theme is None:
-        _theme = _get_theme()
-    return _theme
-
-
-def set_theme(theme: Theme) -> None:
-    global _theme
-    _theme = theme
+    """Get the current theme from the ThemeManager."""
+    return ThemeManager().current
 
 
 def replace_font_size(style: Style, size: float, policy: FontSizePolicy) -> Style:
