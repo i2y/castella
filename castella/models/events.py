@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import platform
 from enum import Enum, auto
 from typing import Any, Generic, TypeVar
 
@@ -28,6 +29,11 @@ class KeyCode(Enum):
     ESCAPE = auto()
     HOME = auto()
     END = auto()
+    # Letter keys for shortcuts
+    A = auto()
+    C = auto()
+    V = auto()
+    X = auto()
     UNKNOWN = auto()
 
 
@@ -111,6 +117,18 @@ class InputKeyEvent(BaseModel):
     @property
     def is_alt(self) -> bool:
         return bool(self.mods & 0x0004)
+
+    @property
+    def is_super(self) -> bool:
+        """Check if Super/Cmd key is pressed (0x0008 for GLFW)."""
+        return bool(self.mods & 0x0008)
+
+    @property
+    def is_cmd_or_ctrl(self) -> bool:
+        """Platform-aware check: Cmd on macOS, Ctrl elsewhere."""
+        if platform.system() == "Darwin":
+            return self.is_super
+        return self.is_ctrl
 
     @property
     def is_pressed(self) -> bool:

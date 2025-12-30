@@ -107,7 +107,7 @@ Text("Small text", font_size=12)
 
 ## MultilineText
 
-Display multi-line text content.
+Display multi-line text content with text selection support.
 
 ```python
 MultilineText(
@@ -116,6 +116,13 @@ MultilineText(
     wrap=True  # Enable text wrapping
 )
 ```
+
+### Features
+
+- Line wrapping with `wrap=True`
+- Mouse drag to select text
+- Cmd+C / Ctrl+C to copy selected text
+- Cmd+A / Ctrl+A to select all
 
 ## Input
 
@@ -165,6 +172,11 @@ editor = (
 - Click to position cursor
 - Scrollbar thumb dragging
 - Auto-scroll to keep cursor visible
+- Mouse drag to select text
+- Cmd+C / Ctrl+C to copy selected text
+- Cmd+X / Ctrl+X to cut selected text
+- Cmd+V / Ctrl+V to paste from clipboard
+- Cmd+A / Ctrl+A to select all
 
 !!! warning "MultilineInput and State"
     Don't attach MultilineInput's state to the component - it causes focus loss on every keystroke. See [State Management](state.md) for details.

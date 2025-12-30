@@ -173,7 +173,7 @@ class Frame(BaseFrame):
                             key=_convert_to_key_code(event.key.keysym.sym),
                             scancode=0,
                             action=KeyAction.PRESS,
-                            mods=0,
+                            mods=_get_key_mods(),
                         )
                     )
                 case sdl.SDL_TEXTINPUT:
@@ -217,5 +217,28 @@ def _convert_to_key_code(keysym: int) -> KeyCode:
             return KeyCode.PAGE_DOWN
         case sdl.SDLK_DELETE:
             return KeyCode.DELETE
+        case sdl.SDLK_a:
+            return KeyCode.A
+        case sdl.SDLK_c:
+            return KeyCode.C
+        case sdl.SDLK_v:
+            return KeyCode.V
+        case sdl.SDLK_x:
+            return KeyCode.X
         case _:
             return KeyCode.UNKNOWN
+
+
+def _get_key_mods() -> int:
+    """Get current keyboard modifier state in GLFW-compatible format."""
+    key_mods = sdl.SDL_GetModState()
+    mods = 0
+    if key_mods & (sdl.KMOD_LSHIFT | sdl.KMOD_RSHIFT):
+        mods |= 0x0001  # SHIFT
+    if key_mods & (sdl.KMOD_LCTRL | sdl.KMOD_RCTRL):
+        mods |= 0x0002  # CTRL
+    if key_mods & (sdl.KMOD_LALT | sdl.KMOD_RALT):
+        mods |= 0x0004  # ALT
+    if key_mods & (sdl.KMOD_LGUI | sdl.KMOD_RGUI):
+        mods |= 0x0008  # SUPER/CMD
+    return mods

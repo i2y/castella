@@ -41,6 +41,10 @@ class MultilineInputState(ObservableBase):
         self._scroll_y: int = 0
         self._manual_scroll: bool = False
         self._cursor_set_by_click: bool = False  # Flag to prevent cursor reset
+        # Selection state
+        self._selection_start: tuple[int, int] | None = None  # (row, col)
+        self._selection_end: tuple[int, int] | None = None  # (row, col)
+        self._is_selecting: bool = False
 
     def value(self) -> str:
         """Return full text as a single string joined with newlines."""
@@ -198,6 +202,102 @@ class MultilineInputState(ObservableBase):
         self._col = min(self._target_col, len(self._lines[self._row]))
         # Don't call notify() - widget handles redraw
 
+    # Selection methods
+    def has_selection(self) -> bool:
+        """Check if there is an active selection."""
+        return (
+            self._selection_start is not None
+            and self._selection_end is not None
+            and self._selection_start != self._selection_end
+        )
+
+    def start_selection(self, row: int, col: int) -> None:
+        """Start a new selection at the given position."""
+        self._selection_start = (row, col)
+        self._selection_end = (row, col)
+        self._is_selecting = True
+
+    def update_selection(self, row: int, col: int) -> None:
+        """Update the selection endpoint."""
+        if self._is_selecting:
+            self._selection_end = (row, col)
+
+    def end_selection(self) -> None:
+        """Finish selection (mouse up)."""
+        self._is_selecting = False
+
+    def clear_selection(self) -> None:
+        """Clear any active selection."""
+        self._selection_start = None
+        self._selection_end = None
+        self._is_selecting = False
+
+    def get_selection_range(
+        self,
+    ) -> tuple[tuple[int, int], tuple[int, int]] | None:
+        """Get normalized selection range (start <= end)."""
+        if not self.has_selection():
+            return None
+        start = self._selection_start
+        end = self._selection_end
+        assert start is not None and end is not None
+        # Normalize: ensure start <= end
+        if (start[0] > end[0]) or (start[0] == end[0] and start[1] > end[1]):
+            start, end = end, start
+        return (start, end)
+
+    def get_selected_text(self) -> str:
+        """Get the currently selected text."""
+        range_result = self.get_selection_range()
+        if range_result is None:
+            return ""
+        (start_row, start_col), (end_row, end_col) = range_result
+
+        if start_row == end_row:
+            return self._lines[start_row][start_col:end_col]
+
+        result = [self._lines[start_row][start_col:]]
+        for row in range(start_row + 1, end_row):
+            result.append(self._lines[row])
+        result.append(self._lines[end_row][:end_col])
+        return "\n".join(result)
+
+    def delete_selection(self) -> str:
+        """Delete selected text and return it. Returns empty string if no selection."""
+        text = self.get_selected_text()
+        if not text:
+            return ""
+
+        range_result = self.get_selection_range()
+        assert range_result is not None
+        (start_row, start_col), (end_row, end_col) = range_result
+
+        if start_row == end_row:
+            # Single line deletion
+            line = self._lines[start_row]
+            self._lines[start_row] = line[:start_col] + line[end_col:]
+        else:
+            # Multi-line deletion
+            first_line = self._lines[start_row][:start_col]
+            last_line = self._lines[end_row][end_col:]
+            self._lines[start_row] = first_line + last_line
+            del self._lines[start_row + 1 : end_row + 1]
+
+        # Move cursor to selection start
+        self._row = start_row
+        self._col = start_col
+        self.clear_selection()
+        return text
+
+    def select_all(self) -> None:
+        """Select all text."""
+        if len(self._lines) == 0:
+            return
+        self._selection_start = (0, 0)
+        last_row = len(self._lines) - 1
+        self._selection_end = (last_row, len(self._lines[last_row]))
+        self._is_selecting = False
+
 
 class MultilineInput(Widget):
     """Multi-line text input widget with optional word wrapping."""
@@ -210,6 +310,8 @@ class MultilineInput(Widget):
         stroke=StrokeStyle(color=_scrollbar_widget_style.border_color),
     )
     _scrollbox_style = Style(fill=FillStyle(color=_scrollbox_widget_style.bg_color))
+    # Selection highlight style
+    _selection_style = Style(fill=FillStyle(color=get_theme().colors.bg_selected))
 
     def __init__(
         self,
@@ -239,6 +341,10 @@ class MultilineInput(Widget):
         self._last_display_lines: list[tuple[int, str, int]] | None = (
             None  # For click handling
         )
+        # Cache for accurate character position calculation
+        # List of (cumulative_widths) for each display line
+        # cumulative_widths[i] = width from start of line to character i
+        self._char_positions_cache: list[list[float]] | None = None
         # Note: scroll_y and manual_scroll are stored in state to persist across re-renders
 
         super().__init__(
@@ -383,6 +489,14 @@ class MultilineInput(Widget):
         # Store display_lines for click handling
         self._last_display_lines = display_lines
 
+        # Build character position cache for accurate click detection
+        self._char_positions_cache = []
+        for _, text, _ in display_lines:
+            positions = [0.0]  # Position before first character
+            for i in range(len(text)):
+                positions.append(p.measure_text(text[: i + 1]))
+            self._char_positions_cache.append(positions)
+
         # Auto-scroll to keep cursor visible when editing (but not if user manually scrolled)
         if state.is_in_editing() and not state._manual_scroll:
             display_idx, _ = self._find_cursor_display_pos(p, display_lines)
@@ -411,6 +525,11 @@ class MultilineInput(Widget):
         )
         p.translate(Point(x=0, y=-state._scroll_y))
 
+        # Draw selection highlight before text
+        if state.has_selection():
+            self._draw_selection_highlight(p, display_lines)
+
+        p.style(self._text_style)
         for display_idx, (_, text, _) in enumerate(display_lines):
             y = padding + font_size + display_idx * (font_size + line_spacing)
             p.fill_text(text, Point(x=padding + 0.1, y=y), None)
@@ -511,6 +630,9 @@ class MultilineInput(Widget):
 
     def input_char(self, ev: InputCharEvent) -> None:
         state = cast(MultilineInputState, self._state)
+        # Delete selection if any before inserting
+        if state.has_selection():
+            state.delete_selection()
         state.insert(ev.char)
         state._manual_scroll = False  # Reset manual scroll on input
         self._callback(state.raw_value())
@@ -523,6 +645,38 @@ class MultilineInput(Widget):
 
         state = cast(MultilineInputState, self._state)
         state._manual_scroll = False  # Reset manual scroll on any key input
+
+        # Handle Cmd+C / Ctrl+C (Copy)
+        if ev.is_cmd_or_ctrl and ev.key is KeyCode.C:
+            self._handle_copy()
+            return
+
+        # Handle Cmd+X / Ctrl+X (Cut)
+        if ev.is_cmd_or_ctrl and ev.key is KeyCode.X:
+            self._handle_cut()
+            return
+
+        # Handle Cmd+V / Ctrl+V (Paste)
+        if ev.is_cmd_or_ctrl and ev.key is KeyCode.V:
+            self._handle_paste()
+            return
+
+        # Handle Cmd+A / Ctrl+A (Select All)
+        if ev.is_cmd_or_ctrl and ev.key is KeyCode.A:
+            state.select_all()
+            self.update(True)
+            return
+
+        # Clear selection on navigation keys
+        if ev.key in (KeyCode.LEFT, KeyCode.RIGHT, KeyCode.UP, KeyCode.DOWN):
+            state.clear_selection()
+
+        # Delete selection on content-modifying keys
+        if ev.key in (KeyCode.BACKSPACE, KeyCode.DELETE) and state.has_selection():
+            state.delete_selection()
+            self._callback(state.raw_value())
+            self.update(True)
+            return
 
         if ev.key is KeyCode.BACKSPACE:
             state.delete_prev()
@@ -539,21 +693,176 @@ class MultilineInput(Widget):
         elif ev.key is KeyCode.DOWN:
             state.move_down()
         elif ev.key is KeyCode.ENTER:
+            # Delete selection before inserting newline
+            if state.has_selection():
+                state.delete_selection()
             state.insert_newline()
             self._callback(state.raw_value())
         # Request redraw without triggering component re-render
         self.update(True)
+
+    def _handle_copy(self) -> None:
+        """Copy selected text to clipboard."""
+        from castella.core import App
+
+        state = cast(MultilineInputState, self._state)
+        text = state.get_selected_text()
+        if text:
+            App.get().set_clipboard_text(text)
+
+    def _handle_cut(self) -> None:
+        """Cut selected text to clipboard."""
+        from castella.core import App
+
+        state = cast(MultilineInputState, self._state)
+        text = state.delete_selection()
+        if text:
+            App.get().set_clipboard_text(text)
+            self._callback(state.raw_value())
+            self.update(True)
+
+    def _handle_paste(self) -> None:
+        """Paste text from clipboard."""
+        from castella.core import App
+
+        state = cast(MultilineInputState, self._state)
+        text = App.get().get_clipboard_text()
+        if text:
+            # Delete selection if any
+            if state.has_selection():
+                state.delete_selection()
+            # Insert pasted text (handle multi-line)
+            for char in text:
+                if char == "\n":
+                    state.insert_newline()
+                else:
+                    state.insert(char)
+            self._callback(state.raw_value())
+            self.update(True)
 
     def on_change(self, callback: Callable[[str], None]) -> Self:
         """Register callback for text changes."""
         self._callback = callback
         return self
 
+    def _draw_selection_highlight(
+        self, p: Painter, display_lines: list[tuple[int, str, int]]
+    ) -> None:
+        """Draw selection highlight rectangles."""
+        state = cast(MultilineInputState, self._state)
+        range_result = state.get_selection_range()
+        if range_result is None:
+            return
+
+        (start_row, start_col), (end_row, end_col) = range_result
+        padding = self._padding
+        font_size = self._font_size
+        line_spacing = self._line_spacing
+
+        p.save()
+        p.style(MultilineInput._selection_style)
+
+        for display_idx, (logical_row, text, line_start_col) in enumerate(
+            display_lines
+        ):
+            if logical_row < start_row or logical_row > end_row:
+                continue
+
+            line_end_col = line_start_col + len(text)
+
+            # Determine selection range for this display line
+            if logical_row == start_row:
+                sel_start = max(start_col, line_start_col) - line_start_col
+            else:
+                sel_start = 0
+
+            if logical_row == end_row:
+                sel_end = min(end_col, line_end_col) - line_start_col
+            else:
+                sel_end = len(text)
+
+            if sel_start >= sel_end:
+                continue
+
+            # Calculate pixel positions
+            y = padding + display_idx * (font_size + line_spacing)
+            x_start = padding + p.measure_text(text[:sel_start])
+            x_end = padding + p.measure_text(text[:sel_end])
+
+            # Draw selection rectangle
+            selection_rect = Rect(
+                origin=Point(x=x_start, y=y),
+                size=Size(width=x_end - x_start, height=font_size),
+            )
+            p.fill_rect(selection_rect)
+
+        p.restore()
+
     def is_scrollable(self) -> bool:
         """Return True when widget can potentially scroll."""
         # Always return True so wheel events are received
         # Actual scrolling is handled in mouse_wheel based on content size
         return True
+
+    def _pos_from_point(self, point: Point) -> tuple[int, int]:
+        """Convert screen point to (row, col) position."""
+        state = cast(MultilineInputState, self._state)
+        padding = self._padding
+        font_size = self._font_size
+        line_spacing = self._line_spacing
+        border_width = self._border_width
+
+        # Account for scroll offset
+        click_y = point.y + state._scroll_y - border_width
+
+        # Find the display line index
+        if click_y < padding:
+            display_line_idx = 0
+        else:
+            display_line_idx = int((click_y - padding) / (font_size + line_spacing))
+
+        display_lines = self._last_display_lines or []
+        if not display_lines:
+            return (0, 0)
+
+        display_line_idx = max(0, min(display_line_idx, len(display_lines) - 1))
+        logical_row, text, start_col = display_lines[display_line_idx]
+
+        # Find column based on x position
+        # Text is drawn at padding + 0.1, so account for that offset
+        click_x = point.x - padding - 0.1
+        if click_x <= 0:
+            col = start_col
+        else:
+            # Use cached character positions if available
+            if self._char_positions_cache is not None and display_line_idx < len(
+                self._char_positions_cache
+            ):
+                positions = self._char_positions_cache[display_line_idx]
+                # Binary search for the closest character position
+                col = start_col
+                for i in range(len(positions)):
+                    if positions[i] > click_x:
+                        # Check if click is closer to this char or previous
+                        if i > 0 and (click_x - positions[i - 1]) < (
+                            positions[i] - click_x
+                        ):
+                            col = start_col + i - 1
+                        else:
+                            col = start_col + i
+                        break
+                    col = start_col + i
+            else:
+                # Fallback to approximate calculation
+                char_width = font_size * 0.5
+                for i in range(len(text) + 1):
+                    if i * char_width >= click_x:
+                        col = start_col + max(0, i - 1)
+                        break
+                    col = start_col + i
+
+        col = min(col, len(state.get_line(logical_row)))
+        return (logical_row, col)
 
     def dispatch_to_scrollable(
         self, p: Point, is_direction_x: bool
@@ -565,90 +874,71 @@ class MultilineInput(Widget):
         return None, None
 
     def mouse_down(self, ev: MouseEvent) -> None:
-        """Handle mouse down for scrollbar dragging or cursor positioning."""
+        """Handle mouse down for scrollbar dragging or text selection."""
         # Check if click is on scrollbar
         if self._scroll_box_y is not None and self._scroll_box_y.contain(ev.pos):
             self._under_dragging_y = True
             self._last_drag_pos = ev.pos
             return
 
-        # Click in text area - position cursor
+        # Click in text area - start selection and position cursor
         state = cast(MultilineInputState, self._state)
         # Start editing if not already (click to focus)
         if not state.is_in_editing():
             state._editing = True  # Start editing without resetting cursor
 
-        # Calculate which display line was clicked
-        padding = self._padding
-        font_size = self._font_size
-        line_spacing = self._line_spacing
-        border_width = self._border_width
-
-        # Account for scroll offset
-        click_y = ev.pos.y + state._scroll_y - border_width
-
-        # Find the display line index
-        if click_y < padding:
-            display_line_idx = 0
-        else:
-            display_line_idx = int((click_y - padding) / (font_size + line_spacing))
-
         # Mark that cursor will be set by click (prevents start_editing from resetting)
         state._cursor_set_by_click = True
 
-        # Get display lines (need to recalculate here)
-        # Store last calculated display_lines in state for click handling
-        if not hasattr(self, "_last_display_lines") or self._last_display_lines is None:
-            # Can't calculate exact position, but flag is set to prevent cursor reset
-            self._dirty = True
-            if self._parent is not None:
-                self.ask_parent_to_render(True)
-            return
+        # Get position from click
+        row, col = self._pos_from_point(ev.pos)
 
-        display_lines = self._last_display_lines
-        display_line_idx = max(0, min(display_line_idx, len(display_lines) - 1))
+        # Clear previous selection and start new one
+        state.clear_selection()
+        state.start_selection(row, col)
 
-        if display_line_idx < len(display_lines):
-            logical_row, text, start_col = display_lines[display_line_idx]
+        # Update cursor position
+        state._row = row
+        state._col = col
+        state._target_col = None
+        state._manual_scroll = False  # Allow auto-scroll to cursor
 
-            # Find column based on x position
-            click_x = ev.pos.x - padding - border_width
-            if click_x <= 0:
-                col = start_col
-            else:
-                # Find character position
-                col = start_col
-                for i in range(len(text) + 1):
-                    # We need a painter to measure, but we don't have one here
-                    # Use approximate calculation based on average char width
-                    char_width = (
-                        font_size * 0.5
-                    )  # Approximate (adjusted for typical fonts)
-                    if i * char_width >= click_x:
-                        col = start_col + max(0, i - 1)
-                        break
-                    col = start_col + i
-
-            # Update cursor position
-            state._row = logical_row
-            state._col = min(col, len(state.get_line(logical_row)))
-            state._target_col = None
-            state._manual_scroll = False  # Allow auto-scroll to cursor
-            # Don't call state.notify() - just redraw the widget
-            self._dirty = True
-            if self._parent is not None:
-                self.ask_parent_to_render(True)
-            else:
-                self.update(True)
+        # Redraw
+        self._dirty = True
+        if self._parent is not None:
+            self.ask_parent_to_render(True)
+        else:
+            self.update(True)
 
     def mouse_up(self, _: MouseEvent) -> None:
-        """Handle mouse up to stop scrollbar dragging."""
+        """Handle mouse up to stop scrollbar dragging or text selection."""
+        state = cast(MultilineInputState, self._state)
+        state.end_selection()
         self._under_dragging_y = False
         self._last_drag_pos = None
 
     def mouse_drag(self, ev: MouseEvent) -> None:
-        """Handle mouse drag for scrollbar."""
-        if not self._under_dragging_y or self._last_drag_pos is None:
+        """Handle mouse drag for scrollbar or text selection."""
+        state = cast(MultilineInputState, self._state)
+
+        # Check scrollbar drag first
+        if self._under_dragging_y and self._last_drag_pos is not None:
+            self._handle_scrollbar_drag(ev)
+            return
+
+        # Text selection drag
+        if state._is_selecting:
+            row, col = self._pos_from_point(ev.pos)
+            state.update_selection(row, col)
+            # Move cursor to selection end
+            state._row = row
+            state._col = col
+            self.update(True)
+            return
+
+    def _handle_scrollbar_drag(self, ev: MouseEvent) -> None:
+        """Handle scrollbar thumb dragging."""
+        if self._last_drag_pos is None:
             return
 
         state = cast(MultilineInputState, self._state)

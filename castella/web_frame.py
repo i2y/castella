@@ -81,7 +81,7 @@ class Frame:
                         key=convert_to_key_code(ev.keyCode),
                         scancode=0,
                         action=core.KeyAction.PRESS,
-                        mods=0,
+                        mods=get_key_mods(ev),
                     )
                 )
             ),
@@ -245,5 +245,27 @@ def convert_to_key_code(code: int) -> core.KeyCode:
             return core.KeyCode.PAGE_DOWN
         case 46:
             return core.KeyCode.DELETE
+        case 65:  # 'A'
+            return core.KeyCode.A
+        case 67:  # 'C'
+            return core.KeyCode.C
+        case 86:  # 'V'
+            return core.KeyCode.V
+        case 88:  # 'X'
+            return core.KeyCode.X
         case _:
             return core.KeyCode.UNKNOWN
+
+
+def get_key_mods(ev) -> int:
+    """Get keyboard modifier state from JavaScript event."""
+    mods = 0
+    if ev.shiftKey:
+        mods |= 0x0001  # SHIFT
+    if ev.ctrlKey:
+        mods |= 0x0002  # CTRL
+    if ev.altKey:
+        mods |= 0x0004  # ALT
+    if ev.metaKey:  # Cmd on macOS
+        mods |= 0x0008  # SUPER/CMD
+    return mods
