@@ -3,6 +3,7 @@ from castella import (
     Button,
     Column,
     Component,
+    Kind,
     Row,
     State,
     Text,
@@ -76,7 +77,7 @@ class Calc(Component):
 
     def view(self) -> Widget:
         return Column(
-            Text(self.result, align=TextAlign.RIGHT),
+            Text(self.result, align=TextAlign.RIGHT, kind=Kind.INFO),
             Row(self.ac().flex(3), self.op("÷")),
             Row(self.number(7), self.number(8), self.number(9), self.op("×")),
             Row(self.number(4), self.number(5), self.number(6), self.op("-")),
@@ -91,10 +92,16 @@ class Calc(Component):
         return Button(".", font_size=50).on_click(self.press_dot)
 
     def ac(self) -> Button:
-        return Button("AC", font_size=50).on_click(self.all_clear)
+        return Button("AC", font_size=50, kind=Kind.DANGER).on_click(self.all_clear)
 
     def op(self, label: str) -> Button:
-        return Button(label, font_size=50).on_click(self.press_operator)
+        if label == "=":
+            return Button(label, font_size=50, kind=Kind.SUCCESS).on_click(
+                self.press_operator
+            )
+        return Button(label, font_size=50, kind=Kind.WARNING).on_click(
+            self.press_operator
+        )
 
     @staticmethod
     def calc(lhs: str, op: str, rhs: str):
