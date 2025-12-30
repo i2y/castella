@@ -336,6 +336,126 @@ tabs_state.select("settings")
 | `label` | str | Tab button label |
 | `content` | Widget | Content widget |
 
+## Tree
+
+Hierarchical tree widget for displaying nested data structures.
+
+```python
+from castella import Tree, TreeState, TreeNode
+
+# Create tree data
+nodes = [
+    TreeNode(id="docs", label="Documents", icon="📁", children=[
+        TreeNode(id="readme", label="README.md", icon="📄"),
+        TreeNode(id="license", label="LICENSE", icon="📄"),
+    ]),
+    TreeNode(id="src", label="Source", icon="📁", children=[
+        TreeNode(id="main", label="main.py", icon="🐍"),
+    ]),
+]
+
+# Create tree widget
+state = TreeState(nodes, multi_select=False)
+tree = Tree(state).on_select(lambda node: print(f"Selected: {node.label}"))
+
+# Programmatic control
+tree.expand_all()
+tree.collapse_all()
+state.expand_to("main")  # Expand ancestors to reveal node
+state.select("main")
+```
+
+### TreeNode Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | str | Unique node identifier |
+| `label` | str | Display text |
+| `children` | list[TreeNode] | Child nodes |
+| `icon` | str \| None | Custom icon (emoji) |
+| `data` | Any | Optional user data |
+
+### TreeState Methods
+
+| Method | Description |
+|--------|-------------|
+| `expand(node_id)` | Expand a node |
+| `collapse(node_id)` | Collapse a node |
+| `toggle_expanded(node_id)` | Toggle expand/collapse |
+| `expand_all()` | Expand all nodes |
+| `collapse_all()` | Collapse all nodes |
+| `expand_to(node_id)` | Expand ancestors to reveal node |
+| `select(node_id)` | Select a node |
+| `deselect(node_id)` | Deselect a node |
+| `clear_selection()` | Clear all selections |
+| `get_selected()` | Get selected nodes |
+| `set_multi_select(bool)` | Enable/disable multi-select |
+
+### Tree Callbacks
+
+| Method | Description |
+|--------|-------------|
+| `on_select(callback)` | Called when node is selected |
+| `on_expand(callback)` | Called when node is expanded |
+| `on_collapse(callback)` | Called when node is collapsed |
+
+## FileTree
+
+File system browser widget built on Tree.
+
+```python
+from castella import FileTree, FileTreeState
+from pathlib import Path
+
+# Create file tree from directory
+state = FileTreeState(
+    root_path=".",
+    show_hidden=False,
+    dirs_first=True
+)
+
+file_tree = (
+    FileTree(state)
+    .on_file_select(lambda path: print(f"File: {path}"))
+    .on_dir_select(lambda path: print(f"Dir: {path}"))
+)
+
+# Toggle hidden files
+state.set_show_hidden(True)
+
+# Refresh from file system
+state.refresh()
+
+# Get selected paths
+paths = file_tree.get_selected_paths()
+```
+
+### FileTreeState Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `root_path` | str \| Path | None | Root directory |
+| `show_hidden` | bool | False | Show hidden files |
+| `dirs_first` | bool | True | Sort directories before files |
+| `multi_select` | bool | False | Allow multiple selection |
+
+### FileTree Callbacks
+
+| Method | Description |
+|--------|-------------|
+| `on_file_select(callback)` | Called with Path when file selected |
+| `on_dir_select(callback)` | Called with Path when directory selected |
+
+### Automatic File Icons
+
+FileTree automatically assigns icons based on file extension:
+
+- Programming: `.py` 🐍, `.js` 📜, `.rs` 🦀, `.go` 🐹
+- Documents: `.md` 📝, `.pdf` 📕, `.txt` 📄
+- Images: `.png` 🖼️, `.jpg` 🖼️, `.svg` 🖼️
+- Config: `.json` 📋, `.yaml` 📋, `.env` 🔐
+- Special files: `Dockerfile` 🐳, `README` 📖, `LICENSE` ⚖️
+
 ## Modal
 
 Modal dialog overlay for focused interactions.
@@ -602,6 +722,8 @@ For more widgets and examples, see:
 | `RadioButtons` | Radio button group |
 | `Slider` | Range input slider |
 | `Tabs` | Tabbed navigation |
+| `Tree` | Hierarchical tree view |
+| `FileTree` | File system browser |
 | `Modal` | Modal dialog overlay |
 | `DateTimeInput` | Date/time picker |
 | `Image` | Image display |

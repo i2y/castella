@@ -125,6 +125,8 @@ class Theme(BaseModel):
             return deepcopy(generate_slider_styles(self.colors, font, radius))
         elif class_name in ("layout", "row", "column", "box"):
             return deepcopy(generate_layout_styles(self.colors))
+        elif class_name == "tree":
+            return deepcopy(generate_tree_styles(self.colors, font, radius))
         else:
             # Default: return text styles for unknown widgets
             return deepcopy(generate_text_styles(self.colors, font))
@@ -214,6 +216,12 @@ class Theme(BaseModel):
     def checkbox(self) -> WidgetStyles:
         """Get checkbox styles."""
         return self.switch
+
+    @property
+    def tree(self) -> WidgetStyles:
+        """Get tree styles."""
+        font = Font(family=self.typography.font_family, size=self.typography.base_size)
+        return generate_tree_styles(self.colors, font, self.spacing.border_radius)
 
 
 def generate_widget_style(
@@ -502,6 +510,50 @@ def generate_layout_styles(
         "normal": WidgetStyle(
             bg_color=colors.bg_primary,
             border_color=colors.border_primary,
+            border_radius=border_radius,
+            shadow=shadow,
+        ),
+    }
+
+
+def generate_tree_styles(
+    colors: ColorPalette,
+    font: Font = Font(),
+    border_radius: float = 0.0,
+    shadow: Shadow | None = None,
+) -> WidgetStyles:
+    """Generate styles for Tree widget.
+
+    Includes styles for:
+    - normal: Default node row
+    - normal_hover: Hover state
+    - normal_selected: Selected node
+    """
+    return {
+        # Default row
+        "normal": WidgetStyle(
+            bg_color=colors.bg_primary,
+            border_color=colors.bg_primary,  # No visible border
+            text_color=colors.text_primary,
+            text_font=font,
+            border_radius=border_radius,
+            shadow=shadow,
+        ),
+        # Hover row
+        "normal_hover": WidgetStyle(
+            bg_color=colors.bg_overlay,
+            border_color=colors.bg_overlay,
+            text_color=colors.text_primary,
+            text_font=font,
+            border_radius=border_radius,
+            shadow=shadow,
+        ),
+        # Selected row
+        "normal_selected": WidgetStyle(
+            bg_color=colors.bg_selected,
+            border_color=colors.bg_selected,
+            text_color=colors.text_primary,
+            text_font=font,
             border_radius=border_radius,
             shadow=shadow,
         ),
