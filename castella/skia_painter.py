@@ -8,6 +8,7 @@ import skia
 
 from castella import core
 from castella.font import FontSlant, FontWeight
+from castella.font_fallback import segment_text_by_font
 from castella.models.style import Shadow
 
 
@@ -62,10 +63,53 @@ def _to_skia_stroke_rect(rect: core.Rect, stroke_width: float) -> skia.Rect:
     )
 
 
+def _parse_font_stack(font_family: str) -> list[str]:
+    """Parse CSS-style font stack into individual font names.
+
+    Examples:
+        "'JetBrains Mono', 'Fira Code', monospace" -> ["JetBrains Mono", "Fira Code", "monospace"]
+        "Helvetica, Arial, sans-serif" -> ["Helvetica", "Arial", "sans-serif"]
+    """
+    if not font_family:
+        return []
+
+    fonts = []
+    for part in font_family.split(","):
+        name = part.strip().strip("'\"")
+        if name:
+            fonts.append(name)
+    return fonts
+
+
+@cache
+def _resolve_font_family(font_family: str, font_style: skia.FontStyle) -> skia.Typeface:
+    """Resolve CSS-style font stack to the first available Skia Typeface."""
+    fm = skia.FontMgr()
+
+    # Parse font stack and try each font
+    for name in _parse_font_stack(font_family):
+        # Skip generic family names that Skia doesn't understand
+        if name in ("sans-serif", "serif", "monospace", "cursive", "fantasy"):
+            continue
+        typeface = fm.matchFamilyStyle(name, font_style)
+        if typeface is not None:
+            return typeface
+
+    # Fallback to system default
+    return fm.matchFamilyStyle("", font_style)
+
+
 @cache
 def _get_font_face(font_family: str, font_style: skia.FontStyle) -> skia.Typeface:
     if font_family == "":
         font_family = core.App.get_default_font_family()
+
+    # Try to resolve CSS-style font stack
+    typeface = _resolve_font_family(font_family, font_style)
+    if typeface is not None:
+        return typeface
+
+    # Final fallback
     return skia.Typeface(font_family, font_style)
 
 
@@ -185,7 +229,22 @@ class Painter:
     def measure_text(self, text: str) -> float:
         style = cast(core.Style, self._style)
         font = _to_skia_font(style.font)
-        return font.measureText(text)
+
+        primary_typeface = font.getTypeface()
+        if primary_typeface is None:
+            return font.measureText(text)
+
+        font_style = primary_typeface.fontStyle()
+        font_size = font.getSize()
+
+        segments = segment_text_by_font(text, primary_typeface, font_style)
+
+        total_width = 0.0
+        for segment_text, typeface in segments:
+            segment_font = skia.Font(typeface, font_size)
+            total_width += segment_font.measureText(segment_text)
+
+        return total_width
 
     def get_font_metrics(self) -> core.FontMetrics:
         style = cast(core.Style, self._style)
@@ -222,17 +281,31 @@ class Painter:
         else:
             font = _to_skia_font(style.font)
 
-        blob = skia.TextBlob(text, font)
         paint = skia.Paint(
             Style=skia.Paint.kFill_Style,
             Color=color,
         )
-        self._canvas.drawTextBlob(
-            blob,
-            pos.x,
-            pos.y,
-            paint,
-        )
+
+        primary_typeface = font.getTypeface()
+        if primary_typeface is None:
+            # No primary typeface, render without fallback
+            blob = skia.TextBlob(text, font)
+            self._canvas.drawTextBlob(blob, pos.x, pos.y, paint)
+            return
+
+        font_style = primary_typeface.fontStyle()
+        font_size = font.getSize()
+
+        # Segment text by font availability
+        segments = segment_text_by_font(text, primary_typeface, font_style)
+
+        # Render each segment with its appropriate font
+        x_offset = 0.0
+        for segment_text, typeface in segments:
+            segment_font = skia.Font(typeface, font_size)
+            blob = skia.TextBlob(segment_text, segment_font)
+            self._canvas.drawTextBlob(blob, pos.x + x_offset, pos.y, paint)
+            x_offset += segment_font.measureText(segment_text)
 
     def stroke_text(
         self, text: str, pos: core.Point, max_width: Optional[float]
