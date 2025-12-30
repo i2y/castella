@@ -1,5 +1,7 @@
+"""Basic DataTable example with live updates using the new DataTableState API."""
+
 from pydantic import BaseModel, Field
-from castella import App, DataTable, TableModel
+from castella import App, DataTable, DataTableState, ColumnConfig
 from castella.frame import Frame
 
 
@@ -40,68 +42,29 @@ persons = [
     Person(name="Beta", age=160, country="Australia"),
     Person(name="Gamma", age=165, country="Spain"),
     Person(name="Delta", age=170, country="Mexico"),
-    Person(name="Epsilon", age=175, country="Argentina"),
-    Person(name="Zeta", age=180, country="Chile"),
-    Person(name="Eta", age=185, country="Peru"),
-    Person(name="Theta", age=190, country="Cuba"),
-    Person(name="Iota", age=195, country="Egypt"),
-    Person(name="Kappa", age=200, country="Greece"),
-    Person(name="Lambda", age=205, country="Turkey"),
-    Person(name="Mu", age=210, country="India"),
-    Person(name="Nu", age=215, country="Brazil"),
-    Person(name="Xi", age=220, country="France"),
-    Person(name="Omicron", age=225, country="Germany"),
-    Person(name="Pi", age=230, country="Italy"),
-    Person(name="Rho", age=235, country="Canada"),
-    Person(name="Sigma", age=240, country="Australia"),
-    Person(name="Tau", age=245, country="Spain"),
-    Person(name="Upsilon", age=250, country="Mexico"),
-    Person(name="Phi", age=255, country="Argentina"),
-    Person(name="Chi", age=260, country="Chile"),
-    Person(name="Psi", age=265, country="Peru"),
-    Person(name="Omega", age=270, country="Cuba"),
-    Person(name="A", age=275, country="Egypt"),
-    Person(name="B", age=280, country="Greece"),
-    Person(name="C", age=285, country="Turkey"),
-    Person(name="D", age=290, country="India"),
-    Person(name="E", age=295, country="Brazil"),
-    Person(name="F", age=300, country="France"),
-    Person(name="G", age=305, country="Germany"),
-    Person(name="H", age=310, country="Italy"),
-    Person(name="I", age=315, country="Canada"),
-    Person(name="J", age=320, country="Australia"),
-    Person(name="K", age=325, country="Spain"),
-    Person(name="L", age=330, country="Mexico"),
-    Person(name="M", age=335, country="Argentina"),
-    Person(name="N", age=340, country="Chile"),
-    Person(name="O", age=345, country="Peru"),
-    Person(name="P", age=350, country="Cuba"),
-    Person(name="Q", age=355, country="Egypt"),
-    Person(name="R", age=360, country="Greece"),
-    Person(name="S", age=365, country="Turkey"),
-    Person(name="T", age=370, country="India"),
-    Person(name="U", age=375, country="Brazil"),
-    Person(name="V", age=380, country="France"),
-    Person(name="W", age=385, country="Germany"),
-    Person(name="X", age=390, country="Italy"),
-    Person(name="Y", age=395, country="Canada"),
-    Person(name="Z", age=400, country="Australia"),
 ]
 
+# Create table state from Pydantic models
+state = DataTableState.from_pydantic(persons)
 
-model = TableModel.from_pydantic_model(persons)
-table = DataTable(model)
+# Create table
+table = DataTable(state)
 
 
-# モデルを更新するスレッドを作成
+# Update model in background thread
 def update_model():
     import time
 
+    age_offset = 0
     while True:
         time.sleep(5)
-        for p in persons:
-            p.age += 1
-        model.reflect_pydantic_model(persons)
+        age_offset += 1
+        # Update rows using the new API
+        new_rows = [
+            [p.name, p.age + age_offset, p.country]
+            for p in persons
+        ]
+        state.set_rows(new_rows)
 
 
 import threading

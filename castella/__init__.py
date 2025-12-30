@@ -45,6 +45,14 @@ from castella.table import (
     TableEvent as TableEvent,
     TableModel as TableModel,
     DataTable as DataTable,
+    DataTableState as DataTableState,
+    ColumnConfig as ColumnConfig,
+    SortDirection as SortDirection,
+    SelectionMode as SelectionMode,
+    CellClickEvent as CellClickEvent,
+    SortEvent as SortEvent,
+    SelectionChangeEvent as SelectionChangeEvent,
+    FilterChangeEvent as FilterChangeEvent,
 )
 
 try:
