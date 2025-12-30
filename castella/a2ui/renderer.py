@@ -324,6 +324,8 @@ class A2UIRenderer:
 
         Avoids adding duplicates if child is already a child of parent.
         """
+        import os
+
         # Import here to avoid circular imports
         from castella.box import Box
         from castella.column import Column
@@ -334,6 +336,8 @@ class A2UIRenderer:
             existing_children = getattr(parent, "_children", [])
             if child not in existing_children:
                 parent.add(child)
+                if os.environ.get("A2UI_DEBUG"):
+                    print(f"[RENDERER] Added child {child} to parent {parent}")
 
     def _render_template_children(
         self,
@@ -604,13 +608,30 @@ class A2UIRenderer:
 
     def _handle_update_data_model(self, msg: UpdateDataModel) -> A2UISurface | None:
         """Update the data model for a surface and re-render bound widgets."""
+        import os
+
+        debug = os.environ.get("A2UI_DEBUG")
+
+        if debug:
+            print(f"[RENDERER] _handle_update_data_model: surfaceId={msg.surface_id}")
+            print(f"[RENDERER]   msg.data = {msg.data}")
+
         surface = self._surfaces.get(msg.surface_id)
         if surface is None:
+            if debug:
+                print("[RENDERER]   Surface not found!")
             return None
 
         # Update data model values
         for path, value in msg.data.items():
             surface.update_data(path, value)
+
+        if debug:
+            print(f"[RENDERER]   Updated data_model = {surface._data_model}")
+            print(
+                f"[RENDERER]   Components: {list(surface._components.keys()) if surface._components else 'None'}"
+            )
+            print(f"[RENDERER]   root_id: {surface._root_id}")
 
         # Re-render all components with updated data model
         if surface._components and surface._root_id:

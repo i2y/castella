@@ -118,6 +118,57 @@ for skill in card.skills:
     print(f"  - {skill.name}: {skill.description}")
 ```
 
+## A2UI Client
+
+The `A2UIClient` class connects to A2A agents that support the A2UI extension, automatically handling protocol negotiation and UI generation.
+
+```python
+from castella import App
+from castella.a2ui import A2UIClient, A2UIComponent, UserAction
+from castella.frame import Frame
+
+# Create client with action handler
+def on_action(action: UserAction):
+    print(f"Action: {action.name}")
+    print(f"Source: {action.source_component_id}")
+    print(f"Context: {action.context}")
+
+client = A2UIClient("http://localhost:10002", on_action=on_action)
+
+# Send message and get A2UI surface
+surface = client.send("Find me restaurants in Tokyo")
+
+if surface:
+    # Render in Castella app
+    App(Frame("Demo", 800, 600), A2UIComponent(surface)).run()
+```
+
+### Async Usage
+
+```python
+async def main():
+    client = A2UIClient("http://localhost:10002")
+    surface = await client.send_async("Hello!")
+
+    # Send user actions back to agent
+    if surface:
+        action = UserAction(
+            name="book_restaurant",
+            source_component_id="book-button",
+            context={"restaurant": "Sushi Place"}
+        )
+        await client.send_action_async(action)
+```
+
+### Features
+
+- Connects to A2A Protocol agents with A2UI extension
+- Handles A2UI extension negotiation automatically
+- Extracts A2UI messages from A2A responses
+- Integrates with `A2UIRenderer` for widget generation
+- Supports both sync and async operations
+- Maintains conversation context across messages
+
 ### Displaying Agent Card
 
 ```python

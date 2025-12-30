@@ -99,6 +99,26 @@ chat = AgentChat(
 chat.run()
 ```
 
+## A2UI Example
+
+Render AI-generated UIs from [A2UI](https://a2ui.org/) compatible agents:
+
+```python
+from castella import App
+from castella.a2ui import A2UIClient, A2UIComponent
+from castella.frame import Frame
+
+# Connect to an A2UI-enabled agent
+client = A2UIClient("http://localhost:10002")
+
+# Send a message and get UI
+surface = client.send("Find me restaurants in Tokyo")
+
+# Render in Castella
+if surface:
+    App(Frame("A2UI Demo", 800, 600), A2UIComponent(surface)).run()
+```
+
 You can see some other examples in [examples](examples) directory.
 
 ## Supported Platforms

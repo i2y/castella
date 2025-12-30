@@ -94,9 +94,14 @@ def create_text(
     action_handler: ActionHandler,
 ) -> Widget:
     """Create a Text widget from an A2UI Text component."""
+    import os
     from castella.text import Text
 
     text_value = resolve_value(component.text, data_model, "")
+    if os.environ.get("A2UI_DEBUG"):
+        print(
+            f"[FACTORY] create_text: id={component.id}, text={component.text} -> '{text_value}'"
+        )
 
     # Determine font size based on usage hint
     font_size = None

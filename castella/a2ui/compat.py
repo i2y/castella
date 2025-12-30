@@ -319,6 +319,13 @@ def normalize_message(msg: dict[str, Any]) -> dict[str, Any]:
         for comp in components:
             normalized = normalize_legacy_component(comp)
             normalized_components.append(normalized)
+            # Debug output
+            import os
+
+            if os.environ.get("A2UI_DEBUG"):
+                print(
+                    f"[COMPAT] {comp.get('id')}: {comp.get('component')} -> {normalized.get('component')}"
+                )
         result["updateComponents"] = {
             "surfaceId": update.get("surfaceId", "default"),
             "components": normalized_components,

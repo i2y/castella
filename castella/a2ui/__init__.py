@@ -51,6 +51,12 @@ from castella.a2ui.catalog import (
     get_default_catalog,
     reset_default_catalog,
 )
+from castella.a2ui.client import (
+    A2UIClient,
+    A2UIClientError,
+    A2UIConnectionError,
+    A2UIResponseError,
+)
 from castella.a2ui.compat import (
     normalize_component,
     normalize_message,
@@ -122,6 +128,11 @@ from castella.a2ui.types import (
 )
 
 __all__ = [
+    # Client
+    "A2UIClient",
+    "A2UIClientError",
+    "A2UIConnectionError",
+    "A2UIResponseError",
     # Renderer
     "A2UIComponent",
     "A2UIRenderer",
