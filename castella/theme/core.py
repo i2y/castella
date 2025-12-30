@@ -223,6 +223,12 @@ class Theme(BaseModel):
         font = Font(family=self.typography.font_family, size=self.typography.base_size)
         return generate_tree_styles(self.colors, font, self.spacing.border_radius)
 
+    @property
+    def calendar(self) -> WidgetStyles:
+        """Get calendar styles for day cells and headers."""
+        font = Font(family=self.typography.font_family, size=self.typography.base_size)
+        return generate_calendar_styles(self.colors, font, self.spacing.border_radius)
+
 
 def generate_widget_style(
     colors: ColorPalette,
@@ -556,5 +562,81 @@ def generate_tree_styles(
             text_font=font,
             border_radius=border_radius,
             shadow=shadow,
+        ),
+    }
+
+
+def generate_calendar_styles(
+    colors: ColorPalette,
+    font: Font = Font(),
+    border_radius: float = 0.0,
+) -> WidgetStyles:
+    """Generate styles for calendar widgets.
+
+    Returns styles for:
+    - day_normal: Regular day cells
+    - day_muted: Days from previous/next month
+    - day_hover: Hovered day cell
+    - day_selected: Selected day cell
+    - day_today: Today indicator (outline)
+    - day_disabled: Disabled day cell
+    - weekday_header: Weekday header row
+    """
+    return {
+        # Regular day cell
+        "day_normal": WidgetStyle(
+            bg_color=colors.bg_primary,
+            border_color=colors.bg_primary,
+            text_color=colors.text_primary,
+            text_font=font,
+            border_radius=border_radius,
+        ),
+        # Day from previous/next month (muted)
+        "day_muted": WidgetStyle(
+            bg_color=colors.bg_primary,
+            border_color=colors.bg_primary,
+            text_color=colors.text_info,
+            text_font=font,
+            border_radius=border_radius,
+        ),
+        # Hovered day cell
+        "day_hover": WidgetStyle(
+            bg_color=colors.bg_overlay,
+            border_color=colors.border_primary,
+            text_color=colors.text_primary,
+            text_font=font,
+            border_radius=border_radius,
+        ),
+        # Selected day cell
+        "day_selected": WidgetStyle(
+            bg_color=colors.bg_selected,
+            border_color=colors.border_info,
+            text_color=colors.fg,
+            text_font=font,
+            border_radius=border_radius,
+        ),
+        # Today indicator (border only, not filled)
+        "day_today": WidgetStyle(
+            bg_color=colors.bg_primary,
+            border_color=colors.border_info,
+            text_color=colors.text_info,
+            text_font=font,
+            border_radius=border_radius,
+        ),
+        # Disabled day cell
+        "day_disabled": WidgetStyle(
+            bg_color=colors.bg_tertiary,
+            border_color=colors.bg_tertiary,
+            text_color=colors.border_secondary,
+            text_font=font,
+            border_radius=border_radius,
+        ),
+        # Weekday header row
+        "weekday_header": WidgetStyle(
+            bg_color=colors.bg_secondary,
+            border_color=colors.bg_secondary,
+            text_color=colors.text_info,
+            text_font=font,
+            border_radius=0.0,
         ),
     }

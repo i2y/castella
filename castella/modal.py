@@ -103,6 +103,7 @@ class Modal(StatefulComponent):
         height: int = 300,
         close_on_backdrop_click: bool = True,
         show_close_button: bool = True,
+        show_backdrop: bool = True,
     ):
         """Initialize Modal.
 
@@ -114,6 +115,7 @@ class Modal(StatefulComponent):
             height: Height of the modal dialog
             close_on_backdrop_click: Whether clicking the backdrop closes the modal
             show_close_button: Whether to show a close button in the header
+            show_backdrop: Whether to show semi-transparent backdrop (default True)
         """
         self._content = content
         self._title = title
@@ -121,6 +123,7 @@ class Modal(StatefulComponent):
         self._modal_height = height
         self._close_on_backdrop_click = close_on_backdrop_click
         self._show_close_button = show_close_button
+        self._show_backdrop = show_backdrop
         self._on_close_callback: Callable[[], None] = lambda: None
         self._on_open_callback: Callable[[], None] = lambda: None
 
@@ -137,14 +140,19 @@ class Modal(StatefulComponent):
 
         theme = ThemeManager().current
 
-        # Build backdrop (semi-transparent overlay)
-        backdrop = (
-            _ClickableBackdrop(
-                self._on_backdrop_click if self._close_on_backdrop_click else None
+        # Build backdrop (semi-transparent overlay) if enabled
+        backdrop = None
+        if self._show_backdrop:
+            backdrop = (
+                _ClickableBackdrop(
+                    self._on_backdrop_click if self._close_on_backdrop_click else None
+                )
+                .bg_color("rgba(0, 0, 0, 0.5)")
+                .z_index(99)
             )
-            .bg_color("rgba(0, 0, 0, 0.5)")
-            .z_index(99)
-        )
+        elif self._close_on_backdrop_click:
+            # Invisible click catcher (no background drawing)
+            backdrop = _ClickableBackdrop(self._on_backdrop_click).z_index(99)
 
         # Build modal content
         modal_children = []
@@ -181,7 +189,10 @@ class Modal(StatefulComponent):
             .z_index(100)
         )
 
-        return Box(backdrop, modal_dialog)
+        if backdrop:
+            return Box(backdrop, modal_dialog)
+        else:
+            return Box(modal_dialog)
 
     def redraw(self, p, completely: bool) -> None:
         """Draw the modal. Skip drawing when closed to avoid covering other content."""

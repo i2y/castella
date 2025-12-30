@@ -511,12 +511,21 @@ modal_state.close()
 
 ## DateTimeInput
 
-Date and/or time picker widget.
+Date and/or time picker widget with visual calendar grid and dropdown time selection.
+
+### Features
+
+- Visual calendar grid for date selection (7x6 grid)
+- Month/year quick navigation with picker views
+- Time picker with hour/minute dropdowns
+- "Today" and preset time buttons
+- Locale support (English, Japanese)
+- Min/max date constraints
 
 ```python
 from castella import DateTimeInput, DateTimeInputState
 
-# Date only
+# Date only with calendar picker
 state = DateTimeInputState(
     value="2024-12-25",
     enable_date=True,
@@ -539,6 +548,19 @@ state = DateTimeInputState(
     enable_time=True
 )
 time_input = DateTimeInput(state=state, label="Start Time")
+
+# With constraints and locale
+from datetime import date
+from castella.calendar.locale import JA
+
+date_input = DateTimeInput(
+    state=state,
+    label="予約日",
+    min_date=date.today(),
+    max_date=date(2025, 12, 31),
+    first_day_of_week=0,  # 0=Sunday, 1=Monday (default)
+    locale=JA,  # Japanese locale
+)
 ```
 
 ### DateTimeInputState Methods
@@ -560,6 +582,31 @@ time_input = DateTimeInput(state=state, label="Start Time")
 | `value` | str | None | Initial value (ISO format) |
 | `enable_date` | bool | True | Show date picker |
 | `enable_time` | bool | False | Show time picker |
+| `min_date` | date | None | Minimum selectable date |
+| `max_date` | date | None | Maximum selectable date |
+| `first_day_of_week` | int | 1 | 0=Sunday, 1=Monday |
+| `locale` | CalendarLocale | EN | Locale for labels |
+
+### Locale Support
+
+```python
+from castella.calendar.locale import EN, JA, CalendarLocale
+
+# Use built-in locales
+DateTimeInput(state, locale=EN)  # English (default)
+DateTimeInput(state, locale=JA)  # Japanese
+
+# Create custom locale
+custom = CalendarLocale(
+    weekday_names=["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    month_names=["Jan", "Feb", "Mar", ...],
+    today_button="Today",
+    done_button="Done",
+    now_button="Now",
+    time_label="Time:",
+    placeholder="Select date",
+)
+```
 
 ## Image
 

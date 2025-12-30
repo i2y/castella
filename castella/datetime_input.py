@@ -1,15 +1,22 @@
 """DateTimeInput widget for date and time selection.
 
-Provides a combined date/time input with optional picker popup.
+Provides a combined date/time input with visual calendar picker popup.
 """
 
 from __future__ import annotations
 
-from datetime import datetime, date, time
+from datetime import date, datetime, time
 from typing import Callable, Self
 
 from castella.box import Box
 from castella.button import Button
+from castella.calendar.grid import CalendarGrid
+from castella.calendar.header import CalendarHeader
+from castella.calendar.locale import DEFAULT_LOCALE, CalendarLocale
+from castella.calendar.month_picker import MonthPicker
+from castella.calendar.state import CalendarState, TimePickerState, ViewMode
+from castella.calendar.time_picker import TimePicker
+from castella.calendar.year_picker import YearPicker
 from castella.column import Column
 from castella.core import (
     Kind,
@@ -18,7 +25,6 @@ from castella.core import (
     StatefulComponent,
     Widget,
 )
-from castella.input import Input
 from castella.row import Row
 from castella.spacer import Spacer
 from castella.text import Text
@@ -211,7 +217,13 @@ class DateTimeInputState(ObservableBase):
 
 
 class DateTimeInput(StatefulComponent):
-    """Date and time input widget with picker popup.
+    """Date and time input widget with visual calendar picker popup.
+
+    Features:
+    - Visual calendar grid for date selection
+    - Month/year quick navigation
+    - Time picker with dropdown selectors
+    - "Today" and preset time buttons
 
     Supports:
     - Date only (enable_date=True, enable_time=False)
@@ -230,6 +242,17 @@ class DateTimeInput(StatefulComponent):
         date_input.on_change(lambda iso: print(f"Selected: {iso}"))
     """
 
+    # Layout constants
+    CELL_SIZE = 32
+    GRID_WIDTH = 7 * CELL_SIZE  # 224px
+    POPUP_PADDING = 16
+    POPUP_WIDTH = GRID_WIDTH + POPUP_PADDING  # 240px
+    HEADER_HEIGHT = 40
+    WEEKDAY_HEIGHT = 24
+    GRID_HEIGHT = 6 * CELL_SIZE  # 192px
+    FOOTER_HEIGHT = 44
+    TIME_PICKER_HEIGHT = 80
+
     def __init__(
         self,
         state: DateTimeInputState | None = None,
@@ -237,6 +260,10 @@ class DateTimeInput(StatefulComponent):
         enable_date: bool = True,
         enable_time: bool = False,
         value: datetime | date | time | str | None = None,
+        min_date: date | None = None,
+        max_date: date | None = None,
+        first_day_of_week: int = 1,  # 1=Monday (ISO 8601)
+        locale: CalendarLocale | None = None,
     ):
         """Initialize DateTimeInput.
 
@@ -246,9 +273,17 @@ class DateTimeInput(StatefulComponent):
             enable_date: Whether to show date input (ignored if state provided)
             enable_time: Whether to show time input (ignored if state provided)
             value: Initial value (ignored if state provided)
+            min_date: Minimum selectable date
+            max_date: Maximum selectable date
+            first_day_of_week: 0=Sunday, 1=Monday (default)
+            locale: Locale for calendar display (default: EN)
         """
         self._label = label
         self._on_change_callback: Callable[[str | None], None] = lambda _: None
+        self._min_date = min_date
+        self._max_date = max_date
+        self._first_day_of_week = first_day_of_week
+        self._locale = locale or DEFAULT_LOCALE
 
         if state is not None:
             self._dt_state = state
@@ -259,21 +294,42 @@ class DateTimeInput(StatefulComponent):
                 enable_time=enable_time,
             )
 
-        # Temporary input values for picker (don't trigger re-renders)
-        self._temp_year = ""
-        self._temp_month = ""
-        self._temp_day = ""
-        self._temp_hour = ""
-        self._temp_minute = ""
+        # Internal calendar state (created when picker opens)
+        self._calendar_state: CalendarState | None = None
+        self._time_state: TimePickerState | None = None
 
         super().__init__(self._dt_state)
+
+    def _init_picker_states(self) -> None:
+        """Initialize calendar and time picker states from current value."""
+        current_value = self._dt_state.value()
+
+        # Create calendar state
+        self._calendar_state = CalendarState(
+            value=current_value.date() if current_value else None,
+            min_date=self._min_date,
+            max_date=self._max_date,
+            first_day_of_week=self._first_day_of_week,
+            locale=self._locale,
+        )
+
+        # Create time state if needed
+        if self._dt_state.enable_time:
+            if current_value:
+                self._time_state = TimePickerState(
+                    hour=current_value.hour,
+                    minute=current_value.minute,
+                    locale=self._locale,
+                )
+            else:
+                self._time_state = TimePickerState(locale=self._locale)
 
     def view(self) -> Widget:
         """Build the date/time input UI."""
         theme = ThemeManager().current
 
         # Main input display
-        display_text = self._dt_state.to_display_string() or "Select..."
+        display_text = self._dt_state.to_display_string() or self._locale.placeholder
 
         main_row = (
             Row(
@@ -298,141 +354,165 @@ class DateTimeInput(StatefulComponent):
         else:
             main_content = main_row
 
-        if not self._dt_state.is_picker_open():
+        # Build picker popup if open
+        if self._dt_state.is_picker_open():
+            # Ensure picker states exist
+            if self._calendar_state is None:
+                self._init_picker_states()
+
+            # Calculate popup size
+            popup_height = self.HEADER_HEIGHT + self.FOOTER_HEIGHT
+            if self._dt_state.enable_date:
+                popup_height += self.WEEKDAY_HEIGHT + self.GRID_HEIGHT
+            if self._dt_state.enable_time:
+                popup_height += self.TIME_PICKER_HEIGHT
+
+            # Build picker with fixed size (no double wrapping)
+            picker_popup = (
+                self._build_picker(theme)
+                .bg_color(theme.colors.bg_primary)
+                .fixed_size(self.POPUP_WIDTH, popup_height)
+                .z_index(100)
+            )
+
+            return Box(main_content, picker_popup)
+        else:
             return main_content
 
-        # Build picker popup
-        picker_content = self._build_picker(theme)
-
-        # Picker popup
-        picker = (
-            Column(picker_content)
-            .bg_color(theme.colors.bg_primary)
-            .fixed_size(280, 180)
-            .z_index(100)
-        )
-
-        # Backdrop
-        backdrop = (
-            _ClickableBackdrop(lambda _: self._close_picker())
-            .bg_color("rgba(0, 0, 0, 0.3)")
-            .z_index(99)
-        )
-
-        return Box(main_content.z_index(1), backdrop, picker)
-
-    def _init_temp_values(self) -> None:
-        """Initialize temporary values from current state."""
-        value = self._dt_state.value() or datetime.now()
-        self._temp_year = str(value.year)
-        self._temp_month = str(value.month)
-        self._temp_day = str(value.day)
-        self._temp_hour = f"{value.hour:02d}"
-        self._temp_minute = f"{value.minute:02d}"
-
     def _build_picker(self, theme) -> Widget:
-        """Build the date/time picker UI."""
-        rows = []
+        """Build the date/time picker UI with calendar."""
+        rows: list[Widget] = []
 
-        if self._dt_state.enable_date:
-            # Date picker: Year / Month / Day
-            date_row = (
-                Row(
-                    Column(
-                        Text("Year").height(20).height_policy(SizePolicy.FIXED),
-                        Input(self._temp_year)
-                        .on_change(lambda v: setattr(self, "_temp_year", v))
-                        .height(32)
-                        .height_policy(SizePolicy.FIXED),
-                    ),
-                    Column(
-                        Text("Month").height(20).height_policy(SizePolicy.FIXED),
-                        Input(self._temp_month)
-                        .on_change(lambda v: setattr(self, "_temp_month", v))
-                        .height(32)
-                        .height_policy(SizePolicy.FIXED),
-                    ),
-                    Column(
-                        Text("Day").height(20).height_policy(SizePolicy.FIXED),
-                        Input(self._temp_day)
-                        .on_change(lambda v: setattr(self, "_temp_day", v))
-                        .height(32)
-                        .height_policy(SizePolicy.FIXED),
-                    ),
-                )
-                .height(60)
-                .height_policy(SizePolicy.FIXED)
-            )
-            rows.append(date_row)
+        if self._dt_state.enable_date and self._calendar_state:
+            # Header with navigation (40px)
+            header = CalendarHeader(
+                self._calendar_state, width=self.GRID_WIDTH
+            ).fixed_height(self.HEADER_HEIGHT)
+            rows.append(header)
 
-        if self._dt_state.enable_time:
-            # Time picker: Hour : Minute
-            time_row = (
-                Row(
-                    Column(
-                        Text("Hour").height(20).height_policy(SizePolicy.FIXED),
-                        Input(self._temp_hour)
-                        .on_change(lambda v: setattr(self, "_temp_hour", v))
-                        .height(32)
-                        .height_policy(SizePolicy.FIXED),
-                    ),
-                    Column(
-                        Text("Min").height(20).height_policy(SizePolicy.FIXED),
-                        Input(self._temp_minute)
-                        .on_change(lambda v: setattr(self, "_temp_minute", v))
-                        .height(32)
-                        .height_policy(SizePolicy.FIXED),
-                    ),
-                )
-                .height(60)
-                .height_policy(SizePolicy.FIXED)
-            )
-            rows.append(time_row)
+            # Calendar view based on mode (24px weekday + 192px grid = 216px)
+            grid_height = self.WEEKDAY_HEIGHT + self.GRID_HEIGHT
+            view_mode = self._calendar_state.view_mode
+            if view_mode == ViewMode.DAYS:
+                grid = CalendarGrid(
+                    self._calendar_state,
+                    cell_size=self.CELL_SIZE,
+                    on_select=self._on_date_select,
+                ).fixed_height(grid_height)
+                rows.append(grid)
+            elif view_mode == ViewMode.MONTHS:
+                month_picker = MonthPicker(
+                    self._calendar_state, width=self.GRID_WIDTH
+                ).fixed_height(grid_height)
+                rows.append(month_picker)
+            else:  # ViewMode.YEARS
+                year_picker = YearPicker(
+                    self._calendar_state, width=self.GRID_WIDTH
+                ).fixed_height(grid_height)
+                rows.append(year_picker)
 
-        # Done button
-        rows.append(
+        # Time picker
+        if self._dt_state.enable_time and self._time_state:
+            time_picker = TimePicker(
+                self._time_state,
+                width=self.GRID_WIDTH,
+                show_presets=True,
+            ).fixed_height(self.TIME_PICKER_HEIGHT)
+            rows.append(time_picker)
+
+        # Footer with Today and Done buttons
+        footer = (
             Row(
+                Button(self._locale.today_button)
+                .on_click(lambda _: self._go_to_today())
+                .height(32)
+                .height_policy(SizePolicy.FIXED)
+                .kind(Kind.NORMAL),
                 Spacer(),
-                Button("Done")
+                Button(self._locale.done_button)
                 .on_click(lambda _: self._apply_and_close())
-                .kind(Kind.INFO),
+                .height(32)
+                .height_policy(SizePolicy.FIXED)
+                .kind(Kind.SUCCESS),
             )
-            .height(50)
+            .width(self.GRID_WIDTH)
+            .width_policy(SizePolicy.FIXED)
+            .height(self.FOOTER_HEIGHT)
             .height_policy(SizePolicy.FIXED)
         )
+        rows.append(footer)
 
         return Column(*rows)
 
-    def _apply_temp_values(self) -> None:
-        """Apply temporary input values to the state."""
-        try:
-            year = int(self._temp_year) if self._temp_year else None
-            month = int(self._temp_month) if self._temp_month else None
-            day = int(self._temp_day) if self._temp_day else None
-            hour = int(self._temp_hour) if self._temp_hour else 0
-            minute = int(self._temp_minute) if self._temp_minute else 0
+    def _on_date_select(self, selected_date: date) -> None:
+        """Handle date selection from calendar grid."""
+        # Update the main state with selected date
+        current = self._dt_state.value()
+        if current:
+            new_dt = datetime.combine(selected_date, current.time())
+        else:
+            new_dt = datetime.combine(selected_date, time(0, 0))
+        self._dt_state.set(new_dt)
 
-            if year and month and day:
-                new_dt = datetime(year, month, day, hour, minute)
-                self._dt_state.set(new_dt)
-        except (ValueError, TypeError):
-            pass  # Ignore invalid input
+    def _go_to_today(self) -> None:
+        """Go to today's date."""
+        if self._calendar_state:
+            self._calendar_state.go_to_today()
+            # Also update the main state
+            today = date.today()
+            current = self._dt_state.value()
+            if current:
+                new_dt = datetime.combine(today, current.time())
+            else:
+                new_dt = datetime.combine(today, time(0, 0))
+            self._dt_state.set(new_dt)
 
     def _toggle_picker(self) -> None:
         """Toggle the picker popup."""
         if not self._dt_state.is_picker_open():
-            # Initialize temp values when opening
-            self._init_temp_values()
-        self._dt_state.toggle_picker()
+            # Initialize picker states when opening
+            self._init_picker_states()
+            self._dt_state.open_picker()
+        else:
+            self._close_picker()
 
     def _close_picker(self) -> None:
         """Close the picker popup without applying changes."""
+        self._calendar_state = None
+        self._time_state = None
         self._dt_state.close_picker()
 
     def _apply_and_close(self) -> None:
-        """Apply temp values, close picker and notify of change."""
-        self._apply_temp_values()
+        """Apply selections, close picker and notify of change."""
+        # Apply calendar selection
+        if self._calendar_state and self._calendar_state.value:
+            selected_date = self._calendar_state.value
+        else:
+            selected_date = (
+                self._dt_state.value().date()
+                if self._dt_state.value()
+                else date.today()
+            )
+
+        # Apply time selection
+        if self._time_state:
+            selected_time = time(self._time_state.hour, self._time_state.minute)
+        else:
+            current = self._dt_state.value()
+            selected_time = current.time() if current else time(0, 0)
+
+        # Combine and set
+        new_dt = datetime.combine(selected_date, selected_time)
+
+        # Clean up and close
+        self._calendar_state = None
+        self._time_state = None
         self._dt_state.close_picker()
+
+        # Set value (triggers rebuild)
+        self._dt_state.set(new_dt)
+
+        # Notify callback
         self._on_change_callback(self._dt_state.to_iso())
 
     def on_change(self, callback: Callable[[str | None], None]) -> Self:
@@ -458,16 +538,3 @@ class DateTimeInput(StatefulComponent):
         """
         self._label = label
         return self
-
-
-class _ClickableBackdrop(Spacer):
-    """Internal backdrop widget that handles click events."""
-
-    def __init__(self, on_click: Callable | None = None):
-        super().__init__()
-        self._on_click_handler = on_click
-
-    def mouse_up(self, ev) -> None:
-        """Handle mouse up (click)."""
-        if self._on_click_handler:
-            self._on_click_handler(ev)
