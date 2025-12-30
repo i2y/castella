@@ -185,7 +185,7 @@ editor = (
 
 Rich markdown text rendering with syntax highlighting.
 
-```python
+````python
 from castella import Markdown
 
 md = Markdown("""
@@ -202,7 +202,7 @@ def hello():
 # With link click handler
 import webbrowser
 md = Markdown(content, on_link_click=lambda url: webbrowser.open(url))
-```
+````
 
 ### Supported Features
 
