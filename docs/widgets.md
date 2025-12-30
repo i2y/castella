@@ -654,13 +654,43 @@ Column(
 
 ## DataTable
 
-Display tabular data with headers.
+High-performance data table with sorting, filtering, row selection, and column resize.
 
 ```python
-from castella import DataTable, TableModel
+from castella import (
+    DataTable, DataTableState, ColumnConfig,
+    SortDirection, SelectionMode,
+)
+
+# Create table state with column configs
+state = DataTableState(
+    columns=[
+        ColumnConfig(name="Name", width=150, sortable=True),
+        ColumnConfig(name="Age", width=80, sortable=True),
+        ColumnConfig(name="City", width=120, sortable=True),
+    ],
+    rows=[
+        ["Alice", 30, "Tokyo"],
+        ["Bob", 25, "Osaka"],
+        ["Charlie", 35, "Kyoto"],
+    ],
+    selection_mode=SelectionMode.MULTI,  # NONE, SINGLE, or MULTI
+)
+
+# Create table with event handlers
+table = (
+    DataTable(state)
+    .on_sort(lambda ev: print(f"Sorted column {ev.column}"))
+    .on_selection_change(lambda ev: print(f"Selected: {ev.selected_rows}"))
+    .on_cell_click(lambda ev: print(f"Clicked: {ev.value}"))
+)
+```
+
+### From Pydantic Models
+
+```python
 from pydantic import BaseModel, Field
 
-# Create from Pydantic models
 class Person(BaseModel):
     name: str = Field(title="Name")
     age: int = Field(title="Age")
@@ -671,33 +701,50 @@ people = [
     Person(name="Bob", age=25, city="Osaka"),
 ]
 
-model = TableModel.from_pydantic_model(people)
-table = DataTable(model)
-
-# Create manually
-model = TableModel(
-    column_names=["Name", "Age", "City"],
-    data=[
-        ["Alice", 30, "Tokyo"],
-        ["Bob", 25, "Osaka"],
-    ]
-)
-table = DataTable(model)
+state = DataTableState.from_pydantic(people)
+table = DataTable(state)
 ```
 
-### TableModel Methods
+### Features
+
+- **Sorting**: Click column headers to sort (ASC → DESC → NONE)
+- **Filtering**: Global and per-column text filtering
+- **Selection**: Single or multi-row selection with Shift/Ctrl
+- **Column Resize**: Drag column borders to resize
+- **Virtual Scrolling**: Efficient handling of 1000+ rows
+- **Keyboard Navigation**: Arrow keys, Enter, Home/End, PageUp/PageDown
+
+### DataTableState Methods
 
 | Method | Description |
 |--------|-------------|
-| `from_pydantic_model(models)` | Create from Pydantic model list |
-| `reflect_pydantic_model(models)` | Update data from Pydantic models |
-| `get_value_at(row, col)` | Get cell value |
-| `set_value_at(value, row, col)` | Set cell value |
-| `add_row(row_data)` | Add a new row |
-| `remove_row(row_index)` | Remove a row |
-| `add_column(name, data)` | Add a new column |
-| `remove_column(col_index)` | Remove a column |
-| `attach(observer)` | Listen for changes |
+| `from_pydantic(models)` | Create from Pydantic model list |
+| `set_rows(rows)` | Replace all rows |
+| `set_filter(text)` | Set global filter |
+| `set_column_filter(col, text)` | Set per-column filter |
+| `clear_filters()` | Clear all filters |
+| `set_sort(column, direction)` | Set sort column and direction |
+| `clear_selection()` | Clear row selection |
+
+### Events
+
+| Event | Description |
+|-------|-------------|
+| `on_sort(callback)` | Called when sort changes |
+| `on_selection_change(callback)` | Called when selection changes |
+| `on_cell_click(callback)` | Called when a cell is clicked |
+| `on_filter_change(callback)` | Called when filter changes |
+
+### Legacy TableModel (Backward Compatible)
+
+The legacy `TableModel` API is still supported:
+
+```python
+from castella import DataTable, TableModel
+
+model = TableModel.from_pydantic_model(people)
+table = DataTable(model)  # Automatically converted to DataTableState
+```
 
 ## Additional Widgets
 
