@@ -131,25 +131,21 @@ class ChatMessage(Component):
         # Role label
         if self._show_role_label:
             header_parts = [
-                Text(role_label)
+                Text(role_label, font_size=14)
                 .text_color(role_color)
-                .height(20)
-                .height_policy(SizePolicy.FIXED)
+                .fixed_height(20)
             ]
 
             if self._show_timestamp:
                 time_str = self._timestamp.strftime("%H:%M")
                 header_parts.append(Spacer())
                 header_parts.append(
-                    Text(time_str)
+                    Text(time_str, font_size=12)
                     .text_color(theme.colors.text_info)
-                    .height(16)
-                    .height_policy(SizePolicy.FIXED)
+                    .fixed_height(16)
                 )
 
-            elements.append(
-                Row(*header_parts).height(24).height_policy(SizePolicy.FIXED)
-            )
+            elements.append(Row(*header_parts).fixed_height(24))
 
         # Content - use Markdown for assistant, plain Text for user/system
         if self._a2ui_json and self._a2ui_renderer:
@@ -195,10 +191,9 @@ class ChatMessage(Component):
             line_count = self._content.count("\n") + 1
             estimated_height = max(24, line_count * 20)
             return (
-                Text(self._content)
+                Text(self._content, font_size=14)
                 .text_color(theme.colors.text_primary)
-                .height(estimated_height)
-                .height_policy(SizePolicy.FIXED)
+                .fixed_height(estimated_height)
             )
 
 
@@ -252,18 +247,12 @@ class ChatInput(Component):
                     self._input_state,
                     font_size=14,
                     wrap=True,
-                )
-                .height(self._min_height)
-                .height_policy(SizePolicy.FIXED),
+                ).fixed_height(self._min_height),
                 Button(self._send_label)
                 .on_click(self._handle_send)
-                .width(80)
-                .width_policy(SizePolicy.FIXED)
-                .height(self._min_height)
-                .height_policy(SizePolicy.FIXED),
-            )
-            .height(self._min_height + 16)
-            .height_policy(SizePolicy.FIXED)
+                .fixed_width(80)
+                .fixed_height(self._min_height),
+            ).fixed_height(self._min_height + 16)
         )
 
 
@@ -312,10 +301,9 @@ class ChatView(Component):
 
         if not self._messages:
             return Box(
-                Text("No messages yet")
+                Text("No messages yet", font_size=14)
                 .text_color(theme.colors.text_info)
-                .height(40)
-                .height_policy(SizePolicy.FIXED)
+                .fixed_height(40)
             ).bg_color(theme.colors.bg_primary)
 
         message_widgets = []
@@ -334,7 +322,7 @@ class ChatView(Component):
             msg_widget.height_policy(SizePolicy.CONTENT)
             message_widgets.append(msg_widget)
             # Add small spacer between messages
-            message_widgets.append(Spacer().height(8).height_policy(SizePolicy.FIXED))
+            message_widgets.append(Spacer().fixed_height(8))
 
         return Column(
             *message_widgets,
@@ -398,14 +386,12 @@ class ChatContainer(Component):
         if self._title:
             elements.append(
                 Box(
-                    Text(self._title)
+                    Text(self._title, font_size=16)
                     .text_color(theme.colors.text_primary)
-                    .height(24)
-                    .height_policy(SizePolicy.FIXED)
+                    .fixed_height(24)
                 )
                 .bg_color(theme.colors.bg_secondary)
-                .height(40)
-                .height_policy(SizePolicy.FIXED)
+                .fixed_height(40)
             )
 
         # Message list - use Box to ensure proper sizing

@@ -18,9 +18,9 @@ from __future__ import annotations
 import json
 
 from castella.box import Box
+from castella.button import Button
 from castella.column import Column
 from castella.core import Component, SizePolicy, State
-from castella.row import Row
 from castella.text import Text
 
 
@@ -73,24 +73,11 @@ class ToolCallView(Component):
         # Header with tool name and expand/collapse toggle
         toggle_icon = "▼" if self._expanded() else "▶"
         status_text = "completed" if self._result is not None else "running..."
-        status_color = (
-            theme.colors.text_success if self._result else theme.colors.text_warning
-        )
 
         header = (
-            Row(
-                Text(f"{toggle_icon} {self._name}")
-                .text_color(theme.colors.text_primary)
-                .height(20)
-                .height_policy(SizePolicy.FIXED),
-                Text(f"  [{status_text}]")
-                .text_color(status_color)
-                .height(16)
-                .height_policy(SizePolicy.FIXED),
-            )
-            .height(28)
-            .height_policy(SizePolicy.FIXED)
+            Button(f"{toggle_icon} {self._name}  [{status_text}]")
             .on_click(self._toggle_expanded)
+            .fixed_height(28)
         )
 
         elements = [header]
@@ -100,16 +87,17 @@ class ToolCallView(Component):
             # Arguments section
             if self._arguments:
                 args_text = json.dumps(self._arguments, indent=2, ensure_ascii=False)
+                args_lines = args_text.count("\n") + 1
+                args_height = max(20, args_lines * 18)
                 elements.append(
                     Box(
                         Column(
-                            Text("Arguments:")
+                            Text("Arguments:", font_size=14)
                             .text_color(theme.colors.text_info)
-                            .height(18)
-                            .height_policy(SizePolicy.FIXED),
-                            Text(args_text)
+                            .fixed_height(18),
+                            Text(args_text, font_size=14)
                             .text_color(theme.colors.text_primary)
-                            .height_policy(SizePolicy.CONTENT),
+                            .fixed_height(args_height),
                         ).height_policy(SizePolicy.CONTENT)
                     )
                     .bg_color(theme.colors.bg_primary)
@@ -118,21 +106,17 @@ class ToolCallView(Component):
 
             # Result section
             if self._result is not None:
-                result_text = (
-                    self._result
-                    if len(self._result) < 500
-                    else self._result[:500] + "..."
-                )
+                result_lines = self._result.count("\n") + 1
+                result_height = max(20, result_lines * 18)
                 elements.append(
                     Box(
                         Column(
-                            Text("Result:")
+                            Text("Result:", font_size=14)
                             .text_color(theme.colors.text_success)
-                            .height(18)
-                            .height_policy(SizePolicy.FIXED),
-                            Text(result_text)
+                            .fixed_height(18),
+                            Text(self._result, font_size=14)
                             .text_color(theme.colors.text_primary)
-                            .height_policy(SizePolicy.CONTENT),
+                            .fixed_height(result_height),
                         ).height_policy(SizePolicy.CONTENT)
                     )
                     .bg_color(theme.colors.bg_primary)
@@ -183,18 +167,16 @@ class ToolHistoryPanel(Component):
         theme = ThemeManager().current
 
         elements = [
-            Text(self._title)
+            Text(self._title, font_size=16)
             .text_color(theme.colors.text_primary)
-            .height(24)
-            .height_policy(SizePolicy.FIXED)
+            .fixed_height(24)
         ]
 
         if not self._tool_calls:
             elements.append(
-                Text("No tool calls yet")
+                Text("No tool calls yet", font_size=14)
                 .text_color(theme.colors.text_info)
-                .height(20)
-                .height_policy(SizePolicy.FIXED)
+                .fixed_height(20)
             )
         else:
             for call in self._tool_calls[-self._max_visible :]:

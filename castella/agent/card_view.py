@@ -31,16 +31,13 @@ class SkillBadge(Component):
 
         return (
             Box(
-                Text(self._skill.name)
+                Text(self._skill.name, font_size=14)
                 .text_color(theme.colors.text_primary)
-                .height(20)
-                .height_policy(SizePolicy.FIXED)
+                .fixed_height(20)
             )
             .bg_color(theme.colors.bg_tertiary)
-            .height(28)
-            .height_policy(SizePolicy.FIXED)
-            .width(100)
-            .width_policy(SizePolicy.FIXED)
+            .fixed_height(28)
+            .fixed_width(100)
         )
 
 
@@ -90,25 +87,20 @@ class AgentCardView(Component):
         # Header with name and version
         header = (
             Row(
-                Text(self._card.name)
+                Text(self._card.name, font_size=16)
                 .text_color(theme.colors.text_primary)
-                .height(24)
-                .height_policy(SizePolicy.FIXED),
-                Text(f"v{self._card.version}")
+                .fixed_height(24),
+                Text(f"v{self._card.version}", font_size=14)
                 .text_color(theme.colors.text_info)
-                .height(20)
-                .height_policy(SizePolicy.FIXED),
-            )
-            .height(30)
-            .height_policy(SizePolicy.FIXED)
+                .fixed_height(20),
+            ).fixed_height(30)
         )
 
         # Description
         description = (
-            Text(self._card.description or "No description")
+            Text(self._card.description or "No description", font_size=14)
             .text_color(theme.colors.text_info)
-            .height(20)
-            .height_policy(SizePolicy.FIXED)
+            .fixed_height(20)
         )
 
         # Build content list
@@ -117,20 +109,18 @@ class AgentCardView(Component):
         # URL (optional)
         if self._show_url and self._card.url:
             url_text = (
-                Text(f"URL: {self._card.url}")
+                Text(f"URL: {self._card.url}", font_size=12)
                 .text_color(theme.colors.text_info)
-                .height(18)
-                .height_policy(SizePolicy.FIXED)
+                .fixed_height(18)
             )
             content.append(url_text)
 
         # Skills section (optional)
         if self._show_skills and self._card.skills:
             skills_header = (
-                Text(f"Skills ({len(self._card.skills)})")
+                Text(f"Skills ({len(self._card.skills)})", font_size=14)
                 .text_color(theme.colors.text_primary)
-                .height(20)
-                .height_policy(SizePolicy.FIXED)
+                .fixed_height(20)
             )
             content.append(skills_header)
 
@@ -138,19 +128,16 @@ class AgentCardView(Component):
             skills_row = (
                 Row(
                     *[SkillBadge(s) for s in self._card.skills[:5]],  # Limit to 5
-                )
-                .height(32)
-                .height_policy(SizePolicy.FIXED)
+                ).fixed_height(32)
             )
             content.append(skills_row)
 
             # Show remaining count if more than 5
             if len(self._card.skills) > 5:
                 more_text = (
-                    Text(f"+{len(self._card.skills) - 5} more skills")
+                    Text(f"+{len(self._card.skills) - 5} more skills", font_size=12)
                     .text_color(theme.colors.text_info)
-                    .height(16)
-                    .height_policy(SizePolicy.FIXED)
+                    .fixed_height(16)
                 )
                 content.append(more_text)
 
@@ -202,10 +189,9 @@ class AgentListView(Component):
 
         if not self._cards:
             return (
-                Text("No agents found")
+                Text("No agents found", font_size=14)
                 .text_color(theme.colors.text_info)
-                .height(40)
-                .height_policy(SizePolicy.FIXED)
+                .fixed_height(40)
             )
 
         items = []

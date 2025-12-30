@@ -243,10 +243,9 @@ class AgentChat(Component):
             msg_box = (
                 Box(
                     Column(
-                        Text(role_label)
+                        Text(role_label, font_size=14)
                         .text_color(role_color)
-                        .height(20)
-                        .height_policy(SizePolicy.FIXED),
+                        .fixed_height(20),
                         content_widget,
                     ).height_policy(SizePolicy.CONTENT)
                 )
@@ -261,14 +260,12 @@ class AgentChat(Component):
             loading_box = (
                 Box(
                     Column(
-                        Text("Assistant")
+                        Text("Assistant", font_size=14)
                         .text_color(theme.colors.text_info)
-                        .height(20)
-                        .height_policy(SizePolicy.FIXED),
-                        Text("Thinking...")
+                        .fixed_height(20),
+                        Text("Thinking...", font_size=14)
                         .text_color(theme.colors.text_info)
-                        .height(24)
-                        .height_policy(SizePolicy.FIXED),
+                        .fixed_height(24),
                     ).height_policy(SizePolicy.CONTENT)
                 )
                 .bg_color(theme.colors.bg_secondary)
@@ -288,13 +285,9 @@ class AgentChat(Component):
         # Input area
         elements.append(
             Row(
-                MultilineInput(self._input_state, font_size=14)
-                .height(40)
-                .height_policy(SizePolicy.FIXED),
+                MultilineInput(self._input_state, font_size=14).fixed_height(40),
                 self._create_send_button(theme),
-            )
-            .height(56)
-            .height_policy(SizePolicy.FIXED)
+            ).fixed_height(56)
         )
 
         return Column(*elements)
@@ -307,10 +300,8 @@ class AgentChat(Component):
         return (
             Button(label)
             .on_click(self._send_message)
-            .width(80)
-            .width_policy(SizePolicy.FIXED)
-            .height(40)
-            .height_policy(SizePolicy.FIXED)
+            .fixed_width(80)
+            .fixed_height(40)
         )
 
     def run(self):

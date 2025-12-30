@@ -29,6 +29,11 @@ class SliderDemo(Component):
         self._temperature = SliderState(22.0, min_val=-20.0, max_val=40.0)
         self._temperature.attach(self)
 
+        # RGB sliders - need SliderState to preserve values across rebuilds
+        self._red = SliderState(128, min_val=0, max_val=255)
+        self._green = SliderState(64, min_val=0, max_val=255)
+        self._blue = SliderState(192, min_val=0, max_val=255)
+
     def view(self):
         theme = ThemeManager().current
 
@@ -81,19 +86,19 @@ class SliderDemo(Component):
                 Row(
                     Column(
                         Text("R").height(24).height_policy(SizePolicy.FIXED),
-                        Slider(128, min_val=0, max_val=255)
+                        Slider(self._red)
                         .height(30)
                         .height_policy(SizePolicy.FIXED),
                     ),
                     Column(
                         Text("G").height(24).height_policy(SizePolicy.FIXED),
-                        Slider(64, min_val=0, max_val=255)
+                        Slider(self._green)
                         .height(30)
                         .height_policy(SizePolicy.FIXED),
                     ),
                     Column(
                         Text("B").height(24).height_policy(SizePolicy.FIXED),
-                        Slider(192, min_val=0, max_val=255)
+                        Slider(self._blue)
                         .height(30)
                         .height_policy(SizePolicy.FIXED),
                     ),

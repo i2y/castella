@@ -129,29 +129,18 @@ class ArcElement:
         start = normalize(self.start_angle)
         end = normalize(self.end_angle)
 
-        # Calculate the arc sweep direction and check if angle is within
-        # For gauge charts: arc goes from start toward end (may be clockwise or counter-clockwise)
-        # For pie charts: arc typically goes counter-clockwise from start to end
-
-        if abs(start - end) < 0.001:
-            # Very small arc, probably shouldn't match
-            return False
-
-        # Check if angle is between start and end, considering the shorter arc
-        # Calculate the angular distance from start to end going counter-clockwise
+        # For pie charts, the arc always goes counter-clockwise from start to end
+        # Calculate the angular span from start to end (counter-clockwise)
         ccw_span = (end - start) % (2 * math.pi)
-        # Angular distance from start to angle going counter-clockwise
+
+        # Handle full circle case
+        if ccw_span < 0.001:
+            ccw_span = 2 * math.pi
+
+        # Angular distance from start to the point (counter-clockwise)
         ccw_to_angle = (angle - start) % (2 * math.pi)
 
-        # If ccw_span is more than pi, the arc goes clockwise (shorter path)
-        if ccw_span > math.pi:
-            # Clockwise arc: check if angle is in the clockwise direction from start to end
-            cw_span = 2 * math.pi - ccw_span
-            cw_to_angle = (start - angle) % (2 * math.pi)
-            return cw_to_angle <= cw_span
-        else:
-            # Counter-clockwise arc
-            return ccw_to_angle <= ccw_span
+        return ccw_to_angle <= ccw_span
 
     @property
     def centroid(self) -> Point:

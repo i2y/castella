@@ -120,12 +120,22 @@ class Text(Widget):
         return super().height_policy(sp)
 
     def measure(self, p: Painter) -> Size:
-        p.save()
-        p.style(self._text_style)
-        state: State = cast(State, self._state)
-        s = Size(width=p.measure_text(str(state)), height=self._text_style.font.size)
-        p.restore()
-        return s
+        # For FIXED policy, return the fixed size
+        width = self._size.width if self._width_policy is SizePolicy.FIXED else None
+        height = self._size.height if self._height_policy is SizePolicy.FIXED else None
+
+        # Only measure content if needed
+        if width is None or height is None:
+            p.save()
+            p.style(self._text_style)
+            state: State = cast(State, self._state)
+            if width is None:
+                width = p.measure_text(str(state))
+            if height is None:
+                height = self._text_style.font.size
+            p.restore()
+
+        return Size(width=width, height=height)
 
 
 class SimpleText(Widget):
@@ -229,9 +239,19 @@ class SimpleText(Widget):
         return super().height_policy(sp)
 
     def measure(self, p: Painter) -> Size:
-        p.save()
-        p.style(self._text_style)
-        state: State = cast(State, self._state)
-        s = Size(width=p.measure_text(str(state)), height=self._text_style.font.size)
-        p.restore()
-        return s
+        # For FIXED policy, return the fixed size
+        width = self._size.width if self._width_policy is SizePolicy.FIXED else None
+        height = self._size.height if self._height_policy is SizePolicy.FIXED else None
+
+        # Only measure content if needed
+        if width is None or height is None:
+            p.save()
+            p.style(self._text_style)
+            state: State = cast(State, self._state)
+            if width is None:
+                width = p.measure_text(str(state))
+            if height is None:
+                height = self._text_style.font.size
+            p.restore()
+
+        return Size(width=width, height=height)

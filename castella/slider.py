@@ -159,6 +159,10 @@ class Slider(Widget):
         state = cast(SliderState, self._state)
         size = self.get_size()
 
+        # Skip drawing if size is not yet set (widget not in tree)
+        if size.width == 0 or size.height == 0:
+            return
+
         # Calculate dimensions
         track_height = max(4, size.height * 0.2)
         track_y = (size.height - track_height) / 2

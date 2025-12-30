@@ -54,16 +54,33 @@ class TabsState(ObservableBase):
             selected_id: ID of initially selected tab (defaults to first tab)
         """
         super().__init__()
-        self._tabs = tabs or []
+        self.__tabs = tabs or []  # Use __tabs for internal storage
         self._selected_id = selected_id
 
         # Default to first tab if not specified
-        if self._selected_id is None and self._tabs:
-            self._selected_id = self._tabs[0].id
+        if self._selected_id is None and self.__tabs:
+            self._selected_id = self.__tabs[0].id
+
+    @property
+    def _tabs(self) -> list[TabItem]:
+        """Internal tab list property."""
+        return self.__tabs
+
+    @_tabs.setter
+    def _tabs(self, value: list[TabItem]) -> None:
+        """Set tab list with automatic cleanup of old content."""
+        self._detach_old_content(self.__tabs)
+        self.__tabs = value
+
+    def _detach_old_content(self, old_tabs: list[TabItem]) -> None:
+        """Detach content widgets from old tabs to prevent orphaned observers."""
+        for tab in old_tabs:
+            if tab.content is not None and hasattr(tab.content, "detach"):
+                tab.content.detach()
 
     def tabs(self) -> list[TabItem]:
         """Get list of tabs."""
-        return self._tabs
+        return self.__tabs
 
     def selected_id(self) -> str | None:
         """Get ID of currently selected tab."""
@@ -75,14 +92,14 @@ class TabsState(ObservableBase):
         Args:
             tab_id: ID of the tab to select
         """
-        if any(t.id == tab_id for t in self._tabs):
+        if any(t.id == tab_id for t in self.__tabs):
             if self._selected_id != tab_id:
                 self._selected_id = tab_id
                 self.notify()
 
     def get_selected_tab(self) -> TabItem | None:
         """Get the currently selected TabItem."""
-        for tab in self._tabs:
+        for tab in self.__tabs:
             if tab.id == self._selected_id:
                 return tab
         return None
@@ -93,7 +110,7 @@ class TabsState(ObservableBase):
         Args:
             tab: The TabItem to add
         """
-        self._tabs.append(tab)
+        self.__tabs.append(tab)
         if self._selected_id is None:
             self._selected_id = tab.id
         self.notify()
@@ -104,10 +121,16 @@ class TabsState(ObservableBase):
         Args:
             tab_id: ID of the tab to remove
         """
-        self._tabs = [t for t in self._tabs if t.id != tab_id]
+        # Detach the removed tab's content
+        for tab in self.__tabs:
+            if tab.id == tab_id and tab.content is not None:
+                if hasattr(tab.content, "detach"):
+                    tab.content.detach()
+                break
+        self.__tabs = [t for t in self.__tabs if t.id != tab_id]
         # If removed tab was selected, select first available
         if self._selected_id == tab_id:
-            self._selected_id = self._tabs[0].id if self._tabs else None
+            self._selected_id = self.__tabs[0].id if self.__tabs else None
         self.notify()
 
     def set_tabs(self, tabs: list[TabItem]) -> None:
@@ -116,11 +139,13 @@ class TabsState(ObservableBase):
         Args:
             tabs: New list of TabItem instances
         """
-        self._tabs = tabs
+        # Detach old content widgets
+        self._detach_old_content(self.__tabs)
+        self.__tabs = tabs
         # Ensure selected_id is valid
-        if self._tabs:
-            if not any(t.id == self._selected_id for t in self._tabs):
-                self._selected_id = self._tabs[0].id
+        if self.__tabs:
+            if not any(t.id == self._selected_id for t in self.__tabs):
+                self._selected_id = self.__tabs[0].id
         else:
             self._selected_id = None
         self.notify()

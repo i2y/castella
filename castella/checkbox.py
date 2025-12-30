@@ -30,6 +30,7 @@ class CheckBox(Widget):
         self._off_label = off_label
         self._is_circle = is_circle
         self._on_click = lambda _: ...
+        self._on_change: Callable[[bool], Any] = lambda _: ...
         self._kind = Kind.NORMAL
         self._appearance_state = AppearanceState.NORMAL
         super().__init__(
@@ -51,11 +52,25 @@ class CheckBox(Widget):
 
     def mouse_up(self, ev: MouseEvent) -> None:
         state: State[bool] = cast(State[bool], self._state)
-        state.set(not state.value())
+        new_value = not state.value()
+        state.set(new_value)
         self._on_click(ev)
+        self._on_change(new_value)
 
     def on_click(self, callback: Callable[[MouseEvent], Any]) -> Self:
         self._on_click = callback
+        return self
+
+    def on_change(self, callback: Callable[[bool], Any]) -> Self:
+        """Set callback for when checkbox state changes.
+
+        Args:
+            callback: Function called with the new checked state (True/False)
+
+        Returns:
+            Self for method chaining
+        """
+        self._on_change = callback
         return self
 
     def redraw(self, p: Painter, _: bool) -> None:

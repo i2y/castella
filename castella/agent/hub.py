@@ -253,10 +253,9 @@ class AgentHub(Component):
 
         # Title
         title = (
-            Text("Agents")
+            Text("Agents", font_size=18)
             .text_color(theme.colors.text_primary)
-            .height(30)
-            .height_policy(SizePolicy.FIXED)
+            .fixed_height(30)
         )
         items.append(title)
 
@@ -267,8 +266,7 @@ class AgentHub(Component):
             card = (
                 Button(f"{client.name}\n{client.description or 'No description'}")
                 .on_click(lambda ev, idx=i: self._select_agent(idx))
-                .height(60)
-                .height_policy(SizePolicy.FIXED)
+                .fixed_height(60)
             )
             if is_selected:
                 card = card.kind(Kind.INFO)
@@ -277,10 +275,9 @@ class AgentHub(Component):
         # Empty state
         if not self._agents:
             empty_text = (
-                Text("No agents added")
+                Text("No agents added", font_size=14)
                 .text_color(theme.colors.text_info)
-                .height(40)
-                .height_policy(SizePolicy.FIXED)
+                .fixed_height(40)
             )
             items.append(empty_text)
 
@@ -290,27 +287,19 @@ class AgentHub(Component):
         # Add agent section
         add_section = (
             Column(
-                Text("Add Agent")
+                Text("Add Agent", font_size=14)
                 .text_color(theme.colors.text_info)
-                .height(24)
-                .height_policy(SizePolicy.FIXED),
+                .fixed_height(24),
                 Row(
                     Input(self._url_input())
                     .on_change(lambda t: self._url_input.set(t))
-                    .height(32)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(32),
                     Button("Add")
                     .on_click(self._add_agent_from_input)
-                    .width(60)
-                    .width_policy(SizePolicy.FIXED)
-                    .height(32)
-                    .height_policy(SizePolicy.FIXED),
-                )
-                .height(40)
-                .height_policy(SizePolicy.FIXED),
-            )
-            .height(80)
-            .height_policy(SizePolicy.FIXED)
+                    .fixed_width(60)
+                    .fixed_height(32),
+                ).fixed_height(40),
+            ).fixed_height(80)
         )
         items.append(add_section)
 
@@ -360,10 +349,9 @@ class AgentHub(Component):
             msg_box = (
                 Box(
                     Column(
-                        Text(role_label)
+                        Text(role_label, font_size=14)
                         .text_color(role_color)
-                        .height(20)
-                        .height_policy(SizePolicy.FIXED),
+                        .fixed_height(20),
                         content_widget,
                     ).height_policy(SizePolicy.CONTENT)
                 )
@@ -378,14 +366,12 @@ class AgentHub(Component):
             loading_box = (
                 Box(
                     Column(
-                        Text(client.name)
+                        Text(client.name, font_size=14)
                         .text_color(theme.colors.text_info)
-                        .height(20)
-                        .height_policy(SizePolicy.FIXED),
-                        Text("Thinking...")
+                        .fixed_height(20),
+                        Text("Thinking...", font_size=14)
                         .text_color(theme.colors.text_info)
-                        .height(24)
-                        .height_policy(SizePolicy.FIXED),
+                        .fixed_height(24),
                     ).height_policy(SizePolicy.CONTENT)
                 )
                 .bg_color(theme.colors.bg_secondary)
@@ -404,18 +390,12 @@ class AgentHub(Component):
         send_label = "..." if loading() else "Send"
         input_area = (
             Row(
-                MultilineInput(input_state, font_size=14)
-                .height(40)
-                .height_policy(SizePolicy.FIXED),
+                MultilineInput(input_state, font_size=14).fixed_height(40),
                 Button(send_label)
                 .on_click(lambda _: self._send_message(index))
-                .width(80)
-                .width_policy(SizePolicy.FIXED)
-                .height(40)
-                .height_policy(SizePolicy.FIXED),
-            )
-            .height(56)
-            .height_policy(SizePolicy.FIXED)
+                .fixed_width(80)
+                .fixed_height(40),
+            ).fixed_height(56)
         )
 
         return Column(messages_area, input_area)

@@ -18,6 +18,7 @@ from castella.core import (
     StatefulComponent,
     Widget,
 )
+from castella.models import Point
 from castella.row import Row
 from castella.spacer import Spacer
 from castella.text import Text
@@ -125,6 +126,8 @@ class Modal(StatefulComponent):
 
         self._modal_state = state or ModalState(False)
         super().__init__(self._modal_state)
+        # Modal must have high z-index to receive events before other content
+        self.z_index(98)
 
     def view(self) -> Widget:
         """Build the modal UI."""
@@ -179,6 +182,132 @@ class Modal(StatefulComponent):
         )
 
         return Box(backdrop, modal_dialog)
+
+    def redraw(self, p, completely: bool) -> None:
+        """Draw the modal. Skip drawing when closed to avoid covering other content."""
+        if not self._modal_state.is_open():
+            # Don't draw anything when closed - the child is a 0x0 Spacer
+            # and we don't want to draw the Layout background
+            return
+        super().redraw(p, completely)
+
+    def dispatch(self, p):
+        """Dispatch mouse events. When closed, don't capture events."""
+        if not self._modal_state.is_open():
+            # When closed, don't capture any events - let them pass through
+            return None, None
+
+        # If Modal not yet laid out, still block events (don't pass through)
+        size = self.get_size()
+        if size.width == 0 or size.height == 0:
+            # Block event by returning self, but don't dispatch to children
+            return self, Point(x=0, y=0)
+
+        # Ensure child widget is created (normally done in redraw)
+        # This is needed because dispatch may be called before redraw
+        if self._child is None:
+            self._child = self.view()
+            self.add(self._child)
+            # Only do manual layout if child was just created
+            # (real layout hasn't happened yet via redraw)
+            self._layout_for_dispatch()
+
+        return super().dispatch(p)
+
+    def _layout_for_dispatch(self) -> None:
+        """Layout child widgets for event dispatch without a Painter.
+
+        This is a simplified layout that works for Modal's specific structure.
+        Recursively layouts widgets using EXPANDING/FIXED policies.
+        """
+        size = self.get_size()
+        pos = self.get_pos()
+
+        if self._child is None:
+            return
+
+        # Size and position the Box (Modal's direct child)
+        self._child.resize(size.model_copy())
+        self._child.move(pos)
+
+        # Recursively layout all descendants
+        self._layout_widget_tree(self._child, size, pos)
+
+    def _layout_widget_tree(self, widget: Widget, parent_size, parent_pos) -> None:
+        """Recursively layout a widget and its children for dispatch."""
+        from castella.core import SizePolicy
+
+        if not hasattr(widget, '_children'):
+            return
+
+        # Calculate positions for children
+        # This is a simplified layout - works for Box, Column, Row
+        current_y = parent_pos.y
+        current_x = parent_pos.x
+
+        for c in widget._children:
+            # Set size based on policy
+            if c.get_width_policy() is SizePolicy.EXPANDING:
+                c.width(parent_size.width)
+            elif c.get_width_policy() is SizePolicy.FIXED:
+                pass  # Already set
+
+            if c.get_height_policy() is SizePolicy.EXPANDING:
+                c.height(parent_size.height)
+            elif c.get_height_policy() is SizePolicy.FIXED:
+                pass  # Already set
+
+            child_width = c.get_width()
+            child_height = c.get_height()
+
+            # Position based on widget type
+            widget_type = type(widget).__name__
+
+            if widget_type == 'Box':
+                # Box centers fixed-size children
+                if c.get_width_policy() is SizePolicy.FIXED and child_width < parent_size.width:
+                    c.move_x(parent_pos.x + (parent_size.width - child_width) / 2)
+                else:
+                    c.move_x(parent_pos.x)
+
+                if c.get_height_policy() is SizePolicy.FIXED and child_height < parent_size.height:
+                    c.move_y(parent_pos.y + (parent_size.height - child_height) / 2)
+                else:
+                    c.move_y(parent_pos.y)
+
+            elif widget_type == 'Column':
+                # Column stacks vertically
+                c.move_x(parent_pos.x)
+                c.move_y(current_y)
+                current_y += child_height
+
+            elif widget_type == 'Row':
+                # Row stacks horizontally
+                c.move_x(current_x)
+                c.move_y(parent_pos.y)
+                current_x += child_width
+
+            else:
+                # Default: position at parent origin
+                c.move_x(parent_pos.x)
+                c.move_y(parent_pos.y)
+
+            # Recursively layout this child's children
+            from castella.models import Size
+            child_size = Size(width=child_width, height=child_height)
+            child_pos = c.get_pos()
+            self._layout_widget_tree(c, child_size, child_pos)
+
+    def contain(self, p) -> bool:
+        """Check if point is within modal.
+
+        When closed, always return False.
+        When open, return True to capture all events (modal is a fullscreen overlay).
+        """
+        if not self._modal_state.is_open():
+            return False
+        # Modal is a fullscreen overlay, so it captures all events when open
+        return True
 
     def _on_backdrop_click(self, _) -> None:
         """Handle backdrop click."""

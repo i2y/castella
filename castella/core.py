@@ -207,12 +207,16 @@ class ObservableBase(ABC):
         observer.on_attach(self)
 
     def detach(self, observer: Observer) -> None:
-        self._observers.remove(observer)
-        observer.on_detach(self)
+        if observer in self._observers:
+            self._observers.remove(observer)
+            observer.on_detach(self)
 
     def notify(self, event: Any = None) -> None:
-        for o in self._observers:
-            o.on_notify(event)
+        # Iterate over a copy to avoid issues if observers are modified during notification
+        for o in list(self._observers):
+            # Skip if observer was detached during iteration
+            if o in self._observers:
+                o.on_notify(event)
 
     def on_update(self, callback: Callable) -> None:
         self.attach(UpdateListener(callback))
@@ -417,7 +421,9 @@ class Widget(ABC):
 
     def detach(self) -> None:
         if self._enable_to_detach:
-            for o in self._observable:
+            # Create a copy to avoid modification during iteration
+            # (on_detach removes from self._observable)
+            for o in list(self._observable):
                 o.detach(self)
         # Clear any App-level references to this widget to prevent
         # ghost redraws after the widget is removed from the tree
@@ -902,7 +908,7 @@ class App:
         if target is not None and p is not None:
             ev.target = target
             self._prev_abs_pos = ev.pos
-            ev.pos = p - target.get_pos()
+            ev.pos = p  # p is already local coordinates from dispatch()
             self._prev_rel_pos = ev.pos
             target.mouse_down(ev)
             self._downed = target
@@ -1112,9 +1118,13 @@ class Layout(Widget, ABC):
                 target, adjusted_p = c.dispatch(p)
                 if target is not None:
                     return target, adjusted_p
-            return self, p
+            # Return position relative to this widget's origin
+            local_p = Point(x=p.x - self._pos.x, y=p.y - self._pos.y)
+            return self, local_p
         elif self.contain(p):
-            return self, p
+            # Return position relative to this widget's origin
+            local_p = Point(x=p.x - self._pos.x, y=p.y - self._pos.y)
+            return self, local_p
         else:
             return None, None
 

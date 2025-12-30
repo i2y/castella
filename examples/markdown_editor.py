@@ -3,13 +3,12 @@
 from castella import (
     App,
     Box,
-    Button,
     Column,
     Component,
     Markdown,
     Row,
+    ScrollState,
     SizePolicy,
-    State,
     Text,
 )
 from castella.frame import Frame
@@ -42,6 +41,8 @@ class MarkdownEditor(Component):
         self._text_state = MultilineInputState(INITIAL_MARKDOWN.strip())
         # Attach state to component - preview updates when editing finishes
         self._text_state.attach(self)
+        # ScrollState to preserve preview scroll position across re-renders
+        self._preview_scroll = ScrollState()
 
     def view(self):
         return Row(
@@ -72,6 +73,7 @@ class MarkdownEditor(Component):
                     )
                     .width_policy(SizePolicy.EXPANDING)
                     .height_policy(SizePolicy.CONTENT),
+                    scroll_state=self._preview_scroll,
                 )
                 .width_policy(SizePolicy.EXPANDING)
                 .height_policy(SizePolicy.EXPANDING),

@@ -226,10 +226,9 @@ class MultiAgentChat(Component):
             msg_box = (
                 Box(
                     Column(
-                        Text(role_label)
+                        Text(role_label, font_size=14)
                         .text_color(role_color)
-                        .height(20)
-                        .height_policy(SizePolicy.FIXED),
+                        .fixed_height(20),
                         content_widget,
                     ).height_policy(SizePolicy.CONTENT)
                 )
@@ -246,14 +245,12 @@ class MultiAgentChat(Component):
             loading_box = (
                 Box(
                     Column(
-                        Text(agent_name)
+                        Text(agent_name, font_size=14)
                         .text_color(theme.colors.text_info)
-                        .height(20)
-                        .height_policy(SizePolicy.FIXED),
-                        Text("Thinking...")
+                        .fixed_height(20),
+                        Text("Thinking...", font_size=14)
                         .text_color(theme.colors.text_info)
-                        .height(24)
-                        .height_policy(SizePolicy.FIXED),
+                        .fixed_height(24),
                     ).height_policy(SizePolicy.CONTENT)
                 )
                 .bg_color(theme.colors.bg_secondary)
@@ -272,18 +269,12 @@ class MultiAgentChat(Component):
         send_label = "..." if loading() else "Send"
         input_area = (
             Row(
-                MultilineInput(input_state, font_size=14)
-                .height(40)
-                .height_policy(SizePolicy.FIXED),
+                MultilineInput(input_state, font_size=14).fixed_height(40),
                 Button(send_label)
                 .on_click(lambda _: self._send_message(agent_id))
-                .width(80)
-                .width_policy(SizePolicy.FIXED)
-                .height(40)
-                .height_policy(SizePolicy.FIXED),
-            )
-            .height(56)
-            .height_policy(SizePolicy.FIXED)
+                .fixed_width(80)
+                .fixed_height(40),
+            ).fixed_height(56)
         )
 
         return Column(messages_area, input_area)

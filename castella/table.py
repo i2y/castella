@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, PrivateAttr
 from castella.column import Column
 from castella.core import (
     Observer,
+    ScrollState,
     StatefulComponent,
     Widget,
     EM,
@@ -159,6 +160,8 @@ class DataTable(StatefulComponent):
     def __init__(self, model: TableModel):
         super().__init__(model)
         self._model = model
+        # ScrollState to preserve scroll position across re-renders
+        self._scroll_state = ScrollState()
 
     def view(self) -> Widget:
         header = (
@@ -187,4 +190,4 @@ class DataTable(StatefulComponent):
             for row in range(self._model.get_row_count())
         ]
 
-        return Column(header, Column(*rows, scrollable=True))
+        return Column(header, Column(*rows, scrollable=True, scroll_state=self._scroll_state))
