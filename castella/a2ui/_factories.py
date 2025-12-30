@@ -18,6 +18,7 @@ from castella.a2ui.types import (
     DateTimeInputComponent,
     DividerComponent,
     ExplicitChildren,
+    IconComponent,
     ImageComponent,
     ListComponent,
     LiteralBoolean,
@@ -97,9 +98,8 @@ def create_text(
 
     text_value = resolve_value(component.text, data_model, "")
 
-    widget = Text(str(text_value))
-
-    # Apply usage hint styling
+    # Determine font size based on usage hint
+    font_size = None
     if component.usage_hint:
         # Map A2UI usage hints to font sizes
         size_map = {
@@ -112,6 +112,12 @@ def create_text(
             TextUsageHint.CAPTION: 12,
         }
         font_size = size_map.get(component.usage_hint, 14)
+
+    # Create widget with font_size if specified
+    widget = Text(str(text_value), font_size=font_size)
+
+    # Apply fixed height for elements with usage_hint to ensure proper layout
+    if font_size is not None:
         widget = widget.fixed_height(font_size + 16)  # Add padding
 
     # Apply flex weight if specified
@@ -165,13 +171,29 @@ def create_textfield(
     data_model: dict[str, Any],
     action_handler: ActionHandler,
 ) -> Widget:
-    """Create an Input widget from an A2UI TextField component."""
+    """Create an Input widget from an A2UI TextField component.
+
+    Supports both A2UI 0.9 spec usageHint values (shortText, longText, obscured)
+    and Castella's values (text, password, multiline).
+    """
+    from castella.a2ui.types import TextFieldUsageHint
     from castella.input import Input
 
     # Get current value
     text_value = resolve_value(component.text, data_model, "")
+    hint = component.usage_hint
 
-    widget = Input(str(text_value))
+    # Select widget type based on usage hint
+    # Support both A2UI 0.9 spec values and Castella values
+    if hint in (TextFieldUsageHint.PASSWORD, TextFieldUsageHint.OBSCURED):
+        widget = Input(str(text_value), password=True)
+    elif hint in (TextFieldUsageHint.MULTILINE, TextFieldUsageHint.LONG_TEXT):
+        from castella.multiline_input import MultilineInput
+
+        widget = MultilineInput(str(text_value), font_size=14)
+    else:
+        # text, shortText, email, number, phone, url - use standard Input
+        widget = Input(str(text_value))
 
     # If the text is a binding, set up two-way binding via on_change
     if isinstance(component.text, DataBinding):
@@ -233,16 +255,21 @@ def create_slider(
     action_handler: ActionHandler,
 ) -> Widget:
     """Create a Slider widget from an A2UI Slider component."""
+    from castella.box import Box
     from castella.slider import Slider
+    from castella.theme import ThemeManager
 
     # Get current value
     value = resolve_value(component.value, data_model, 0.0)
 
-    widget = Slider(
+    slider = Slider(
         value=float(value) if value is not None else 0.0,
         min_val=component.min,
         max_val=component.max,
     )
+
+    # Set fixed height
+    slider = slider.height(40).height_policy(SizePolicy.FIXED)
 
     # If value is a binding, set up two-way binding via on_change
     if isinstance(component.value, DataBinding):
@@ -255,7 +282,16 @@ def create_slider(
                 {"path": path, "value": new_value},
             )
 
-        widget = widget.on_change(on_change)
+        slider = slider.on_change(on_change)
+
+    # Wrap in Box with background color to prevent afterimage rendering bug
+    theme = ThemeManager().current
+    widget = (
+        Box(slider)
+        .bg_color(theme.colors.bg_secondary)
+        .height(50)
+        .height_policy(SizePolicy.FIXED)
+    )
 
     # Apply flex weight if specified
     if component.weight is not None:
@@ -315,12 +351,71 @@ def create_image(
     action_handler: ActionHandler,
 ) -> Widget:
     """Create an Image widget from an A2UI Image component."""
-    from castella.net_image import NetImage
+    from castella.net_image import ImageFit, NetImage
 
     src = resolve_value(component.src, data_model, "")
 
-    # Use NetImage for URLs
-    widget = NetImage(str(src))
+    # Use NetImage with CONTAIN fit to maintain aspect ratio
+    # Set EXPANDING policies so image fills available space
+    widget = (
+        NetImage(str(src), fit=ImageFit.CONTAIN)
+        .width_policy(SizePolicy.EXPANDING)
+        .height_policy(SizePolicy.EXPANDING)
+    )
+
+    # Apply flex weight if specified
+    if component.weight is not None:
+        widget = widget.flex(int(component.weight))
+
+    return widget
+
+
+def create_icon(
+    component: IconComponent,
+    data_model: dict[str, Any],
+    action_handler: ActionHandler,
+) -> Widget:
+    """Create a Text widget as placeholder for A2UI Icon component.
+
+    Material Icons are not directly supported in Castella, so we render
+    the icon name as text (emoji) for now.
+    """
+    from castella.text import Text
+
+    icon_name = resolve_value(component.name, data_model, "")
+
+    # Map common material icons to Unicode emoji/symbols
+    icon_map = {
+        "calendar_today": "📅",
+        "location_on": "📍",
+        "mail": "✉️",
+        "call": "📞",
+        "check_circle": "✓",
+        "person": "👤",
+        "search": "🔍",
+        "settings": "⚙️",
+        "home": "🏠",
+        "star": "⭐",
+        "favorite": "❤️",
+        "close": "✕",
+        "add": "+",
+        "remove": "-",
+        "edit": "✎",
+        "delete": "🗑",
+        "info": "ℹ",
+        "warning": "⚠",
+        "error": "⚠",
+    }
+
+    display_text = icon_map.get(str(icon_name), f"[{icon_name}]")
+
+    # Use specified size or default
+    size = int(component.size) if component.size else 24
+
+    widget = Text(display_text, font_size=size)
+
+    # Apply fixed size for icons
+    widget = widget.fixed_height(size + 8).fixed_width(size + 8)
 
     # Apply flex weight if specified
     if component.weight is not None:
@@ -390,11 +485,19 @@ def create_card(
     data_model: dict[str, Any],
     action_handler: ActionHandler,
 ) -> Widget:
-    """Create a Box widget from an A2UI Card component."""
-    from castella.box import Box
+    """Create a Column widget from an A2UI Card component.
+
+    Card is a container that lays out children vertically.
+    We use Column instead of Box because Box stacks children
+    on top of each other (z-order), while Column lays them out.
+    """
+    from castella.column import Column
+    from castella.theme import ThemeManager
+
+    theme = ThemeManager().current
 
     # Note: Children will be added by the renderer after all components are created
-    widget = Box()
+    widget = Column().bg_color(theme.colors.bg_secondary)
 
     # Apply flex weight if specified
     if component.weight is not None:

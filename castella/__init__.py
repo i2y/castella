@@ -12,6 +12,7 @@ from castella.multiline_input import (
     MultilineInputState as MultilineInputState,
 )
 from castella.multiline_text import MultilineText as MultilineText
+from castella.net_image import ImageFit as ImageFit
 from castella.net_image import NetImage as NetImage
 
 try:

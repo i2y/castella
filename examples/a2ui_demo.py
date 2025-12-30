@@ -22,18 +22,39 @@ Run with:
 """
 
 from castella import App
-from castella.a2ui import A2UIRenderer, UserAction
+from castella.a2ui import A2UIComponent, A2UIRenderer, UserAction
 from castella.frame import Frame
 
 
 def main():
-    # Create renderer with action handler
+    # Counter state for updateDataModel demo
+    counter_value = [0]  # Use list for mutability in closure
+
+    # Create renderer (we'll set up action handler after renderer is created)
+    renderer = A2UIRenderer()
+
+    # Action handler that demonstrates updateDataModel
     def on_action(action: UserAction):
         print(f"Action: {action.name}")
         print(f"  Source: {action.source_component_id}")
         print(f"  Context: {action.context}")
 
-    renderer = A2UIRenderer(on_action=on_action)
+        # Handle increment_counter action to demonstrate updateDataModel
+        if action.name == "increment_counter":
+            counter_value[0] += 1
+            # Send updateDataModel message to update the UI
+            renderer.handle_message({
+                "updateDataModel": {
+                    "surfaceId": "default",
+                    "data": {
+                        "/counter": f"Counter: {counter_value[0]}",
+                    },
+                }
+            })
+            print(f"  Counter updated to: {counter_value[0]}")
+
+    # Set the action handler
+    renderer._on_action = on_action
 
     # Comprehensive A2UI JSON with all supported components
     a2ui_json = {
@@ -81,6 +102,8 @@ def main():
                 "children": {"explicitList": [
                     "form_title",
                     "text_field_row",
+                    "password_field_row",
+                    "multiline_section",
                     "checkbox_row",
                     "slider_section",
                     "datetime_section",
@@ -112,6 +135,42 @@ def main():
                 "component": "TextField",
                 "text": {"literalString": ""},
                 "usageHint": "text",
+            },
+
+            # Password Field (usageHint: password)
+            {
+                "id": "password_field_row",
+                "component": "Row",
+                "children": {"explicitList": ["password_label", "password_input"]},
+            },
+            {
+                "id": "password_label",
+                "component": "Text",
+                "text": {"literalString": "Password:"},
+            },
+            {
+                "id": "password_input",
+                "component": "TextField",
+                "text": {"literalString": ""},
+                "usageHint": "password",
+            },
+
+            # Multiline Field (usageHint: multiline)
+            {
+                "id": "multiline_section",
+                "component": "Column",
+                "children": {"explicitList": ["multiline_label", "multiline_input"]},
+            },
+            {
+                "id": "multiline_label",
+                "component": "Text",
+                "text": {"literalString": "Comments:"},
+            },
+            {
+                "id": "multiline_input",
+                "component": "TextField",
+                "text": {"literalString": "Enter multiple lines here..."},
+                "usageHint": "multiline",
             },
 
             # CheckBox
@@ -204,6 +263,7 @@ def main():
                 "component": "Column",
                 "children": {"explicitList": [
                     "display_title",
+                    "counter_section",
                     "list_section",
                     "markdown_content",
                 ]},
@@ -215,6 +275,33 @@ def main():
                 "component": "Text",
                 "text": {"literalString": "Display Components"},
                 "usageHint": "h3",
+            },
+
+            # Data Binding Test (updateDataModel)
+            {
+                "id": "counter_section",
+                "component": "Column",
+                "children": {"explicitList": ["counter_title", "counter_text", "counter_btn"]},
+            },
+            {
+                "id": "counter_title",
+                "component": "Text",
+                "text": {"literalString": "Data Binding Test:"},
+                "usageHint": "caption",
+            },
+            {
+                "id": "counter_text",
+                "component": "Text",
+                "text": {"path": "/counter"},
+            },
+            {
+                "id": "counter_btn",
+                "component": "Button",
+                "text": {"literalString": "Increment Counter"},
+                "action": {
+                    "name": "increment_counter",
+                    "context": [],
+                },
             },
 
             # List with TemplateChildren
@@ -309,21 +396,26 @@ All render natively on **Desktop**, **Web**, and **Terminal**!
         "rootId": "root",
     }
 
-    # Initial data for List component
+    # Initial data for List component and counter
     initial_data = {
         "/users": [
             {"name": "Alice Johnson"},
             {"name": "Bob Smith"},
             {"name": "Charlie Brown"},
             {"name": "Diana Prince"},
-        ]
+        ],
+        "/counter": "Counter: 0",
     }
 
-    # Render A2UI JSON to Castella widget
-    widget = renderer.render_json(a2ui_json, initial_data=initial_data)
+    # Render A2UI JSON to create the surface
+    renderer.render_json(a2ui_json, initial_data=initial_data)
+
+    # Get the surface and wrap it in A2UIComponent for auto-update on data changes
+    surface = renderer.get_surface("default")
+    component = A2UIComponent(surface)
 
     # Run the app
-    App(Frame("A2UI Component Showcase", 1000, 700), widget).run()
+    App(Frame("A2UI Component Showcase", 1000, 700), component).run()
 
 
 if __name__ == "__main__":

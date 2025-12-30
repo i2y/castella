@@ -33,8 +33,19 @@ class TextUsageHint(str, Enum):
 
 
 class TextFieldUsageHint(str, Enum):
-    """Input type hints for TextField components."""
+    """Input type hints for TextField components.
 
+    Supports both A2UI 0.9 spec values and Castella-specific values:
+    - A2UI 0.9 spec: shortText, longText, obscured, number
+    - Castella: text, email, password, phone, url, multiline
+    """
+
+    # A2UI 0.9 spec values
+    SHORT_TEXT = "shortText"
+    LONG_TEXT = "longText"
+    OBSCURED = "obscured"
+
+    # Castella values (mapped from 0.9 spec via compat layer)
     TEXT = "text"
     EMAIL = "email"
     PASSWORD = "password"
@@ -298,6 +309,15 @@ class ModalComponent(BaseComponent):
     open: BooleanValue | None = None
 
 
+class IconComponent(BaseComponent):
+    """Icon display component (Material Icons)."""
+
+    component: Literal["Icon"] = "Icon"
+    name: StringValue  # Material icon name
+    size: float | None = None
+    color: str | None = None
+
+
 # Custom component for Castella-specific features
 class MarkdownComponent(BaseComponent):
     """Markdown display component (Castella extension)."""
@@ -324,6 +344,7 @@ Component = Union[
     ChoicePickerComponent,
     TabsComponent,
     ModalComponent,
+    IconComponent,
     MarkdownComponent,
 ]
 

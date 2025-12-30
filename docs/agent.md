@@ -170,24 +170,50 @@ widget = renderer.render_json({
 
 ### Supported A2UI Components
 
+Castella supports 17 standard A2UI components:
+
 | A2UI Component | Castella Widget | Notes |
 |----------------|-----------------|-------|
 | Text | Text | Supports usageHint (h1-h5, body, caption) |
 | Button | Button | Supports action with context |
-| TextField | Input | Two-way data binding |
+| TextField | Input/MultilineInput | usageHint: password (masked), multiline |
 | CheckBox | CheckBox | Two-way data binding |
 | Slider | Slider | Range input with min/max |
 | DateTimeInput | DateTimeInput | Date/time picker |
 | ChoicePicker | RadioButtons/Column | Single or multiple selection |
-| Image | NetImage | URL-based images |
+| Image | NetImage | URL-based images with aspect ratio preservation |
+| Icon | Text | Material Icons mapped to emoji/symbols |
 | Divider | Spacer | Horizontal/vertical |
 | Row | Row | Horizontal layout |
 | Column | Column | Vertical layout |
-| Card | Box | Container with styling |
+| Card | Column | Container with styling |
 | List | Column (scrollable) | Dynamic list with TemplateChildren |
 | Tabs | Tabs | Tabbed navigation |
 | Modal | Modal | Overlay dialog |
 | Markdown | Markdown | Castella extension |
+
+### A2UI 0.9 Specification Compatibility
+
+Castella supports both the official A2UI 0.9 spec format and its internal format. The `castella.a2ui.compat` module automatically normalizes messages:
+
+```python
+# A2UI 0.9 spec format (plain values - used by Google's sample agents)
+{"text": "Hello", "children": ["a", "b"], "usageHint": "shortText"}
+
+# Castella internal format (wrapped values)
+{"text": {"literalString": "Hello"}, "children": {"explicitList": ["a", "b"]}}
+
+# Both formats are accepted - normalization is automatic
+```
+
+Key format differences handled:
+
+- `text: "Hello"` → `text: {literalString: "Hello"}`
+- `children: ["a", "b"]` → `children: {explicitList: ["a", "b"]}`
+- `child: "id"` → `children: {explicitList: ["id"]}`
+- `usageHint: "shortText"` → `usageHint: "text"`
+- `usageHint: "obscured"` → `usageHint: "password"`
+- `updateDataModel: {path, op, value}` → `updateDataModel: {data: {path: value}}`
 
 ### Custom Components
 
@@ -268,6 +294,60 @@ async def connect_websocket():
 | `createSurface` | Create complete surface at once |
 | `updateDataModel` | Update data binding values |
 | `deleteSurface` | Remove a surface |
+
+### A2UIComponent (Reactive Updates)
+
+Use `A2UIComponent` to automatically rebuild the UI when `updateDataModel` is received:
+
+```python
+from castella import App
+from castella.a2ui import A2UIComponent, A2UIRenderer, UserAction
+from castella.frame import Frame
+
+renderer = A2UIRenderer()
+
+def on_action(action: UserAction):
+    if action.name == "increment":
+        # Send updateDataModel to update the UI
+        renderer.handle_message({
+            "updateDataModel": {
+                "surfaceId": "default",
+                "data": {"/counter": "Counter: 1"},
+            }
+        })
+
+renderer._on_action = on_action
+
+# Render initial UI
+renderer.render_json(a2ui_json, initial_data={"/counter": "Counter: 0"})
+
+# Wrap surface in A2UIComponent for auto-update
+surface = renderer.get_surface("default")
+component = A2UIComponent(surface)
+
+App(Frame("App", 800, 600), component).run()
+```
+
+### TextField usageHint
+
+TextField supports special input types via `usageHint`:
+
+```python
+# Password field (masked input ●●●●)
+{"id": "password", "component": "TextField",
+ "text": {"literalString": ""},
+ "usageHint": "password"}
+
+# Multiline field (uses MultilineInput)
+{"id": "comments", "component": "TextField",
+ "text": {"literalString": ""},
+ "usageHint": "multiline"}
+
+# Other hints (text, email, number, phone, url) use standard Input
+{"id": "email", "component": "TextField",
+ "text": {"literalString": ""},
+ "usageHint": "email"}
+```
 
 ## Chat Components
 
@@ -436,6 +516,36 @@ See the examples directory for working demos:
 - `examples/a2ui_mock_server.py` - Mock A2UI server with SSE streaming
 - `examples/a2ui_sse_client_demo.py` - SSE client that connects to A2UI server
 - `examples/a2a_demo.py` - A2A client/server demo
+- `examples/a2ui_mock_test.py` - Mock tests for all A2UI components
+- `examples/a2ui_google_agent_demo.py` - Connect to Google's A2UI sample agents
+
+### Testing with Google's Sample Agents
+
+Castella has been tested with Google's official A2UI sample agents:
+
+```bash
+# Clone Google's A2UI repository
+git clone https://github.com/google/A2UI /tmp/a2ui
+
+# Run the restaurant_finder agent (requires GEMINI_API_KEY)
+cd /tmp/a2ui/samples/agent/adk/restaurant_finder
+export GEMINI_API_KEY="your-key"
+uv run .
+
+# In another terminal, connect with Castella
+uv run python examples/a2ui_google_agent_demo.py
+```
+
+Mock tests are available for all components:
+
+```bash
+uv run python examples/a2ui_mock_test.py restaurant  # Restaurant list with images
+uv run python examples/a2ui_mock_test.py form        # Form with TextField, DateTimeInput
+uv run python examples/a2ui_mock_test.py tabs        # Tabs navigation
+uv run python examples/a2ui_mock_test.py icon        # Icon component (emoji mapping)
+uv run python examples/a2ui_mock_test.py modal       # Modal dialog
+uv run python examples/a2ui_mock_test.py choice      # ChoicePicker (radio/checkbox)
+```
 
 ## References
 

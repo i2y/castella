@@ -3,6 +3,9 @@
 The renderer takes A2UI messages (createSurface, updateComponents, etc.)
 and produces a tree of Castella widgets that can be displayed on any
 Castella-supported platform (Desktop, Web, Terminal).
+
+Supports both the official A2UI 0.9 specification format and Castella's
+internal format. Messages are automatically normalized via the compat module.
 """
 
 from __future__ import annotations
@@ -12,6 +15,7 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from castella.a2ui._factories import resolve_value
 from castella.a2ui.catalog import ComponentCatalog, get_default_catalog
+from castella.a2ui.compat import normalize_message
 from castella.a2ui.types import (
     BeginRendering,
     CardComponent,
@@ -27,25 +31,32 @@ from castella.a2ui.types import (
     UpdateDataModel,
     UserAction,
 )
-from castella.core import Widget
+from castella.core import Component as CastellaComponent
+from castella.core import ObservableBase, Widget
 
 if TYPE_CHECKING:
     pass
 
 
-class A2UISurface:
+class A2UISurface(ObservableBase):
     """Represents a rendered A2UI surface.
 
     A surface contains a tree of widgets, a data model, and manages
     the relationship between A2UI component IDs and Castella widgets.
+
+    The surface is observable - when the data model is updated via
+    updateDataModel message, observers (like A2UIComponent) are notified
+    to trigger a UI rebuild.
     """
 
     def __init__(self, surface_id: str, root_widget: Widget):
+        super().__init__()
         self.surface_id = surface_id
         self.root_widget = root_widget
         self._widgets: dict[str, Widget] = {}
         self._components: dict[str, Component] = {}  # Store component definitions
         self._data_model: dict[str, Any] = {}
+        self._root_id: str | None = None  # For re-rendering on data model updates
 
     def get_widget(self, component_id: str) -> Widget | None:
         """Get the widget for a component ID."""
@@ -79,6 +90,10 @@ class A2UISurface:
 
         if parts:
             current[parts[-1]] = value
+
+    def notify_update(self) -> None:
+        """Notify observers that the surface has been updated."""
+        self.notify()
 
 
 class A2UIRenderer:
@@ -166,6 +181,9 @@ class A2UIRenderer:
     ) -> A2UISurface | None:
         """Handle an A2UI server message.
 
+        Supports both A2UI 0.9 specification format and Castella's internal format.
+        Messages are automatically normalized to Castella's format.
+
         Args:
             message: The A2UI message (dict or ServerMessage)
 
@@ -173,6 +191,8 @@ class A2UIRenderer:
             The affected surface, or None if no surface was created/updated
         """
         if isinstance(message, dict):
+            # Normalize A2UI 0.9 spec format to Castella format
+            message = normalize_message(message)
             message = ServerMessage.model_validate(message)
 
         if message.begin_rendering:
@@ -256,6 +276,7 @@ class A2UIRenderer:
         surface._widgets = widgets
         surface._components = component_map  # Store component definitions
         surface._data_model = temp_surface._data_model
+        surface._root_id = root_id  # Store for re-rendering on data model updates
 
         self._surfaces[surface_id] = surface
         return surface
@@ -341,7 +362,11 @@ class A2UIRenderer:
             default=[],
         )
 
-        if not isinstance(array_data, list):
+        # Handle both list and dict (legacy valueMap format)
+        if isinstance(array_data, dict):
+            # Convert dict values to list for iteration
+            array_data = list(array_data.values())
+        elif not isinstance(array_data, list):
             return
 
         # Get template component
@@ -381,10 +406,19 @@ class A2UIRenderer:
                 scoped_data["_item"] = item
 
             # Create widget from template with scoped data
+            # We need to create the template widget AND its children with scoped data
             widget = self._catalog.create(
                 template_component,
                 scoped_data,
                 self._action_handler,
+            )
+
+            # Recursively create and connect child widgets with scoped data
+            self._create_template_children(
+                template_component,
+                widget,
+                component_map,
+                scoped_data,
             )
 
             # For List items, ensure they have CONTENT or FIXED height
@@ -395,10 +429,56 @@ class A2UIRenderer:
                 current_policy = widget._height_policy
                 if current_policy == SizePolicy.EXPANDING:
                     # Set fixed height for list items (default item height)
-                    widget = widget.fixed_height(40)
+                    widget = widget.fixed_height(100)
 
             # Add to parent
             self._add_child_to_parent(parent_widget, widget)
+
+    def _create_template_children(
+        self,
+        component: Component,
+        parent_widget: Widget,
+        component_map: dict[str, Component],
+        scoped_data: dict[str, Any],
+    ) -> None:
+        """Recursively create child widgets for a template with scoped data.
+
+        This ensures all nested children in a template are created with
+        the item-specific data model.
+        """
+        children_spec = None
+
+        if isinstance(component, (RowComponent, ColumnComponent, CardComponent)):
+            children_spec = component.children
+        elif isinstance(component, ListComponent):
+            children_spec = component.children
+
+        if children_spec is None:
+            return
+
+        if isinstance(children_spec, ExplicitChildren):
+            for child_id in children_spec.explicit_list:
+                child_component = component_map.get(child_id)
+                if child_component is None:
+                    continue
+
+                # Create child widget with scoped data
+                child_widget = self._catalog.create(
+                    child_component,
+                    scoped_data,
+                    self._action_handler,
+                )
+
+                # Add to parent
+                self._add_child_to_parent(parent_widget, child_widget)
+
+                # Recursively process grandchildren
+                self._create_template_children(
+                    child_component,
+                    child_widget,
+                    component_map,
+                    scoped_data,
+                )
 
     def _handle_update_components(self, msg: UpdateComponents) -> A2UISurface | None:
         """Update components in an existing surface (progressive rendering).
@@ -523,7 +603,7 @@ class A2UIRenderer:
         return surface
 
     def _handle_update_data_model(self, msg: UpdateDataModel) -> A2UISurface | None:
-        """Update the data model for a surface."""
+        """Update the data model for a surface and re-render bound widgets."""
         surface = self._surfaces.get(msg.surface_id)
         if surface is None:
             return None
@@ -532,7 +612,32 @@ class A2UIRenderer:
         for path, value in msg.data.items():
             surface.update_data(path, value)
 
-        # TODO: Trigger widget updates for bound values
+        # Re-render all components with updated data model
+        if surface._components and surface._root_id:
+            # Recreate all widgets with the new data model values
+            for comp_id, component in surface._components.items():
+                widget = self._catalog.create(
+                    component,
+                    surface._data_model,
+                    self._action_handler,
+                )
+                surface._widgets[comp_id] = widget
+
+            # Reconnect children for layout components
+            for comp_id, component in surface._components.items():
+                self._connect_children(
+                    component,
+                    surface._widgets,
+                    surface._components,
+                    surface,
+                )
+
+            # Update root_widget reference
+            surface.root_widget = surface._widgets[surface._root_id]
+
+            # Notify observers that the surface has been updated
+            surface.notify_update()
+
         return surface
 
     def get_surface(self, surface_id: str) -> A2UISurface | None:
@@ -591,6 +696,9 @@ class A2UIRenderer:
     ) -> Widget:
         """Render A2UI JSON directly.
 
+        Supports both A2UI 0.9 specification format and Castella's internal format.
+        Components are automatically normalized to Castella's format.
+
         Args:
             json_data: A2UI JSON with "components" and optional "rootId"
             surface_id: Surface ID to use
@@ -599,7 +707,11 @@ class A2UIRenderer:
         Returns:
             The root widget
         """
+        from castella.a2ui.compat import normalize_component
+
         components_data = json_data.get("components", [])
+        # Normalize each component to Castella's format
+        components_data = [normalize_component(c) for c in components_data]
         root_id = json_data.get("rootId")
         # Also check for data in json_data
         data_from_json = json_data.get("data", {})
@@ -614,6 +726,7 @@ class A2UIRenderer:
             ColumnComponent,
             DateTimeInputComponent,
             DividerComponent,
+            IconComponent,
             ImageComponent,
             ListComponent as ListComp,
             MarkdownComponent,
@@ -634,6 +747,7 @@ class A2UIRenderer:
             "DateTimeInput": DateTimeInputComponent,
             "ChoicePicker": ChoicePickerComponent,
             "Image": ImageComponent,
+            "Icon": IconComponent,
             "Divider": DividerComponent,
             "Row": RowComponent,
             "Column": ColumnComponent,
@@ -775,3 +889,30 @@ class A2UIRenderer:
         if surface_id:
             return self.get_surface(surface_id)
         return last_surface
+
+
+class A2UIComponent(CastellaComponent):
+    """A Castella Component that wraps an A2UI surface.
+
+    This component automatically rebuilds its view when the underlying
+    A2UI surface is updated (e.g., via updateDataModel message).
+
+    Example:
+        renderer = A2UIRenderer(on_action=on_action)
+        surface = renderer.handle_message(create_surface_msg)
+
+        # Create component that auto-updates on data changes
+        component = A2UIComponent(surface)
+
+        # Run the app
+        App(Frame("A2UI App", 800, 600), component).run()
+    """
+
+    def __init__(self, surface: A2UISurface):
+        super().__init__()
+        self._surface = surface
+        self._surface.attach(self)
+
+    def view(self) -> Widget:
+        """Return the current root widget from the surface."""
+        return self._surface.root_widget

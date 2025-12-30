@@ -453,10 +453,10 @@ Image("path/to/image.png")
 
 ## NetImage
 
-Display images from URLs with caching support.
+Display images from URLs with caching and fit mode support.
 
 ```python
-from castella import NetImage
+from castella import NetImage, ImageFit
 
 # Basic usage
 img = NetImage("https://example.com/image.png")
@@ -464,11 +464,27 @@ img = NetImage("https://example.com/image.png")
 # Disable cache
 img = NetImage("https://example.com/image.png", use_cache=False)
 
+# With ImageFit modes (aspect ratio preservation)
+img = NetImage("https://example.com/image.png", fit=ImageFit.CONTAIN)  # Fit within bounds
+img = NetImage("https://example.com/image.png", fit=ImageFit.COVER)    # Cover bounds (may crop)
+img = NetImage("https://example.com/image.png", fit=ImageFit.FILL)     # Stretch to fill (default)
+
+# Chain with fit() method
+img = NetImage(url).fit(ImageFit.CONTAIN)
+
 # With reactive URL
 from castella import State
 url = State("https://example.com/image.png")
 img = NetImage(url)
 ```
+
+### ImageFit Modes
+
+| Mode | Description |
+|------|-------------|
+| `FILL` | Stretch to fill bounds (may distort aspect ratio) - default |
+| `CONTAIN` | Scale to fit within bounds, maintaining aspect ratio (letterbox) |
+| `COVER` | Scale to cover bounds, maintaining aspect ratio (may crop) |
 
 ### Parameters
 
@@ -476,6 +492,7 @@ img = NetImage(url)
 |-----------|------|---------|-------------|
 | `url` | str or State[str] | required | Image URL |
 | `use_cache` | bool | True | Cache downloaded images |
+| `fit` | ImageFit | FILL | How image fits within bounds |
 
 Uses CONTENT size policy by default (sizes to image dimensions).
 

@@ -85,16 +85,14 @@ class AgentCardView(Component):
         theme = ThemeManager().current
 
         # Header with name and version
-        header = (
-            Row(
-                Text(self._card.name, font_size=16)
-                .text_color(theme.colors.text_primary)
-                .fixed_height(24),
-                Text(f"v{self._card.version}", font_size=14)
-                .text_color(theme.colors.text_info)
-                .fixed_height(20),
-            ).fixed_height(30)
-        )
+        header = Row(
+            Text(self._card.name, font_size=16)
+            .text_color(theme.colors.text_primary)
+            .fixed_height(24),
+            Text(f"v{self._card.version}", font_size=14)
+            .text_color(theme.colors.text_info)
+            .fixed_height(20),
+        ).fixed_height(30)
 
         # Description
         description = (
@@ -125,11 +123,9 @@ class AgentCardView(Component):
             content.append(skills_header)
 
             # Create skill badges in rows
-            skills_row = (
-                Row(
-                    *[SkillBadge(s) for s in self._card.skills[:5]],  # Limit to 5
-                ).fixed_height(32)
-            )
+            skills_row = Row(
+                *[SkillBadge(s) for s in self._card.skills[:5]],  # Limit to 5
+            ).fixed_height(32)
             content.append(skills_row)
 
             # Show remaining count if more than 5

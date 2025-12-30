@@ -298,10 +298,7 @@ class AgentChat(Component):
 
         label = "..." if self._is_loading() else "Send"
         return (
-            Button(label)
-            .on_click(self._send_message)
-            .fixed_width(80)
-            .fixed_height(40)
+            Button(label).on_click(self._send_message).fixed_width(80).fixed_height(40)
         )
 
     def run(self):

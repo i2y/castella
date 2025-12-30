@@ -131,9 +131,7 @@ class ChatMessage(Component):
         # Role label
         if self._show_role_label:
             header_parts = [
-                Text(role_label, font_size=14)
-                .text_color(role_color)
-                .fixed_height(20)
+                Text(role_label, font_size=14).text_color(role_color).fixed_height(20)
             ]
 
             if self._show_timestamp:
@@ -241,19 +239,17 @@ class ChatInput(Component):
             self._input_state.set("")
 
     def view(self):
-        return (
-            Row(
-                MultilineInput(
-                    self._input_state,
-                    font_size=14,
-                    wrap=True,
-                ).fixed_height(self._min_height),
-                Button(self._send_label)
-                .on_click(self._handle_send)
-                .fixed_width(80)
-                .fixed_height(self._min_height),
-            ).fixed_height(self._min_height + 16)
-        )
+        return Row(
+            MultilineInput(
+                self._input_state,
+                font_size=14,
+                wrap=True,
+            ).fixed_height(self._min_height),
+            Button(self._send_label)
+            .on_click(self._handle_send)
+            .fixed_width(80)
+            .fixed_height(self._min_height),
+        ).fixed_height(self._min_height + 16)
 
 
 class ChatView(Component):

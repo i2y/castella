@@ -285,22 +285,20 @@ class AgentHub(Component):
         items.append(Spacer())
 
         # Add agent section
-        add_section = (
-            Column(
-                Text("Add Agent", font_size=14)
-                .text_color(theme.colors.text_info)
-                .fixed_height(24),
-                Row(
-                    Input(self._url_input())
-                    .on_change(lambda t: self._url_input.set(t))
-                    .fixed_height(32),
-                    Button("Add")
-                    .on_click(self._add_agent_from_input)
-                    .fixed_width(60)
-                    .fixed_height(32),
-                ).fixed_height(40),
-            ).fixed_height(80)
-        )
+        add_section = Column(
+            Text("Add Agent", font_size=14)
+            .text_color(theme.colors.text_info)
+            .fixed_height(24),
+            Row(
+                Input(self._url_input())
+                .on_change(lambda t: self._url_input.set(t))
+                .fixed_height(32),
+                Button("Add")
+                .on_click(self._add_agent_from_input)
+                .fixed_width(60)
+                .fixed_height(32),
+            ).fixed_height(40),
+        ).fixed_height(80)
         items.append(add_section)
 
         return (
@@ -388,15 +386,13 @@ class AgentHub(Component):
 
         # Input area
         send_label = "..." if loading() else "Send"
-        input_area = (
-            Row(
-                MultilineInput(input_state, font_size=14).fixed_height(40),
-                Button(send_label)
-                .on_click(lambda _: self._send_message(index))
-                .fixed_width(80)
-                .fixed_height(40),
-            ).fixed_height(56)
-        )
+        input_area = Row(
+            MultilineInput(input_state, font_size=14).fixed_height(40),
+            Button(send_label)
+            .on_click(lambda _: self._send_message(index))
+            .fixed_width(80)
+            .fixed_height(40),
+        ).fixed_height(56)
 
         return Column(messages_area, input_area)
 

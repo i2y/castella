@@ -51,7 +51,11 @@ from castella.a2ui.catalog import (
     get_default_catalog,
     reset_default_catalog,
 )
-from castella.a2ui.renderer import A2UIRenderer, A2UISurface
+from castella.a2ui.compat import (
+    normalize_component,
+    normalize_message,
+)
+from castella.a2ui.renderer import A2UIComponent, A2UIRenderer, A2UISurface
 from castella.a2ui.stream import (
     JSONLParser,
     parse_async_stream,
@@ -119,12 +123,16 @@ from castella.a2ui.types import (
 
 __all__ = [
     # Renderer
+    "A2UIComponent",
     "A2UIRenderer",
     "A2UISurface",
     # Catalog
     "ComponentCatalog",
     "get_default_catalog",
     "reset_default_catalog",
+    # Compatibility
+    "normalize_component",
+    "normalize_message",
     # Stream parsing
     "JSONLParser",
     "parse_async_stream",

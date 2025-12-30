@@ -267,15 +267,13 @@ class MultiAgentChat(Component):
 
         # Input area
         send_label = "..." if loading() else "Send"
-        input_area = (
-            Row(
-                MultilineInput(input_state, font_size=14).fixed_height(40),
-                Button(send_label)
-                .on_click(lambda _: self._send_message(agent_id))
-                .fixed_width(80)
-                .fixed_height(40),
-            ).fixed_height(56)
-        )
+        input_area = Row(
+            MultilineInput(input_state, font_size=14).fixed_height(40),
+            Button(send_label)
+            .on_click(lambda _: self._send_message(agent_id))
+            .fixed_width(80)
+            .fixed_height(40),
+        ).fixed_height(56)
 
         return Column(messages_area, input_area)
 

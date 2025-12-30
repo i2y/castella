@@ -56,6 +56,7 @@ class ComponentCatalog:
             create_column,
             create_datetime_input,
             create_divider,
+            create_icon,
             create_image,
             create_list,
             create_markdown,
@@ -71,6 +72,7 @@ class ComponentCatalog:
             # Display components
             "Text": create_text,
             "Image": create_image,
+            "Icon": create_icon,
             "Divider": create_divider,
             "Markdown": create_markdown,
             # Interactive components

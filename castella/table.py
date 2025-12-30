@@ -190,4 +190,6 @@ class DataTable(StatefulComponent):
             for row in range(self._model.get_row_count())
         ]
 
-        return Column(header, Column(*rows, scrollable=True, scroll_state=self._scroll_state))
+        return Column(
+            header, Column(*rows, scrollable=True, scroll_state=self._scroll_state)
+        )

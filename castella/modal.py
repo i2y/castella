@@ -237,7 +237,7 @@ class Modal(StatefulComponent):
         """Recursively layout a widget and its children for dispatch."""
         from castella.core import SizePolicy
 
-        if not hasattr(widget, '_children'):
+        if not hasattr(widget, "_children"):
             return
 
         # Calculate positions for children
@@ -263,25 +263,31 @@ class Modal(StatefulComponent):
             # Position based on widget type
             widget_type = type(widget).__name__
 
-            if widget_type == 'Box':
+            if widget_type == "Box":
                 # Box centers fixed-size children
-                if c.get_width_policy() is SizePolicy.FIXED and child_width < parent_size.width:
+                if (
+                    c.get_width_policy() is SizePolicy.FIXED
+                    and child_width < parent_size.width
+                ):
                     c.move_x(parent_pos.x + (parent_size.width - child_width) / 2)
                 else:
                     c.move_x(parent_pos.x)
 
-                if c.get_height_policy() is SizePolicy.FIXED and child_height < parent_size.height:
+                if (
+                    c.get_height_policy() is SizePolicy.FIXED
+                    and child_height < parent_size.height
+                ):
                     c.move_y(parent_pos.y + (parent_size.height - child_height) / 2)
                 else:
                     c.move_y(parent_pos.y)
 
-            elif widget_type == 'Column':
+            elif widget_type == "Column":
                 # Column stacks vertically
                 c.move_x(parent_pos.x)
                 c.move_y(current_y)
                 current_y += child_height
 
-            elif widget_type == 'Row':
+            elif widget_type == "Row":
                 # Row stacks horizontally
                 c.move_x(current_x)
                 c.move_y(parent_pos.y)
@@ -294,6 +300,7 @@ class Modal(StatefulComponent):
 
             # Recursively layout this child's children
             from castella.models import Size
+
             child_size = Size(width=child_width, height=child_height)
             child_pos = c.get_pos()
             self._layout_widget_tree(c, child_size, child_pos)

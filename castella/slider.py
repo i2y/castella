@@ -1,4 +1,19 @@
-"""Slider widget for range input with drag interaction."""
+"""Slider widget for range input with drag interaction.
+
+TODO: Fix afterimage rendering bug
+    When the Slider widget is used without a parent Box that has bg_color set,
+    the thumb leaves afterimages (previous positions are not cleared properly).
+
+    Workaround: Wrap Slider in a Box with bg_color set.
+
+    Example (works correctly):
+        Box(
+            Slider(state).height(40).height_policy(SizePolicy.FIXED),
+        ).bg_color(theme.colors.bg_secondary).height(50).height_policy(SizePolicy.FIXED)
+
+    Root cause investigation needed - likely related to dirty region calculation
+    or the redraw mechanism not properly clearing the thumb's previous position.
+"""
 
 from typing import Callable, Self, cast
 

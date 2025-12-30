@@ -112,6 +112,7 @@ class Input(Text):
         text: str | InputState,
         align: TextAlign = TextAlign.LEFT,
         font_size: int | None = None,
+        password: bool = False,
     ):
         if isinstance(text, InputState):
             super().__init__(text, Kind.NORMAL, align, font_size)
@@ -121,6 +122,8 @@ class Input(Text):
         # For click-to-position calculation
         self._last_font_size: float = 14.0
         self._last_text_x: float = 0.0
+        # Password mode: mask input with bullets
+        self._password = password
 
     def redraw(self, p: Painter, _: bool) -> None:
         state: InputState = cast(InputState, self._state)
@@ -133,11 +136,16 @@ class Input(Text):
 
         width = size.width
         height = size.height
+
+        # Determine display text (masked for password mode)
+        actual_text = str(state)
+        display_text = "●" * len(actual_text) if self._password else actual_text
+
         font_family, font_size = determine_font(
             width,
             height,
             self._text_style,
-            str(state),
+            display_text,
         )
         p.style(
             self._text_style.model_copy(
@@ -148,12 +156,12 @@ class Input(Text):
         cap_height = p.get_font_metrics().cap_height
         if self._align is TextAlign.CENTER:
             pos = Point(
-                x=width / 2 - p.measure_text(str(state)) / 2,
+                x=width / 2 - p.measure_text(display_text) / 2,
                 y=height / 2 + cap_height / 2,
             )
         elif self._align is TextAlign.RIGHT:
             pos = Point(
-                x=width - p.measure_text(str(state)) - self._rect_style.padding,
+                x=width - p.measure_text(display_text) - self._rect_style.padding,
                 y=height / 2 + cap_height / 2,
             )
         else:
@@ -163,7 +171,7 @@ class Input(Text):
             )
 
         p.fill_text(
-            text=str(state),
+            text=display_text,
             pos=pos,
             max_width=width,
         )
@@ -173,7 +181,7 @@ class Input(Text):
         self._last_text_x = pos.x
 
         if state.is_in_editing():
-            caret_pos_x = p.measure_text(str(state)[: state.get_caret_pos()])
+            caret_pos_x = p.measure_text(display_text[: state.get_caret_pos()])
             caret_pos = Point(
                 x=pos.x + caret_pos_x,
                 y=pos.y - cap_height - (font_size - cap_height) / 2,
