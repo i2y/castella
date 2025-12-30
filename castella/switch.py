@@ -56,12 +56,17 @@ class Switch(Widget):
 
         state = cast(SimpleValue[bool], self._state)
         if state.value():
-            p.style(self._selected_bg_style)
+            bg_style = self._selected_bg_style
         else:
-            p.style(self._bg_style)
+            bg_style = self._bg_style
+
+        p.style(bg_style)
         p.fill_circle(left_circle)
-        p.fill_rect(center_rect)
         p.fill_circle(right_circle)
+
+        # Draw center rect with border_radius=0 to connect smoothly with circles
+        p.style(bg_style.model_copy(update={"border_radius": 0}))
+        p.fill_rect(center_rect)
 
     def _draw_knob(self, p: Painter) -> None:
         s = self.get_size()
