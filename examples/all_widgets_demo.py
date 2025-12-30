@@ -1,0 +1,1297 @@
+"""All Widgets Demo - Comprehensive showcase of all Castella widgets.
+
+This demo includes 29 widgets organized into 6 tabs:
+- Basic: Text, SimpleText, MultilineText, Button
+- Input: Input, MultilineInput, CheckBox, RadioButtons, Switch, Slider, DateTimeInput
+- Layout: Column, Row, Box, Spacer
+- Data: DataTable, Tree, FileTree, Modal, Markdown
+- Media: NetImage
+- Charts: BarChart, LineChart, PieChart, ScatterChart, AreaChart, StackedBarChart, GaugeChart
+"""
+
+from castella import (
+    App,
+    Box,
+    Button,
+    CheckBox,
+    Column,
+    ColumnConfig,
+    Component,
+    DataTable,
+    DataTableState,
+    DateTimeInput,
+    DateTimeInputState,
+    FileTree,
+    FileTreeState,
+    Input,
+    Kind,
+    Markdown,
+    Modal,
+    ModalState,
+    MultilineInput,
+    MultilineInputState,
+    MultilineText,
+    NetImage,
+    RadioButtons,
+    RadioButtonsState,
+    Row,
+    SelectionMode,
+    SimpleText,
+    SizePolicy,
+    Slider,
+    SliderState,
+    Spacer,
+    State,
+    Switch,
+    Tabs,
+    TabsState,
+    TabItem,
+    Text,
+    Tree,
+    TreeNode,
+    TreeState,
+)
+from castella.chart import (
+    AreaChart,
+    BarChart,
+    CategoricalChartData,
+    CategoricalSeries,
+    GaugeChart,
+    GaugeChartData,
+    GaugeStyle,
+    LineChart,
+    NumericChartData,
+    NumericSeries,
+    PieChart,
+    PointShape,
+    ScatterChart,
+    SeriesStyle,
+    StackedBarChart,
+)
+from castella.frame import Frame
+from castella.theme import ThemeManager
+
+
+class AllWidgetsDemo(Component):
+    """Main demo component showcasing all Castella widgets."""
+
+    def __init__(self):
+        super().__init__()
+        self._theme = ThemeManager()
+
+        # Tab navigation state
+        self._tab_id = State("basic")
+        self._tab_id.attach(self)
+
+        # Basic tab states
+        self._counter = State(0)
+        self._counter.attach(self)
+
+        # Input tab states
+        self._input_text = State("")  # Don't attach - Input manages
+        self._multiline_state = MultilineInputState(
+            "Type here...\nMultiple lines supported.\nWith scrolling!"
+        )
+        self._checkbox1 = State(False)
+        self._checkbox1.attach(self)
+        self._checkbox2 = State(True)
+        self._checkbox2.attach(self)
+        self._radio_state = RadioButtonsState(
+            labels=["Option A", "Option B", "Option C"],
+            selected_index=0,
+        )
+        self._radio_state.attach(self)
+        self._switch_on = State(True)
+        self._switch_on.attach(self)
+        self._slider_state = SliderState(value=50, min_val=0, max_val=100)
+        self._slider_state.attach(self)
+        self._datetime_state = DateTimeInputState(
+            value="2024-12-25T14:30:00",
+            enable_date=True,
+            enable_time=True,
+        )
+        self._datetime_state.attach(self)
+
+        # Layout tab states
+        self._z_top = State(3)
+        self._z_top.attach(self)
+
+        # Data tab states
+        self._table_state = DataTableState(
+            columns=[
+                ColumnConfig(name="Name", width=100, sortable=True),
+                ColumnConfig(name="Age", width=60, sortable=True),
+                ColumnConfig(name="Country", width=100, sortable=True),
+            ],
+            rows=[
+                ["Alice", 30, "Japan"],
+                ["Bob", 25, "USA"],
+                ["Charlie", 35, "UK"],
+                ["Diana", 28, "Germany"],
+                ["Eve", 32, "France"],
+            ],
+            selection_mode=SelectionMode.MULTI,
+        )
+
+        self._tree_state = TreeState(
+            nodes=[
+                TreeNode(
+                    id="docs",
+                    label="Documents",
+                    icon="📁",
+                    children=[
+                        TreeNode(id="readme", label="README.md", icon="📄"),
+                        TreeNode(id="license", label="LICENSE", icon="📄"),
+                    ],
+                ),
+                TreeNode(
+                    id="src",
+                    label="Source",
+                    icon="📁",
+                    children=[
+                        TreeNode(id="main", label="main.py", icon="🐍"),
+                        TreeNode(id="utils", label="utils.py", icon="🐍"),
+                    ],
+                ),
+            ],
+            multi_select=False,
+        )
+
+        self._file_tree_state = FileTreeState(
+            root_path=".",
+            show_hidden=False,
+            dirs_first=True,
+        )
+
+        self._modal_state = ModalState()
+        self._modal_state.attach(self)
+
+        self._status = State("Ready")
+        self._status.attach(self)
+
+        # ============================================================
+        # Chart Data - Rich and Complex
+        # ============================================================
+
+        # --- BarChart Data: Regional Sales Comparison (3 years, 6 regions) ---
+        self._bar_data = CategoricalChartData(title="Regional Sales Performance")
+        self._bar_data.add_series(
+            CategoricalSeries.from_values(
+                name="2022",
+                categories=["North America", "Europe", "Asia Pacific", "Latin America", "Middle East", "Africa"],
+                values=[145, 132, 178, 67, 45, 38],
+                style=SeriesStyle(color="#6366f1"),
+            )
+        )
+        self._bar_data.add_series(
+            CategoricalSeries.from_values(
+                name="2023",
+                categories=["North America", "Europe", "Asia Pacific", "Latin America", "Middle East", "Africa"],
+                values=[162, 148, 195, 78, 52, 44],
+                style=SeriesStyle(color="#22c55e"),
+            )
+        )
+        self._bar_data.add_series(
+            CategoricalSeries.from_values(
+                name="2024",
+                categories=["North America", "Europe", "Asia Pacific", "Latin America", "Middle East", "Africa"],
+                values=[189, 167, 223, 92, 61, 53],
+                style=SeriesStyle(color="#f59e0b"),
+            )
+        )
+
+        # --- LineChart Data: Stock Price Movement (multiple stocks, 12 months) ---
+        self._line_data = NumericChartData(title="Stock Price Movement (2024)")
+        self._line_data.add_series(
+            NumericSeries.from_y_values(
+                name="TECH Corp",
+                y_values=[150, 158, 162, 155, 168, 175, 182, 178, 190, 195, 188, 205],
+                style=SeriesStyle(color="#3b82f6"),
+            )
+        )
+        self._line_data.add_series(
+            NumericSeries.from_y_values(
+                name="HEALTH Inc",
+                y_values=[85, 88, 92, 95, 91, 98, 102, 108, 105, 112, 118, 125],
+                style=SeriesStyle(color="#22c55e"),
+            )
+        )
+        self._line_data.add_series(
+            NumericSeries.from_y_values(
+                name="ENERGY Ltd",
+                y_values=[72, 68, 75, 82, 78, 85, 80, 88, 92, 87, 95, 98],
+                style=SeriesStyle(color="#ef4444"),
+            )
+        )
+
+        # --- PieChart Data: Market Share (more segments) ---
+        self._pie_data = CategoricalChartData(title="Browser Market Share 2024")
+        self._pie_data.add_series(
+            CategoricalSeries.from_values(
+                name="Browsers",
+                categories=["Chrome", "Safari", "Edge", "Firefox", "Opera", "Samsung", "Other"],
+                values=[63.5, 19.8, 5.2, 2.8, 2.4, 2.3, 4.0],
+            )
+        )
+
+        # --- Second PieChart: OS Market Share ---
+        self._pie_data_2 = CategoricalChartData(title="Desktop OS Market Share")
+        self._pie_data_2.add_series(
+            CategoricalSeries.from_values(
+                name="OS",
+                categories=["Windows", "macOS", "Linux", "ChromeOS", "Other"],
+                values=[72.1, 15.4, 4.2, 2.8, 5.5],
+            )
+        )
+
+        # --- ScatterChart Data: Correlation Analysis (multiple datasets) ---
+        self._scatter_data = NumericChartData(title="Height vs Weight Correlation")
+        self._scatter_data.add_series(
+            NumericSeries.from_values(
+                name="Male",
+                x_values=[165, 170, 175, 180, 185, 168, 172, 178, 182, 176, 169, 183, 177, 171, 179],
+                y_values=[65, 72, 78, 85, 92, 68, 75, 82, 88, 79, 67, 90, 80, 73, 84],
+                style=SeriesStyle(color="#3b82f6"),
+            )
+        )
+        self._scatter_data.add_series(
+            NumericSeries.from_values(
+                name="Female",
+                x_values=[155, 160, 165, 158, 162, 168, 157, 163, 159, 166, 161, 164, 156, 167, 170],
+                y_values=[50, 55, 60, 52, 57, 65, 51, 58, 54, 62, 56, 59, 49, 63, 67],
+                style=SeriesStyle(color="#ec4899"),
+            )
+        )
+
+        # --- AreaChart Data: Website Traffic (multiple metrics) ---
+        self._area_data = NumericChartData(title="Website Traffic Analysis")
+        self._area_data.add_series(
+            NumericSeries.from_y_values(
+                name="Page Views",
+                y_values=[12000, 15000, 14500, 18000, 22000, 19500, 25000, 28000, 26500, 31000, 35000, 38000],
+                style=SeriesStyle(color="#06b6d4"),
+            )
+        )
+        self._area_data.add_series(
+            NumericSeries.from_y_values(
+                name="Unique Visitors",
+                y_values=[4500, 5200, 5000, 6200, 7500, 6800, 8500, 9200, 8800, 10500, 12000, 13500],
+                style=SeriesStyle(color="#8b5cf6"),
+            )
+        )
+        self._area_data.add_series(
+            NumericSeries.from_y_values(
+                name="Conversions",
+                y_values=[450, 520, 480, 620, 750, 680, 850, 920, 880, 1050, 1200, 1350],
+                style=SeriesStyle(color="#22c55e"),
+            )
+        )
+
+        # --- StackedBarChart Data: Product Category Sales (4 products, 6 months) ---
+        self._stacked_data = CategoricalChartData(title="Product Category Sales by Month")
+        self._stacked_data.add_series(
+            CategoricalSeries.from_values(
+                name="Electronics",
+                categories=["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+                values=[45, 52, 48, 61, 58, 67],
+                style=SeriesStyle(color="#3b82f6"),
+            )
+        )
+        self._stacked_data.add_series(
+            CategoricalSeries.from_values(
+                name="Clothing",
+                categories=["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+                values=[32, 38, 42, 35, 48, 52],
+                style=SeriesStyle(color="#22c55e"),
+            )
+        )
+        self._stacked_data.add_series(
+            CategoricalSeries.from_values(
+                name="Home & Garden",
+                categories=["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+                values=[18, 22, 28, 32, 38, 42],
+                style=SeriesStyle(color="#f59e0b"),
+            )
+        )
+        self._stacked_data.add_series(
+            CategoricalSeries.from_values(
+                name="Sports",
+                categories=["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+                values=[15, 18, 22, 25, 30, 35],
+                style=SeriesStyle(color="#ef4444"),
+            )
+        )
+
+        # --- GaugeChart Data: System Metrics ---
+        self._gauge_cpu = GaugeChartData(
+            title="CPU Usage",
+            value=67,
+            min_value=0,
+            max_value=100,
+            value_format="{:.0f}%",
+            thresholds=[(0.0, "#22c55e"), (0.6, "#f59e0b"), (0.85, "#ef4444")],
+        )
+
+        self._gauge_memory = GaugeChartData(
+            title="Memory Usage",
+            value=78,
+            min_value=0,
+            max_value=100,
+            value_format="{:.0f}%",
+            thresholds=[(0.0, "#22c55e"), (0.7, "#f59e0b"), (0.9, "#ef4444")],
+        )
+
+        self._gauge_disk = GaugeChartData(
+            title="Disk Usage",
+            value=45,
+            min_value=0,
+            max_value=100,
+            value_format="{:.0f}%",
+            thresholds=[(0.0, "#22c55e"), (0.75, "#f59e0b"), (0.9, "#ef4444")],
+        )
+
+        self._gauge_network = GaugeChartData(
+            title="Network Load",
+            value=32,
+            min_value=0,
+            max_value=100,
+            value_format="{:.0f}%",
+            thresholds=[(0.0, "#22c55e"), (0.5, "#f59e0b"), (0.8, "#ef4444")],
+        )
+
+    def view(self):
+        theme = self._theme.current
+
+        # Build tab contents
+        basic_content = self._build_basic_tab(theme)
+        input_content = self._build_input_tab(theme)
+        layout_content = self._build_layout_tab(theme)
+        data_content = self._build_data_tab(theme)
+        media_content = self._build_media_tab(theme)
+        dashboard_content = self._build_dashboard_tab(theme)
+        bar_chart_content = self._build_bar_chart_tab(theme)
+        line_area_content = self._build_line_area_tab(theme)
+        pie_scatter_content = self._build_pie_scatter_tab(theme)
+        stacked_gauge_content = self._build_stacked_gauge_tab(theme)
+
+        # Create tabs
+        tabs_state = TabsState(
+            [
+                TabItem(id="basic", label="Basic", content=basic_content),
+                TabItem(id="input", label="Input", content=input_content),
+                TabItem(id="layout", label="Layout", content=layout_content),
+                TabItem(id="data", label="Data", content=data_content),
+                TabItem(id="media", label="Media", content=media_content),
+                TabItem(id="dashboard", label="Dashboard", content=dashboard_content),
+                TabItem(id="bar", label="Bar", content=bar_chart_content),
+                TabItem(id="line", label="Line/Area", content=line_area_content),
+                TabItem(id="pie", label="Pie/Scatter", content=pie_scatter_content),
+                TabItem(id="gauge", label="Stacked/Gauge", content=stacked_gauge_content),
+            ],
+            self._tab_id(),
+        )
+
+        tabs = Tabs(tabs_state).on_change(lambda id: self._tab_id.set(id))
+
+        main_content = Column(
+            Text("All Widgets Demo", font_size=20)
+            .text_color(theme.colors.text_primary)
+            .height(40)
+            .height_policy(SizePolicy.FIXED),
+            tabs,
+            Row(
+                Text(self._status(), font_size=12).text_color(theme.colors.fg),
+                Spacer(),
+                Button("Toggle Theme").on_click(self._toggle_theme),
+            )
+            .height(35)
+            .height_policy(SizePolicy.FIXED),
+        ).bg_color(theme.colors.bg_primary).z_index(1)
+
+        # Modal overlay
+        modal = Modal(
+            content=Column(
+                Text("Modal Dialog", font_size=16),
+                MultilineText(
+                    "This is a modal dialog.\nClick backdrop or button to close.",
+                    font_size=12,
+                ),
+                Spacer(),
+                Button("Close").on_click(lambda _: self._modal_state.close()),
+            ),
+            state=self._modal_state,
+            title="Modal Demo",
+        )
+
+        return Box(main_content, modal)
+
+    def _toggle_theme(self, _):
+        self._theme.toggle_dark_mode()
+        mode = "Dark" if self._theme.current.is_dark else "Light"
+        self._status.set(f"Theme: {mode} mode")
+
+    def _build_basic_tab(self, theme):
+        """Basic tab: Text, SimpleText, MultilineText, Button."""
+        count = self._counter()
+
+        if count > 0:
+            kind, msg = Kind.SUCCESS, "Positive!"
+        elif count < 0:
+            kind, msg = Kind.DANGER, "Negative!"
+        else:
+            kind, msg = Kind.INFO, "Zero"
+
+        return Column(
+            # Text widget
+            Text("Text Widget", font_size=16)
+            .text_color(theme.colors.text_primary)
+            .height(30)
+            .height_policy(SizePolicy.FIXED),
+            Text(f"Count: {count}", font_size=24)
+            .text_color(theme.colors.text_info)
+            .height(40)
+            .height_policy(SizePolicy.FIXED),
+            # SimpleText widget
+            Text("SimpleText Widget:", font_size=14)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            SimpleText(f"Simple text showing count = {count}")
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            # MultilineText widget
+            Text("MultilineText Widget:", font_size=14)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            MultilineText(f"Status: {msg}\nCount is {count}", font_size=12, kind=kind)
+            .height(50)
+            .height_policy(SizePolicy.FIXED),
+            Spacer().height(10).height_policy(SizePolicy.FIXED),
+            # Button widgets with Kind styling
+            Text("Button Widget (with Kind styling):", font_size=14)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            Row(
+                Button("-5", kind=Kind.DANGER).on_click(
+                    lambda _: self._counter.set(self._counter() - 5)
+                ),
+                Button("-1").on_click(
+                    lambda _: self._counter.set(self._counter() - 1)
+                ),
+                Button("0", kind=Kind.INFO).on_click(
+                    lambda _: self._counter.set(0)
+                ),
+                Button("+1").on_click(
+                    lambda _: self._counter.set(self._counter() + 1)
+                ),
+                Button("+5", kind=Kind.SUCCESS).on_click(
+                    lambda _: self._counter.set(self._counter() + 5)
+                ),
+            )
+            .height(40)
+            .height_policy(SizePolicy.FIXED),
+            Row(
+                Button("Normal", kind=Kind.NORMAL),
+                Button("Info", kind=Kind.INFO),
+                Button("Success", kind=Kind.SUCCESS),
+                Button("Warning", kind=Kind.WARNING),
+                Button("Danger", kind=Kind.DANGER),
+            )
+            .height(40)
+            .height_policy(SizePolicy.FIXED),
+            Spacer(),
+        ).bg_color(theme.colors.bg_secondary)
+
+    def _build_input_tab(self, theme):
+        """Input tab: Input, MultilineInput, CheckBox, RadioButtons, Switch, Slider, DateTimeInput."""
+        return Column(
+            # Input widget
+            Text("Input Widget:", font_size=14)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            Input(self._input_text())
+            .on_change(lambda t: self._input_text.set(t))
+            .height(35)
+            .height_policy(SizePolicy.FIXED),
+            # MultilineInput widget
+            Text("MultilineInput Widget:", font_size=14)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            MultilineInput(self._multiline_state, font_size=12, wrap=True)
+            .height(80)
+            .height_policy(SizePolicy.FIXED),
+            Spacer().height(10).height_policy(SizePolicy.FIXED),
+            # CheckBox widgets
+            Text("CheckBox Widget:", font_size=14)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            Row(
+                CheckBox(self._checkbox1)
+                .on_change(lambda v: self._checkbox1.set(v))
+                .fixed_size(25, 25),
+                Text("Normal", font_size=12),
+                Spacer().width(20).width_policy(SizePolicy.FIXED),
+                CheckBox(self._checkbox2, is_circle=True)
+                .on_change(lambda v: self._checkbox2.set(v))
+                .fixed_size(25, 25),
+                Text("Circle", font_size=12),
+                Spacer(),
+            )
+            .height(30)
+            .height_policy(SizePolicy.FIXED),
+            # RadioButtons widget
+            Text("RadioButtons Widget:", font_size=14)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            RadioButtons(self._radio_state).height(80).height_policy(SizePolicy.FIXED),
+            # Switch widget
+            Text("Switch Widget:", font_size=14)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            Row(
+                Switch(self._switch_on())
+                .on_change(lambda v: self._switch_on.set(v))
+                .fixed_width(50),
+                Text("ON" if self._switch_on() else "OFF", font_size=12),
+                Spacer(),
+            )
+            .height(30)
+            .height_policy(SizePolicy.FIXED),
+            # Slider widget
+            Text("Slider Widget:", font_size=14)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            Row(
+                Slider(self._slider_state).flex(1),
+                Text(f"{self._slider_state.value():.0f}", font_size=12)
+                .width(40)
+                .width_policy(SizePolicy.FIXED),
+            )
+            .height(35)
+            .height_policy(SizePolicy.FIXED),
+            # DateTimeInput widget
+            Text("DateTimeInput Widget:", font_size=14)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            DateTimeInput(state=self._datetime_state, label="Select Date & Time")
+            .height_policy(SizePolicy.EXPANDING),
+            Text(
+                f"Selected: {self._datetime_state.to_display_string() or 'None'}",
+                font_size=11,
+            )
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+        ).bg_color(theme.colors.bg_secondary)
+
+    def _build_layout_tab(self, theme):
+        """Layout tab: Column, Row, Box, Spacer demonstration."""
+        top = self._z_top()
+
+        return Column(
+            # Row with flex demonstration
+            Text("Row with flex() - 1:2:1 proportion:", font_size=14)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            Row(
+                Button("1").flex(1),
+                Button("2").flex(2),
+                Button("1").flex(1),
+            )
+            .height(35)
+            .height_policy(SizePolicy.FIXED),
+            Spacer().height(15).height_policy(SizePolicy.FIXED),
+            # Nested layouts
+            Text("Nested Column/Row layouts:", font_size=14)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            Row(
+                Column(
+                    Button("A1").height(30).height_policy(SizePolicy.FIXED),
+                    Button("A2").height(30).height_policy(SizePolicy.FIXED),
+                ).width(100).width_policy(SizePolicy.FIXED),
+                Column(
+                    Button("B1").height(30).height_policy(SizePolicy.FIXED),
+                    Button("B2").height(30).height_policy(SizePolicy.FIXED),
+                    Button("B3").height(30).height_policy(SizePolicy.FIXED),
+                ).width(100).width_policy(SizePolicy.FIXED),
+                Column(
+                    Button("C1").height(30).height_policy(SizePolicy.FIXED),
+                ).width(100).width_policy(SizePolicy.FIXED),
+                Spacer(),
+            )
+            .height(100)
+            .height_policy(SizePolicy.FIXED),
+            Spacer().height(15).height_policy(SizePolicy.FIXED),
+            # Box with z-index
+            Text("Box with z-index layering:", font_size=14)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            Row(
+                Button("Red Top", kind=Kind.DANGER).on_click(
+                    lambda _: self._z_top.set(1)
+                ),
+                Button("Green Top", kind=Kind.SUCCESS).on_click(
+                    lambda _: self._z_top.set(2)
+                ),
+                Button("Blue Top", kind=Kind.INFO).on_click(
+                    lambda _: self._z_top.set(3)
+                ),
+            )
+            .height(35)
+            .height_policy(SizePolicy.FIXED),
+            Box(
+                MultilineText("R", font_size=14, kind=Kind.DANGER)
+                .fixed_size(60, 50)
+                .z_index(3 if top == 1 else 1),
+                MultilineText("G", font_size=14, kind=Kind.SUCCESS)
+                .fixed_size(60, 50)
+                .z_index(3 if top == 2 else 2),
+                MultilineText("B", font_size=14, kind=Kind.INFO)
+                .fixed_size(60, 50)
+                .z_index(3 if top == 3 else 1),
+            )
+            .height(55)
+            .height_policy(SizePolicy.FIXED),
+            Spacer().height(15).height_policy(SizePolicy.FIXED),
+            # Spacer demonstration
+            Text("Spacer fills remaining space:", font_size=14)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            Row(
+                Button("Left"),
+                Spacer(),
+                Button("Right"),
+            )
+            .height(35)
+            .height_policy(SizePolicy.FIXED),
+            Spacer(),
+        ).bg_color(theme.colors.bg_secondary)
+
+    def _build_data_tab(self, theme):
+        """Data tab: DataTable, Tree, FileTree, Modal, Markdown."""
+        return Column(
+            Row(
+                # Left column: DataTable, Tree, FileTree - all expanding
+                Column(
+                    Text("DataTable Widget:", font_size=14)
+                    .text_color(theme.colors.fg)
+                    .height(25)
+                    .height_policy(SizePolicy.FIXED),
+                    DataTable(self._table_state)
+                    .on_cell_click(
+                        lambda e: self._status.set(f"Clicked: {e.value}")
+                    ),
+                    Text("Tree Widget:", font_size=14)
+                    .text_color(theme.colors.fg)
+                    .height(25)
+                    .height_policy(SizePolicy.FIXED),
+                    Tree(self._tree_state)
+                    .on_select(lambda n: self._status.set(f"Selected: {n.label}")),
+                    Text("FileTree Widget:", font_size=14)
+                    .text_color(theme.colors.fg)
+                    .height(25)
+                    .height_policy(SizePolicy.FIXED),
+                    FileTree(self._file_tree_state)
+                    .on_file_select(lambda p: self._status.set(f"File: {p.name}")),
+                ).flex(1),
+                # Right column: Markdown and Modal trigger
+                Column(
+                    Text("Markdown Widget:", font_size=14)
+                    .text_color(theme.colors.fg)
+                    .height(25)
+                    .height_policy(SizePolicy.FIXED),
+                    Markdown(
+                        """# Markdown Demo
+
+**Bold** and *italic* text.
+
+- List item 1
+- List item 2
+
+```python
+def hello():
+    print("Hello!")
+```
+
+> Blockquote text
+
+| Col1 | Col2 |
+|------|------|
+| A    | B    |
+""",
+                        base_font_size=11,
+                    ),
+                    Text("Modal Widget:", font_size=14)
+                    .text_color(theme.colors.fg)
+                    .height(25)
+                    .height_policy(SizePolicy.FIXED),
+                    Button("Open Modal").on_click(lambda _: self._modal_state.open())
+                    .height(35)
+                    .height_policy(SizePolicy.FIXED),
+                ).flex(1),
+            ),
+        ).bg_color(theme.colors.bg_secondary)
+
+    def _build_media_tab(self, theme):
+        """Media tab: NetImage widget."""
+        return Column(
+            Text("NetImage Widget:", font_size=14)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            Text("Loading image from URL...", font_size=11)
+            .text_color(theme.colors.fg)
+            .height(20)
+            .height_policy(SizePolicy.FIXED),
+            NetImage("https://picsum.photos/400/300"),
+            Text("NetImage supports various image formats from URLs.", font_size=12)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+        ).bg_color(theme.colors.bg_secondary)
+
+    def _build_dashboard_tab(self, theme):
+        """Dashboard tab: Multiple charts in a beautiful layout."""
+        return Column(
+            Row(
+                Text("Analytics Dashboard", font_size=18)
+                .text_color(theme.colors.text_primary),
+                Spacer(),
+                Button("Refresh All").on_click(self._refresh_dashboard),
+            )
+            .height(40)
+            .height_policy(SizePolicy.FIXED),
+            # Top row: Bar chart and Line chart
+            Row(
+                Column(
+                    Text("Regional Sales", font_size=12)
+                    .text_color(theme.colors.fg)
+                    .height(20)
+                    .height_policy(SizePolicy.FIXED),
+                    BarChart(self._bar_data, show_values=False, enable_tooltip=True),
+                ),
+                Column(
+                    Text("Stock Trends", font_size=12)
+                    .text_color(theme.colors.fg)
+                    .height(20)
+                    .height_policy(SizePolicy.FIXED),
+                    LineChart(self._line_data, smooth=True, show_points=True, enable_tooltip=True),
+                ),
+            ),
+            # Middle row: Pie chart, Area chart, Scatter chart
+            Row(
+                Column(
+                    Text("Browser Share", font_size=12)
+                    .text_color(theme.colors.fg)
+                    .height(20)
+                    .height_policy(SizePolicy.FIXED),
+                    PieChart(self._pie_data, donut=True, inner_radius_ratio=0.5, enable_tooltip=True),
+                ),
+                Column(
+                    Text("Traffic Growth", font_size=12)
+                    .text_color(theme.colors.fg)
+                    .height(20)
+                    .height_policy(SizePolicy.FIXED),
+                    AreaChart(self._area_data, fill_opacity=0.3, enable_tooltip=True),
+                ),
+                Column(
+                    Text("Correlation", font_size=12)
+                    .text_color(theme.colors.fg)
+                    .height(20)
+                    .height_policy(SizePolicy.FIXED),
+                    ScatterChart(self._scatter_data, point_radius=6, enable_tooltip=True),
+                ),
+            ),
+            # Bottom row: Stacked bar and Gauges
+            Row(
+                Column(
+                    Text("Product Sales", font_size=12)
+                    .text_color(theme.colors.fg)
+                    .height(20)
+                    .height_policy(SizePolicy.FIXED),
+                    StackedBarChart(self._stacked_data, enable_tooltip=True),
+                ),
+                Column(
+                    Text("System Status", font_size=12)
+                    .text_color(theme.colors.fg)
+                    .height(20)
+                    .height_policy(SizePolicy.FIXED),
+                    # 2x2 grid layout for gauges
+                    Column(
+                        Row(
+                            GaugeChart(self._gauge_cpu, style=GaugeStyle.HALF_CIRCLE, arc_width=18),
+                            GaugeChart(self._gauge_memory, style=GaugeStyle.HALF_CIRCLE, arc_width=18),
+                        ),
+                        Row(
+                            GaugeChart(self._gauge_disk, style=GaugeStyle.HALF_CIRCLE, arc_width=18),
+                            GaugeChart(self._gauge_network, style=GaugeStyle.HALF_CIRCLE, arc_width=18),
+                        ),
+                    ),
+                ),
+            ),
+        ).bg_color(theme.colors.bg_secondary)
+
+    def _refresh_dashboard(self, _):
+        """Refresh all dashboard data."""
+        self._randomize_bar_data(_)
+        self._randomize_line_data(_)
+        self._randomize_area_data(_)
+        self._randomize_pie_data(_)
+        self._randomize_scatter_data(_)
+        self._randomize_stacked_data(_)
+        self._randomize_gauge_data(_)
+        self._status.set("Dashboard refreshed!")
+
+    def _build_bar_chart_tab(self, theme):
+        """Bar Chart tab: Full-featured BarChart demonstration."""
+        return Column(
+            Row(
+                Text("Bar Charts - Vertical & Horizontal", font_size=18)
+                .text_color(theme.colors.text_primary),
+                Spacer(),
+                Button("Randomize Data").on_click(self._randomize_bar_data),
+                Button("Toggle Series").on_click(self._toggle_bar_series),
+            )
+            .height(40)
+            .height_policy(SizePolicy.FIXED),
+            Row(
+                # Vertical BarChart
+                Column(
+                    Text("Vertical Bar Chart", font_size=14)
+                    .text_color(theme.colors.fg)
+                    .height(22)
+                    .height_policy(SizePolicy.FIXED),
+                    BarChart(
+                        self._bar_data,
+                        show_values=True,
+                        enable_tooltip=True,
+                    )
+                    .on_click(lambda e: self._status.set(f"Clicked: {e.label} = {e.value}"))
+                    .on_hover(lambda e: self._status.set(f"Hover: {e.label}")),
+                ),
+                # Horizontal BarChart
+                Column(
+                    Text("Horizontal Bar Chart", font_size=14)
+                    .text_color(theme.colors.fg)
+                    .height(22)
+                    .height_policy(SizePolicy.FIXED),
+                    BarChart(
+                        self._bar_data,
+                        show_values=True,
+                        enable_tooltip=True,
+                        horizontal=True,
+                    )
+                    .on_click(lambda e: self._status.set(f"Clicked: {e.label} = {e.value}")),
+                ),
+            ),
+        ).bg_color(theme.colors.bg_secondary)
+
+    def _randomize_bar_data(self, _):
+        """Randomize bar chart data."""
+        import random
+        regions = ["North America", "Europe", "Asia Pacific", "Latin America", "Middle East", "Africa"]
+        self._bar_data.set_series([
+            CategoricalSeries.from_values(
+                name="2022",
+                categories=regions,
+                values=[random.randint(50, 200) for _ in range(6)],
+                style=SeriesStyle(color="#6366f1"),
+            ),
+            CategoricalSeries.from_values(
+                name="2023",
+                categories=regions,
+                values=[random.randint(60, 220) for _ in range(6)],
+                style=SeriesStyle(color="#22c55e"),
+            ),
+            CategoricalSeries.from_values(
+                name="2024",
+                categories=regions,
+                values=[random.randint(70, 250) for _ in range(6)],
+                style=SeriesStyle(color="#f59e0b"),
+            ),
+        ])
+        self._status.set("Bar chart data randomized!")
+
+    def _toggle_bar_series(self, _):
+        """Toggle visibility of bar chart series."""
+        self._bar_data.toggle_series_visibility(0)
+        self._status.set("Toggled 2022 series visibility")
+
+    def _build_line_area_tab(self, theme):
+        """Line & Area Chart tab: Stock prices and website traffic."""
+        return Column(
+            Row(
+                Text("Line & Area Charts", font_size=18)
+                .text_color(theme.colors.text_primary),
+                Spacer(),
+                Button("Randomize Line").on_click(self._randomize_line_data),
+                Button("Randomize Area").on_click(self._randomize_area_data),
+            )
+            .height(40)
+            .height_policy(SizePolicy.FIXED),
+            # LineChart section
+            Text(
+                "Stock Price Movement - 3 companies over 12 months (smooth Catmull-Rom splines)",
+                font_size=12,
+            )
+            .text_color(theme.colors.fg)
+            .height(22)
+            .height_policy(SizePolicy.FIXED),
+            LineChart(
+                self._line_data,
+                smooth=True,
+                show_points=True,
+                enable_tooltip=True,
+            )
+            .on_click(lambda e: self._status.set(f"Point: {e.label} = ${e.value:.2f}")),
+            # AreaChart section
+            Text(
+                "Website Traffic Analysis - Page views, visitors, and conversions over 12 months",
+                font_size=12,
+            )
+            .text_color(theme.colors.fg)
+            .height(22)
+            .height_policy(SizePolicy.FIXED),
+            AreaChart(
+                self._area_data,
+                fill_opacity=0.4,
+                show_points=True,
+                enable_tooltip=True,
+            )
+            .on_click(lambda e: self._status.set(f"Traffic: {e.value:,.0f}")),
+        ).bg_color(theme.colors.bg_secondary)
+
+    def _randomize_line_data(self, _):
+        """Randomize line chart (stock) data."""
+        import random
+        base_tech = random.randint(120, 180)
+        base_health = random.randint(70, 100)
+        base_energy = random.randint(60, 90)
+
+        tech_values = [base_tech]
+        health_values = [base_health]
+        energy_values = [base_energy]
+
+        for _ in range(11):
+            tech_values.append(tech_values[-1] + random.randint(-15, 20))
+            health_values.append(health_values[-1] + random.randint(-10, 15))
+            energy_values.append(energy_values[-1] + random.randint(-12, 12))
+
+        self._line_data.set_series([
+            NumericSeries.from_y_values(
+                name="TECH Corp",
+                y_values=tech_values,
+                style=SeriesStyle(color="#3b82f6"),
+            ),
+            NumericSeries.from_y_values(
+                name="HEALTH Inc",
+                y_values=health_values,
+                style=SeriesStyle(color="#22c55e"),
+            ),
+            NumericSeries.from_y_values(
+                name="ENERGY Ltd",
+                y_values=energy_values,
+                style=SeriesStyle(color="#ef4444"),
+            ),
+        ])
+        self._status.set("Stock price data randomized!")
+
+    def _randomize_area_data(self, _):
+        """Randomize area chart (traffic) data."""
+        import random
+        base_pv = random.randint(10000, 15000)
+        base_uv = int(base_pv * 0.35)
+        base_conv = int(base_uv * 0.1)
+
+        pv = [base_pv]
+        uv = [base_uv]
+        conv = [base_conv]
+
+        for _ in range(11):
+            pv.append(int(pv[-1] * random.uniform(1.0, 1.15)))
+            uv.append(int(pv[-1] * random.uniform(0.3, 0.4)))
+            conv.append(int(uv[-1] * random.uniform(0.08, 0.12)))
+
+        self._area_data.set_series([
+            NumericSeries.from_y_values(
+                name="Page Views",
+                y_values=pv,
+                style=SeriesStyle(color="#06b6d4"),
+            ),
+            NumericSeries.from_y_values(
+                name="Unique Visitors",
+                y_values=uv,
+                style=SeriesStyle(color="#8b5cf6"),
+            ),
+            NumericSeries.from_y_values(
+                name="Conversions",
+                y_values=conv,
+                style=SeriesStyle(color="#22c55e"),
+            ),
+        ])
+        self._status.set("Website traffic data randomized!")
+
+    def _build_pie_scatter_tab(self, theme):
+        """Pie & Scatter Chart tab: Market share and correlation analysis."""
+        return Column(
+            Row(
+                Text("Pie & Scatter Charts", font_size=18)
+                .text_color(theme.colors.text_primary),
+                Spacer(),
+                Button("Randomize Pie Data").on_click(self._randomize_pie_data),
+                Button("Randomize Scatter").on_click(self._randomize_scatter_data),
+            )
+            .height(40)
+            .height_policy(SizePolicy.FIXED),
+            # Two PieCharts - expanding
+            Row(
+                Column(
+                    Text("Browser Market Share 2024 (Donut)", font_size=14)
+                    .text_color(theme.colors.fg)
+                    .height(25)
+                    .height_policy(SizePolicy.FIXED),
+                    PieChart(
+                        self._pie_data,
+                        donut=True,
+                        inner_radius_ratio=0.55,
+                        show_labels=True,
+                        show_percentages=True,
+                        enable_tooltip=True,
+                    ).on_click(lambda e: self._status.set(f"{e.label}: {e.value}%")),
+                ),
+                Column(
+                    Text("Desktop OS Market Share (Pie)", font_size=14)
+                    .text_color(theme.colors.fg)
+                    .height(25)
+                    .height_policy(SizePolicy.FIXED),
+                    PieChart(
+                        self._pie_data_2,
+                        donut=False,
+                        show_labels=True,
+                        show_percentages=True,
+                        enable_tooltip=True,
+                    ).on_click(lambda e: self._status.set(f"{e.label}: {e.value}%")),
+                ),
+            ),
+            # ScatterChart section
+            Text(
+                "Height vs Weight Correlation - Male (blue) and Female (pink) datasets",
+                font_size=12,
+            )
+            .text_color(theme.colors.fg)
+            .height(22)
+            .height_policy(SizePolicy.FIXED),
+            ScatterChart(
+                self._scatter_data,
+                point_shape=PointShape.CIRCLE,
+                point_radius=10,
+                enable_tooltip=True,
+            ).on_click(
+                lambda e: self._status.set(f"Point: ({e.value:.0f} cm, {e.value:.0f} kg)")
+            ),
+        ).bg_color(theme.colors.bg_secondary)
+
+    def _randomize_pie_data(self, _):
+        """Randomize pie chart data."""
+        import random
+        # Browser market share
+        values = [random.uniform(5, 70) for _ in range(7)]
+        total = sum(values)
+        values = [round(v / total * 100, 1) for v in values]
+        self._pie_data.set_series([
+            CategoricalSeries.from_values(
+                name="Browsers",
+                categories=["Chrome", "Safari", "Edge", "Firefox", "Opera", "Samsung", "Other"],
+                values=values,
+            )
+        ])
+        # OS market share
+        values2 = [random.uniform(5, 80) for _ in range(5)]
+        total2 = sum(values2)
+        values2 = [round(v / total2 * 100, 1) for v in values2]
+        self._pie_data_2.set_series([
+            CategoricalSeries.from_values(
+                name="OS",
+                categories=["Windows", "macOS", "Linux", "ChromeOS", "Other"],
+                values=values2,
+            )
+        ])
+        self._status.set("Pie chart data randomized!")
+
+    def _randomize_scatter_data(self, _):
+        """Randomize scatter chart data."""
+        import random
+        male_x = [random.randint(165, 190) for _ in range(15)]
+        male_y = [int(x * 0.5 + random.randint(-10, 10)) for x in male_x]
+        female_x = [random.randint(150, 175) for _ in range(15)]
+        female_y = [int(x * 0.4 + random.randint(-8, 8)) for x in female_x]
+        self._scatter_data.set_series([
+            NumericSeries.from_values(
+                name="Male",
+                x_values=male_x,
+                y_values=male_y,
+                style=SeriesStyle(color="#3b82f6"),
+            ),
+            NumericSeries.from_values(
+                name="Female",
+                x_values=female_x,
+                y_values=female_y,
+                style=SeriesStyle(color="#ec4899"),
+            ),
+        ])
+        self._status.set("Scatter data randomized!")
+
+    def _build_stacked_gauge_tab(self, theme):
+        """Stacked Bar & Gauge Chart tab: Product sales and system metrics."""
+        return Column(
+            Row(
+                Text("Stacked Bar & Gauge Charts", font_size=18)
+                .text_color(theme.colors.text_primary),
+                Spacer(),
+                Button("Randomize Stacked").on_click(self._randomize_stacked_data),
+                Button("Simulate Metrics").on_click(self._randomize_gauge_data),
+            )
+            .height(40)
+            .height_policy(SizePolicy.FIXED),
+            # StackedBarChart section
+            Text(
+                "Product Category Sales - 4 categories (Electronics, Clothing, Home, Sports) over 6 months",
+                font_size=12,
+            )
+            .text_color(theme.colors.fg)
+            .height(22)
+            .height_policy(SizePolicy.FIXED),
+            StackedBarChart(
+                self._stacked_data,
+                show_values=False,
+                enable_tooltip=True,
+            )
+            .on_click(lambda e: self._status.set(f"{e.label}: ${e.value}K")),
+            # GaugeCharts section - System Dashboard (2x2 grid)
+            Text("System Metrics Dashboard", font_size=14)
+            .text_color(theme.colors.fg)
+            .height(25)
+            .height_policy(SizePolicy.FIXED),
+            Column(
+                # Top row: CPU and Memory
+                Row(
+                    GaugeChart(
+                        self._gauge_cpu,
+                        style=GaugeStyle.HALF_CIRCLE,
+                        arc_width=30,
+                        show_ticks=True,
+                    ),
+                    GaugeChart(
+                        self._gauge_memory,
+                        style=GaugeStyle.HALF_CIRCLE,
+                        arc_width=30,
+                        show_ticks=True,
+                    ),
+                ),
+                # Bottom row: Disk and Network
+                Row(
+                    GaugeChart(
+                        self._gauge_disk,
+                        style=GaugeStyle.HALF_CIRCLE,
+                        arc_width=30,
+                        show_ticks=True,
+                    ),
+                    GaugeChart(
+                        self._gauge_network,
+                        style=GaugeStyle.HALF_CIRCLE,
+                        arc_width=30,
+                        show_ticks=True,
+                    ),
+                ),
+            ),
+        ).bg_color(theme.colors.bg_secondary)
+
+    def _randomize_stacked_data(self, _):
+        """Randomize stacked bar chart data."""
+        import random
+        categories = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
+        self._stacked_data.set_series([
+            CategoricalSeries.from_values(
+                name="Electronics",
+                categories=categories,
+                values=[random.randint(30, 80) for _ in range(6)],
+                style=SeriesStyle(color="#3b82f6"),
+            ),
+            CategoricalSeries.from_values(
+                name="Clothing",
+                categories=categories,
+                values=[random.randint(20, 60) for _ in range(6)],
+                style=SeriesStyle(color="#22c55e"),
+            ),
+            CategoricalSeries.from_values(
+                name="Home & Garden",
+                categories=categories,
+                values=[random.randint(15, 50) for _ in range(6)],
+                style=SeriesStyle(color="#f59e0b"),
+            ),
+            CategoricalSeries.from_values(
+                name="Sports",
+                categories=categories,
+                values=[random.randint(10, 40) for _ in range(6)],
+                style=SeriesStyle(color="#ef4444"),
+            ),
+        ])
+        self._status.set("Stacked bar data randomized!")
+
+    def _randomize_gauge_data(self, _):
+        """Simulate random system metrics."""
+        import random
+        self._gauge_cpu = GaugeChartData(
+            title="CPU Usage",
+            value=random.randint(20, 95),
+            min_value=0,
+            max_value=100,
+            value_format="{:.0f}%",
+            thresholds=[(0.0, "#22c55e"), (0.6, "#f59e0b"), (0.85, "#ef4444")],
+        )
+        self._gauge_memory = GaugeChartData(
+            title="Memory Usage",
+            value=random.randint(30, 95),
+            min_value=0,
+            max_value=100,
+            value_format="{:.0f}%",
+            thresholds=[(0.0, "#22c55e"), (0.7, "#f59e0b"), (0.9, "#ef4444")],
+        )
+        self._gauge_disk = GaugeChartData(
+            title="Disk Usage",
+            value=random.randint(20, 90),
+            min_value=0,
+            max_value=100,
+            value_format="{:.0f}%",
+            thresholds=[(0.0, "#22c55e"), (0.75, "#f59e0b"), (0.9, "#ef4444")],
+        )
+        self._gauge_network = GaugeChartData(
+            title="Network Load",
+            value=random.randint(10, 85),
+            min_value=0,
+            max_value=100,
+            value_format="{:.0f}%",
+            thresholds=[(0.0, "#22c55e"), (0.5, "#f59e0b"), (0.8, "#ef4444")],
+        )
+        self._status.set(f"Metrics: CPU={self._gauge_cpu.value}%, Mem={self._gauge_memory.value}%, Disk={self._gauge_disk.value}%, Net={self._gauge_network.value}%")
+
+
+if __name__ == "__main__":
+    App(
+        Frame("All Widgets Demo - Castella", width=1400, height=900),
+        AllWidgetsDemo(),
+    ).run()

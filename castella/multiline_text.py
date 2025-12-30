@@ -241,7 +241,8 @@ class MultilineText(Widget):
         line_spacing = self._line_spacing
 
         p.save()
-        p.style(MultilineText._selection_style)
+        # Apply text style first for accurate text measurement
+        p.style(self._text_style)
 
         for line_idx, text in enumerate(lines):
             if line_idx < start_row or line_idx > end_row:
@@ -261,10 +262,13 @@ class MultilineText(Widget):
             if sel_start >= sel_end:
                 continue
 
-            # Calculate pixel positions
+            # Calculate pixel positions using text style (same 0.1 offset as text drawing)
             y = padding + line_idx * (font_size + line_spacing)
-            x_start = padding + p.measure_text(text[:sel_start])
-            x_end = padding + p.measure_text(text[:sel_end])
+            x_start = padding + 0.1 + p.measure_text(text[:sel_start])
+            x_end = padding + 0.1 + p.measure_text(text[:sel_end])
+
+            # Switch to selection style for drawing
+            p.style(MultilineText._selection_style)
 
             # Draw selection rectangle
             selection_rect = Rect(
@@ -272,6 +276,9 @@ class MultilineText(Widget):
                 size=Size(width=x_end - x_start, height=font_size),
             )
             p.fill_rect(selection_rect)
+
+            # Restore text style for next iteration's measurement
+            p.style(self._text_style)
 
         p.restore()
 
