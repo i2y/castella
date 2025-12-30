@@ -1,25 +1,11 @@
-"""Slider widget for range input with drag interaction.
-
-TODO: Fix afterimage rendering bug
-    When the Slider widget is used without a parent Box that has bg_color set,
-    the thumb leaves afterimages (previous positions are not cleared properly).
-
-    Workaround: Wrap Slider in a Box with bg_color set.
-
-    Example (works correctly):
-        Box(
-            Slider(state).height(40).height_policy(SizePolicy.FIXED),
-        ).bg_color(theme.colors.bg_secondary).height(50).height_policy(SizePolicy.FIXED)
-
-    Root cause investigation needed - likely related to dirty region calculation
-    or the redraw mechanism not properly clearing the thumb's previous position.
-"""
+"""Slider widget for range input with drag interaction."""
 
 from typing import Callable, Self, cast
 
 from castella.core import (
     AppearanceState,
     Circle,
+    FillStyle,
     Kind,
     MouseEvent,
     ObservableBase,
@@ -28,7 +14,9 @@ from castella.core import (
     Rect,
     Size,
     SizePolicy,
+    Style,
     Widget,
+    get_theme,
 )
 
 
@@ -169,7 +157,7 @@ class Slider(Widget):
             self._kind, AppearanceState.HOVER
         )
 
-    def redraw(self, p: Painter, _: bool) -> None:
+    def redraw(self, p: Painter, completely: bool) -> None:
         """Draw the slider."""
         state = cast(SliderState, self._state)
         size = self.get_size()
@@ -177,6 +165,20 @@ class Slider(Widget):
         # Skip drawing if size is not yet set (widget not in tree)
         if size.width == 0 or size.height == 0:
             return
+
+        # Clear background to prevent thumb afterimages
+        if completely or self.is_dirty():
+            widget_style = get_theme().layout["normal"]
+            clear_style = Style(
+                fill=FillStyle(color=widget_style.bg_color),
+            )
+            p.style(clear_style)
+            p.fill_rect(
+                Rect(
+                    origin=Point(x=0, y=0),
+                    size=size + Size(width=1, height=1),
+                )
+            )
 
         # Calculate dimensions
         track_height = max(4, size.height * 0.2)
