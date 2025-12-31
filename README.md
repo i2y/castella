@@ -10,6 +10,12 @@ The primary final goal of Castella is to provide features for Python programmers
 - The core part as a UI framework of Castella is written in only Python. It's not a wrapper for existing something written in other programing languages. "pure Python cross-platform UI framework" specifies things like the above.
 - Castella allows pythonista to define UI declaratively in Python.
 - Castella provides hot-reloading or hot-restarting on development.
+- **Deep Pydantic v2 integration** - 70+ Pydantic models power the entire framework:
+  - Core types: geometry (`Point`, `Size`, `Rect`), fonts, styles with immutable patterns
+  - Chart data models with observable patterns and automatic UI updates
+  - A2UI/A2A/MCP protocol types with validation and serialization
+  - Theme system with design tokens (`ColorPalette`, `Typography`, `Spacing`)
+  - DataTable: `from_pydantic()` extracts `Field.title`, `Field.description` (tooltips), and type annotations (column width inference)
 - Comprehensive theme system with design tokens (colors, typography, spacing).
 - Built-in themes: Tokyo Night (default), Cupertino, Material Design 3, and classic Castella themes.
 - Dark/light mode with automatic system detection and runtime switching.
@@ -190,6 +196,41 @@ AI agents can then introspect the UI tree and control widgets:
 # Client example (AI agent)
 call_tool("type_text", element_id="name-input", text="Hello")
 call_tool("click", element_id="submit-btn")
+```
+
+## Pydantic Integration Example
+
+Leverage Pydantic's `Field` metadata for automatic DataTable configuration:
+
+```python
+from pydantic import BaseModel, Field
+from castella import App, DataTable, DataTableState
+from castella.frame import Frame
+
+
+class Employee(BaseModel):
+    id: int = Field(..., title="ID", description="Unique identifier")
+    name: str = Field(..., title="Name", description="Full name")
+    salary: float = Field(..., title="Salary", description="Annual salary")
+
+
+employees = [
+    Employee(id=1, name="Alice", salary=75000.0),
+    Employee(id=2, name="Bob", salary=85000.0),
+]
+
+# Field.title → column name, Field.description → tooltip, type → column width
+state = DataTableState.from_pydantic(employees)
+
+# Fluent API for per-table styling
+table = (
+    DataTable(state)
+    .header_bg_color("#3d5a80")
+    .header_text_color("#ffffff")
+    .selected_bg_color("#ee6c4d")
+)
+
+App(Frame("Employee Table", 600, 400), table).run()
 ```
 
 You can see some other examples in [examples](examples) directory.

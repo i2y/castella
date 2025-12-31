@@ -806,13 +806,19 @@ table = (
 
 ### From Pydantic Models
 
+`from_pydantic()` automatically extracts metadata from Pydantic fields:
+
+- **`Field.title`** → Column header name
+- **`Field.description`** → Column tooltip (shown on header hover)
+- **`Field.annotation`** → Column width inference by type
+
 ```python
 from pydantic import BaseModel, Field
 
 class Person(BaseModel):
-    name: str = Field(title="Name")
-    age: int = Field(title="Age")
-    city: str = Field(title="City")
+    name: str = Field(title="Name", description="Full name")
+    age: int = Field(title="Age", description="Age in years")
+    city: str = Field(title="City", description="City of residence")
 
 people = [
     Person(name="Alice", age=30, city="Tokyo"),
@@ -821,6 +827,32 @@ people = [
 
 state = DataTableState.from_pydantic(people)
 table = DataTable(state)
+# Columns: Name (150px), Age (80px), City (150px)
+# Hover headers to see tooltips from Field.description
+```
+
+**Type-based width inference:**
+
+| Type | Width |
+|------|-------|
+| `int` | 80px |
+| `float` | 100px |
+| `str` | 150px |
+| `bool` | 60px |
+| `date`/`datetime` | 120px |
+
+### Style Customization
+
+Customize table colors with fluent API:
+
+```python
+DataTable(state)
+    .header_bg_color("#3d5a80")      # Header background
+    .header_text_color("#ffffff")    # Header text
+    .alt_row_bg_color("#293241")     # Alternating row background
+    .hover_bg_color("#415a77")       # Hover row background
+    .selected_bg_color("#ee6c4d")    # Selected row background
+    .grid_color("#4a5568")           # Grid line color
 ```
 
 ### Features
