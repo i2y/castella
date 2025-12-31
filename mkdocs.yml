@@ -40,6 +40,7 @@ nav:
       - Layout: layout.md
       - Sizing: sizing.md
       - State Management: state.md
+      - Animation: animation.md
       - Custom Widgets: custom-widgets.md
       - Styling: style.md
   - Widgets:

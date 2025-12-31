@@ -303,6 +303,69 @@ state.set(75)          # Set new value
 | `max_val` | int/float | 100 | Maximum value |
 | `kind` | Kind | NORMAL | Visual style |
 
+## ProgressBar
+
+Animated progress indicator for displaying progress values.
+
+```python
+from castella import ProgressBar, ProgressBarState
+
+# Basic usage
+progress = ProgressBar(value=50, min_val=0, max_val=100)
+
+# With state for dynamic updates
+state = ProgressBarState(value=0, min_val=0, max_val=100)
+progress = ProgressBar(state)
+
+# Custom colors
+progress = (
+    ProgressBar(state)
+    .track_color("#1a1b26")
+    .fill_color("#9ece6a")
+    .border_radius(4)
+    .fixed_height(24)
+)
+
+# Update progress
+state.set(75)
+```
+
+### Animation Example
+
+```python
+from castella.animation import ValueTween, AnimationScheduler, EasingFunction
+
+def animate_progress(state):
+    state.set(0)
+    AnimationScheduler.get().add(
+        ValueTween(
+            from_value=0,
+            to_value=100,
+            duration_ms=1000,
+            easing=EasingFunction.EASE_OUT_CUBIC,
+            on_update=lambda v: state.set(v),
+        )
+    )
+```
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `value` or `state` | float or ProgressBarState | required | Initial value or state |
+| `min_val` | float | 0 | Minimum value |
+| `max_val` | float | 100 | Maximum value |
+| `show_text` | bool | False | Show percentage text |
+
+### Customization Methods
+
+| Method | Description |
+|--------|-------------|
+| `.track_color(color)` | Set background track color |
+| `.fill_color(color)` | Set fill (progress) color |
+| `.border_radius(radius)` | Set corner radius |
+| `.show_text(bool)` | Show/hide percentage text |
+
 ## Tabs
 
 Tabbed navigation widget for organizing content.

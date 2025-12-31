@@ -15,6 +15,7 @@ The primary final goal of Castella is to provide features for Python programmers
 - Dark/light mode with automatic system detection and runtime switching.
 - Rich markdown rendering with syntax highlighting and LaTeX math support.
 - Native interactive charts (Bar, Line, Pie, Scatter, Area, Stacked Bar, Gauge) with tooltips, hover, and click events.
+- **Animation system** - Smooth property animations with [ValueTween, AnimatedState](animation.md), and easing functions.
 - Castella utilizes GPU via dependent libraries.
 - Z-index support enables layered UIs with modals, popups, and overlays.
 - **A2A Protocol support** - Connect to AI agents via Google's Agent-to-Agent protocol with `A2AClient`.

@@ -19,6 +19,8 @@ The primary final goal of Castella is to provide features for Python programmers
 - Multi-line text editor with scrolling, cursor positioning, text selection, and clipboard support (copy/cut/paste).
 - Native interactive charts (Bar, Line, Pie, Scatter, Area, Stacked Bar, Gauge) with tooltips, hover, click events, and smooth curves.
 - ASCII charts for terminal environments (Bar, Pie, Line, Gauge).
+- **Animation system** - Smooth property animations with `ValueTween`, `AnimatedState`, and easing functions.
+- **ProgressBar widget** - Animated progress indicator with customizable colors.
 - Castella utilizes GPU via dependent libraries.
 - Z-index support enables layered UIs with modals, popups, and overlays.
 - **A2A Protocol support** - Connect to AI agents via Google's Agent-to-Agent protocol with `A2AClient`.
@@ -80,6 +82,44 @@ class Counter(Component):
 App(Frame("Counter", 800, 600), Counter()).run()
 ```
 [Watch a very short demo video](docs/videos/demo.mp4)
+
+## Animation Example
+
+Animate values with easing functions:
+
+```python
+from castella import App, Column, Component, Button, ProgressBar, ProgressBarState
+from castella.animation import ValueTween, AnimationScheduler, EasingFunction
+from castella.frame import Frame
+
+
+class AnimationDemo(Component):
+    def __init__(self):
+        super().__init__()
+        self._progress = ProgressBarState(0, min_val=0, max_val=100)
+        self._progress.attach(self)
+
+    def view(self):
+        return Column(
+            ProgressBar(self._progress).fixed_height(24),
+            Button("Animate").on_click(self._animate),
+        )
+
+    def _animate(self, _):
+        self._progress.set(0)
+        AnimationScheduler.get().add(
+            ValueTween(
+                from_value=0,
+                to_value=100,
+                duration_ms=1000,
+                easing=EasingFunction.EASE_OUT_CUBIC,
+                on_update=lambda v: self._progress.set(v),
+            )
+        )
+
+
+App(Frame("Animation", 400, 200), AnimationDemo()).run()
+```
 
 ## Agent Chat Example
 
