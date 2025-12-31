@@ -9,7 +9,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TaskState(str, Enum):
@@ -38,8 +38,7 @@ class AgentSkill(BaseModel):
     input_modes: list[str] = Field(default_factory=lambda: ["text/plain"])
     output_modes: list[str] = Field(default_factory=lambda: ["text/plain"])
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class AgentCapabilities(BaseModel):
@@ -51,8 +50,7 @@ class AgentCapabilities(BaseModel):
         default=False, alias="stateTransitionHistory"
     )
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class AgentCard(BaseModel):
@@ -76,8 +74,7 @@ class AgentCard(BaseModel):
     )
     skills: list[AgentSkill] = Field(default_factory=list)
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     @classmethod
     def from_python_a2a(cls, card: Any) -> "AgentCard":
@@ -129,8 +126,7 @@ class Message(BaseModel):
     content: str = ""
     timestamp: str | None = None
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class TaskStatus(BaseModel):
@@ -140,8 +136,7 @@ class TaskStatus(BaseModel):
     message: Message | None = None
     progress: float | None = None  # 0.0 to 1.0
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class TaskResult(BaseModel):
@@ -152,5 +147,4 @@ class TaskResult(BaseModel):
     artifacts: list[dict[str, Any]] = Field(default_factory=list)
     error: str | None = None
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
