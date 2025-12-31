@@ -1340,15 +1340,11 @@ class Container(Protocol):
 
 
 class Layout(Widget, ABC):
-    _widget_style: WidgetStyle
-    _style: Style
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._children: list[Widget] = []
-        if not hasattr(Layout, "_widget_style"):
-            Layout._widget_style = get_theme().layout["normal"]
-            Layout._style = Style(fill=FillStyle(color=Layout._widget_style.bg_color))
+        # _widget_styles is initialized in Widget.__init__()
+        # _on_update_widget_styles() is called in Widget.__init__()
 
     def get_children(self) -> Generator[Widget, None, None]:
         yield from self._children
@@ -1431,15 +1427,17 @@ class Layout(Widget, ABC):
             self._pos.y < p.y < self._pos.y + self._size.height
         )
 
-    def redraw(self, p: Painter, completely: bool) -> None:
-        # Get current theme's layout style for proper dark/light mode support
-        widget_style = get_theme().layout["normal"]
-        style = Style(
+    def _on_update_widget_styles(self) -> None:
+        """Update instance style from widget_styles (called after bg_color() etc.)."""
+        widget_style = self._get_widget_style(Kind.NORMAL, AppearanceState.NORMAL)
+        self._style = Style(
             fill=FillStyle(color=widget_style.bg_color),
             border_radius=widget_style.border_radius,
             shadow=widget_style.shadow,
         )
-        p.style(style)
+
+    def redraw(self, p: Painter, completely: bool) -> None:
+        p.style(self._style)
         if completely or self.is_dirty():
             p.fill_rect(
                 Rect(

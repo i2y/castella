@@ -1,12 +1,12 @@
-"""Alpha channel demo - demonstrates color transparency with buttons."""
+"""Alpha channel demo - demonstrates color transparency."""
 
 from castella import App, Box, Button, Column, Row, Text
 from castella.core import Component, SizePolicy, State
 from castella.frame import Frame
 
 
-class StylishAlphaDemo(Component):
-    """Demonstrates alpha channel with layered buttons."""
+class AlphaDemo(Component):
+    """Demonstrates alpha channel with buttons and layouts."""
 
     def __init__(self):
         super().__init__()
@@ -35,36 +35,36 @@ class StylishAlphaDemo(Component):
                 Button("75%").on_click(lambda _: self._alpha.set(192)),
                 Button("100%").on_click(lambda _: self._alpha.set(255)),
             ).fixed_height(45),
-            # Demo 1: Overlay effect
-            Text("Overlay (blue over red):"),
+            # Demo 1: Layout bg_color - layered boxes showing transparency
+            Text("Layout bg_color with layers:"),
             Box(
-                Button("RED BASE").bg_color("#ff0000").fixed_size(300, 100).z_index(1),
-                Button(f"BLUE α={alpha}").bg_color(f"#0000ff{alpha_hex}").fixed_size(300, 100).z_index(2),
-            ).fixed_height(110),
-            # Demo 2: Three layers
-            Text("Three layers (R→G→B):"),
+                # Base: red column
+                Column().bg_color("#ff0000").fixed_size(300, 50).z_index(1),
+                # Overlay: green with 50% alpha - should blend with red
+                Column().bg_color("#00ff0080").fixed_size(200, 50).z_index(2),
+                # Top: blue with adjustable alpha
+                Column().bg_color(f"#0000ff{alpha_hex}").fixed_size(100, 50).z_index(3),
+            ).fixed_height(60),
+            # Demo 2: Overlay with Layout
+            Text("Box with alpha background:"),
             Box(
-                Button("R").bg_color("#ff0000").fixed_size(180, 80).z_index(1),
-                Button("G").bg_color(f"#00ff00{alpha_hex}").fixed_size(180, 80).z_index(2),
-                Button("B").bg_color(f"#0000ff{alpha_hex}").fixed_size(180, 80).z_index(3),
-            ).fixed_height(90),
-            # Demo 3: Gradient effect
-            Text("Alpha gradient (100% → 10%):"),
+                Button("Button inside").fixed_size(200, 50),
+            ).bg_color(f"#e94560{alpha_hex}").fixed_height(70),
+            # Demo 3: Button layers
+            Text("Button overlay (blue over red):"),
+            Box(
+                Button("RED BASE").bg_color("#ff0000").fixed_size(250, 70).z_index(1),
+                Button(f"BLUE α={alpha}").bg_color(f"#0000ff{alpha_hex}").fixed_size(250, 70).z_index(2),
+            ).fixed_height(80),
+            # Demo 4: Gradient effect
+            Text("Alpha gradient:"),
             Row(
-                Button("100%").bg_color("#e94560ff"),
-                Button("75%").bg_color("#e94560c0"),
-                Button("50%").bg_color("#e9456080"),
-                Button("25%").bg_color("#e9456040"),
-                Button("10%").bg_color("#e945601a"),
-            ).fixed_height(50),
-            # Demo 4: Glass buttons
-            Text("Glass effect buttons:"),
-            Row(
-                Button("Glass").bg_color("#ffffff20"),
-                Button("Glass").bg_color("#ffffff30"),
-                Button("Glass").bg_color("#ffffff40"),
-                Button("Glass").bg_color("#ffffff50"),
-            ).fixed_height(50),
+                Button("100%").bg_color("#9333eaff"),
+                Button("75%").bg_color("#9333eac0"),
+                Button("50%").bg_color("#9333ea80"),
+                Button("25%").bg_color("#9333ea40"),
+                Button("10%").bg_color("#9333ea1a"),
+            ).fixed_height(45),
         )
 
     def _adjust(self, delta: int):
@@ -72,5 +72,5 @@ class StylishAlphaDemo(Component):
 
 
 if __name__ == "__main__":
-    app = App(Frame("Alpha Channel Demo", 700, 550), StylishAlphaDemo())
+    app = App(Frame("Alpha Channel Demo", 700, 550), AlphaDemo())
     app.run()
