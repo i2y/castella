@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date, datetime
 from enum import Enum, auto
-from typing import Any, Callable, Self, Sequence
+from typing import Any, Callable, Self, Sequence, Union, get_args, get_origin
 
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 
@@ -62,6 +63,7 @@ class ColumnConfig:
         editable: Whether cells in this column can be edited.
         visible: Whether the column is visible.
         renderer: Optional custom renderer function (value, row, col) -> str.
+        tooltip: Optional tooltip text (from Pydantic Field.description).
     """
 
     name: str
@@ -72,6 +74,45 @@ class ColumnConfig:
     editable: bool = False
     visible: bool = True
     renderer: Callable[[Any, int, int], str] | None = None
+    tooltip: str | None = None
+
+
+def _infer_width_from_annotation(annotation: type | None) -> float:
+    """Infer column width from Python type annotation.
+
+    Uses Pydantic field annotations to determine appropriate column widths:
+    - bool: 60px (narrow for checkboxes)
+    - int: 80px (narrow for integers)
+    - float: 100px (medium for floats)
+    - str: 150px (wide for strings)
+    - date/datetime: 120px (medium for dates)
+    - other: 100px (default)
+    """
+    if annotation is None:
+        return 100.0
+
+    # Handle Optional, Union types - extract the first non-None type
+    origin = get_origin(annotation)
+    if origin is Union:
+        args = get_args(annotation)
+        for arg in args:
+            if arg is not type(None):
+                annotation = arg
+                break
+
+    # Type-based width inference
+    if annotation is bool:
+        return 60.0
+    elif annotation is int:
+        return 80.0
+    elif annotation is float:
+        return 100.0
+    elif annotation is str:
+        return 150.0
+    elif annotation in (date, datetime):
+        return 120.0
+    else:
+        return 100.0
 
 
 # =============================================================================
@@ -166,18 +207,35 @@ class DataTableState(ObservableBase):
 
     @staticmethod
     def from_pydantic(models: Sequence[BaseModel]) -> DataTableState:
-        """Create state from Pydantic model instances."""
+        """Create state from Pydantic model instances.
+
+        Leverages Pydantic metadata:
+        - Field.title → column name
+        - Field.description → column tooltip
+        - Field.annotation → infer column width
+        """
         if not models:
             return DataTableState(columns=[], rows=[])
 
-        # Extract column names from field titles
-        columns = [
-            ColumnConfig(
-                name=f.title if f.title else name,
-                sortable=True,
+        columns = []
+        for name, field_info in models[0].model_fields.items():
+            # Column name from title (fallback to field name)
+            col_name = field_info.title if field_info.title else name
+
+            # Tooltip from description
+            tooltip = field_info.description
+
+            # Width from annotation type
+            width = _infer_width_from_annotation(field_info.annotation)
+
+            columns.append(
+                ColumnConfig(
+                    name=col_name,
+                    width=width,
+                    sortable=True,
+                    tooltip=tooltip,
+                )
             )
-            for name, f in models[0].model_fields.items()
-        ]
 
         # Extract rows
         rows = [list(m.model_dump().values()) for m in models]
@@ -594,6 +652,8 @@ class DataTable(Widget):
         self._scroll_dragging: bool = False
         self._scroll_drag_start_y: float = 0
         self._scroll_drag_start_offset: int = 0
+        self._hovered_header_col: int = -1  # For header tooltip
+        self._mouse_pos: Point | None = None
 
         # Callbacks
         self._on_cell_click: CellClickCallback | None = None
@@ -601,6 +661,15 @@ class DataTable(Widget):
         self._on_sort: SortCallback | None = None
         self._on_selection_change: SelectionCallback | None = None
         self._on_filter_change: FilterCallback | None = None
+
+        # Custom colors (None = use theme)
+        self._header_bg_color: str | None = None
+        self._header_text_color: str | None = None
+        self._row_bg_color: str | None = None
+        self._alt_row_bg_color: str | None = None
+        self._grid_color: str | None = None
+        self._selected_bg_color: str | None = None
+        self._hover_bg_color: str | None = None
 
         # Theme
         self._theme = ThemeManager()
@@ -632,6 +701,41 @@ class DataTable(Widget):
     def on_filter_change(self, callback: FilterCallback) -> Self:
         """Register callback for filter changes."""
         self._on_filter_change = callback
+        return self
+
+    def header_bg_color(self, color: str) -> Self:
+        """Set header background color."""
+        self._header_bg_color = color
+        return self
+
+    def header_text_color(self, color: str) -> Self:
+        """Set header text color."""
+        self._header_text_color = color
+        return self
+
+    def row_bg_color(self, color: str) -> Self:
+        """Set row background color."""
+        self._row_bg_color = color
+        return self
+
+    def alt_row_bg_color(self, color: str) -> Self:
+        """Set alternating row background color."""
+        self._alt_row_bg_color = color
+        return self
+
+    def grid_color(self, color: str) -> Self:
+        """Set grid line color."""
+        self._grid_color = color
+        return self
+
+    def selected_bg_color(self, color: str) -> Self:
+        """Set selected row background color."""
+        self._selected_bg_color = color
+        return self
+
+    def hover_bg_color(self, color: str) -> Self:
+        """Set hover row background color."""
+        self._hover_bg_color = color
         return self
 
     # -------------------------------------------------------------------------
@@ -911,21 +1015,42 @@ class DataTable(Widget):
     def cursor_pos(self, ev: MouseEvent) -> None:
         """Handle cursor position (hover)."""
         pos = ev.pos
+        self._mouse_pos = pos
 
         new_row = self._get_row_at_y(pos.y) if not self._is_in_header(pos.y) else -1
         new_col = self._get_column_at_x(pos.x) or -1
 
+        # Track header hover for tooltip
+        new_header_col = -1
+        if self._is_in_header(pos.y):
+            new_header_col = self._get_column_at_x(pos.x) or -1
+
+        needs_update = False
         if new_row != self._hovered_row or new_col != self._hovered_col:
             self._hovered_row = new_row if new_row is not None else -1
             self._hovered_col = new_col
+            needs_update = True
+
+        if new_header_col != self._hovered_header_col:
+            self._hovered_header_col = new_header_col
+            needs_update = True
+
+        if needs_update:
             self.dirty(True)
             self.update()
 
     def mouse_out(self) -> None:
         """Handle mouse leaving the widget."""
+        needs_update = False
         if self._hovered_row != -1 or self._hovered_col != -1:
             self._hovered_row = -1
             self._hovered_col = -1
+            needs_update = True
+        if self._hovered_header_col != -1:
+            self._hovered_header_col = -1
+            needs_update = True
+        self._mouse_pos = None
+        if needs_update:
             self.dirty(True)
             self.update()
 
@@ -1029,12 +1154,15 @@ class DataTable(Widget):
         if self._needs_vertical_scrollbar():
             self._render_scrollbar(p, state, theme)
 
+        # Draw header tooltip (must be last to appear on top)
+        self._render_header_tooltip(p, state, theme)
+
     def _render_header(self, p: Painter, state: DataTableState, theme) -> None:
         """Render the header row."""
         width = self._get_viewport_width()
 
-        # Header background
-        header_bg = theme.colors.bg_secondary
+        # Header background (custom or theme)
+        header_bg = self._header_bg_color or theme.colors.bg_secondary
         p.style(Style(fill=FillStyle(color=header_bg)))
         p.fill_rect(
             Rect(
@@ -1043,8 +1171,8 @@ class DataTable(Widget):
             )
         )
 
-        # Header text and sort indicators
-        text_color = theme.colors.text_primary
+        # Header text and sort indicators (custom or theme)
+        text_color = self._header_text_color or theme.colors.text_primary
         font_size = 14
         p.style(Style(fill=FillStyle(color=text_color), font=Font(size=font_size)))
 
@@ -1074,7 +1202,7 @@ class DataTable(Widget):
 
         # Header border
         if self._show_grid_lines:
-            border_color = theme.colors.border_primary
+            border_color = self._grid_color or theme.colors.border_primary
             p.style(Style(stroke=StrokeStyle(color=border_color, width=1)))
             p.stroke_rect(
                 Rect(
@@ -1100,15 +1228,18 @@ class DataTable(Widget):
 
         font_size = 13
         text_color = theme.colors.text_primary
-        alt_bg = (
+
+        # Use custom colors or fall back to theme
+        row_bg = self._row_bg_color  # None means transparent
+        alt_bg = self._alt_row_bg_color or (
             theme.colors.bg_tertiary
             if hasattr(theme.colors, "bg_tertiary")
             else theme.colors.bg_secondary
         )
-        selected_bg = (
+        selected_bg = self._selected_bg_color or (
             theme.colors.text_info if hasattr(theme.colors, "text_info") else "#3b82f6"
         )
-        hover_bg = theme.colors.bg_secondary
+        hover_bg = self._hover_bg_color or theme.colors.bg_secondary
 
         for view_row in range(start_row, end_row):
             data_row = state.get_data_row(view_row)
@@ -1132,7 +1263,7 @@ class DataTable(Widget):
                 bg = alt_bg
                 fg = text_color
             else:
-                bg = None
+                bg = row_bg
                 fg = text_color
 
             if bg:
@@ -1174,7 +1305,7 @@ class DataTable(Widget):
 
             # Row border (horizontal line)
             if self._show_grid_lines:
-                border_color = theme.colors.border_primary
+                border_color = self._grid_color or theme.colors.border_primary
                 p.style(Style(fill=FillStyle(color=border_color)))
                 p.fill_rect(
                     Rect(
@@ -1185,7 +1316,7 @@ class DataTable(Widget):
 
         # Column grid lines (vertical lines)
         if self._show_grid_lines:
-            border_color = theme.colors.border_primary
+            border_color = self._grid_color or theme.colors.border_primary
             p.style(Style(fill=FillStyle(color=border_color)))
             x = -state.scroll_x
             for col in state.columns:
@@ -1239,6 +1370,65 @@ class DataTable(Widget):
                 size=Size(width=SCROLLBAR_SIZE - 4, height=thumb_height),
             )
         )
+
+    def _render_header_tooltip(
+        self, p: Painter, state: DataTableState, theme
+    ) -> None:
+        """Render tooltip for hovered header column."""
+        if self._hovered_header_col < 0 or self._mouse_pos is None:
+            return
+
+        col_idx = self._hovered_header_col
+        if col_idx >= len(state.columns):
+            return
+
+        col = state.columns[col_idx]
+        if not col.tooltip:
+            return
+
+        # Build tooltip text
+        text = col.tooltip
+
+        # Measure text
+        font_size = 12
+        p.style(Style(font=Font(size=font_size)))
+        text_width = p.measure_text(text)
+        text_height = font_size + 2
+        padding = 6
+
+        # Calculate tooltip dimensions
+        tooltip_width = text_width + padding * 2
+        tooltip_height = text_height + padding * 2
+
+        # Position below header, near mouse
+        x = self._mouse_pos.x - tooltip_width / 2
+        y = self._header_height + 4
+
+        # Clamp to widget bounds
+        size = self.get_size()
+        x = max(4, min(x, size.width - tooltip_width - 4))
+
+        # Draw tooltip background
+        bg_rect = Rect(
+            origin=Point(x=x, y=y),
+            size=Size(width=tooltip_width, height=tooltip_height),
+        )
+        bg_color = theme.colors.bg_tertiary if hasattr(theme.colors, "bg_tertiary") else "#333333"
+        border_color = theme.colors.border_primary if hasattr(theme.colors, "border_primary") else "#555555"
+        p.style(
+            Style(
+                fill=FillStyle(color=bg_color),
+                stroke=StrokeStyle(color=border_color),
+                border_radius=4,
+            )
+        )
+        p.fill_rect(bg_rect)
+        p.stroke_rect(bg_rect)
+
+        # Draw text
+        text_color = theme.colors.text_primary if hasattr(theme.colors, "text_primary") else "#ffffff"
+        p.style(Style(fill=FillStyle(color=text_color), font=Font(size=font_size)))
+        p.fill_text(text, Point(x=x + padding, y=y + padding + text_height - 4), None)
 
     # -------------------------------------------------------------------------
     # Measurement

@@ -140,6 +140,11 @@ class Text(Widget):
 
         return Size(width=width, height=height)
 
+    def font_size(self, size: int) -> Self:
+        """Set the font size (fluent API)."""
+        self._font_size = size
+        return self
+
 
 class SimpleText(Widget):
     def __init__(
@@ -260,3 +265,8 @@ class SimpleText(Widget):
             p.restore()
 
         return Size(width=width, height=height)
+
+    def font_size(self, size: int) -> Self:
+        """Set the font size (fluent API)."""
+        self._font_size = size
+        return self

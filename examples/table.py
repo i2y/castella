@@ -6,9 +6,9 @@ from castella.frame import Frame
 
 
 class Person(BaseModel):
-    name: str = Field(..., title="Name")
-    age: int = Field(..., title="Age")
-    country: str = Field(..., title="Country")
+    name: str = Field(..., title="Name", description="Full name of the person")
+    age: int = Field(..., title="Age", description="Age in years (0-200)")
+    country: str = Field(..., title="Country", description="Country of residence")
 
 
 persons = [
