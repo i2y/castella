@@ -1,5 +1,8 @@
 """All Widgets Demo - Comprehensive showcase of all Castella widgets.
 
+This demo uses Approach B: Tabs widget with lazy content building.
+Only the selected tab's content is built; other tabs use empty Spacer.
+
 This demo includes 29 widgets organized into 6 tabs:
 - Basic: Text, SimpleText, MultilineText, Button
 - Input: Input, MultilineInput, CheckBox, RadioButtons, Switch, Slider, DateTimeInput
@@ -43,6 +46,9 @@ from castella import (
     Spacer,
     State,
     Switch,
+    TabItem,
+    Tabs,
+    TabsState,
     Text,
     Tree,
     TreeNode,
@@ -360,19 +366,39 @@ class AllWidgetsDemo(Component):
         theme = self._theme.current
         tab_id = self._tab_id()
 
-        # Build ONLY the visible tab content (lazy building for performance)
-        content = self._build_tab_content(theme, tab_id)
+        # Build TabItems with lazy content - only selected tab has real content
+        tab_definitions = [
+            ("basic", "Basic"),
+            ("input", "Input"),
+            ("layout", "Layout"),
+            ("data", "Data"),
+            ("media", "Media"),
+            ("dashboard", "Dashboard"),
+            ("bar", "Bar"),
+            ("line", "Line/Area"),
+            ("pie", "Pie/Scatter"),
+            ("gauge", "Stacked/Gauge"),
+        ]
 
-        # Build simple tab bar with buttons
-        tab_bar = self._build_tab_bar(theme, tab_id)
+        tab_items = []
+        for tid, label in tab_definitions:
+            if tid == tab_id:
+                # Only build content for the selected tab
+                content = self._build_tab_content(theme, tid)
+            else:
+                # Use lightweight Spacer for non-selected tabs
+                content = Spacer()
+            tab_items.append(TabItem(id=tid, label=label, content=content))
+
+        tabs_state = TabsState(tab_items, selected_id=tab_id)
+        tabs = Tabs(tabs_state).on_change(lambda id: self._tab_id.set(id))
 
         main_content = Column(
-            Text("All Widgets Demo", font_size=20)
+            Text("All Widgets Demo (Tabs Version)", font_size=20)
             .text_color(theme.colors.text_primary)
             .height(40)
             .height_policy(SizePolicy.FIXED),
-            tab_bar,
-            content,
+            tabs,
             Row(
                 Text(self._status(), font_size=12).text_color(theme.colors.fg),
                 Spacer(),
@@ -403,35 +429,6 @@ class AllWidgetsDemo(Component):
         self._theme.toggle_dark_mode()
         mode = "Dark" if self._theme.current.is_dark else "Light"
         self._status.set(f"Theme: {mode} mode")
-
-    def _build_tab_bar(self, theme, current_tab_id):
-        """Build a simple button-based tab bar."""
-        tabs = [
-            ("basic", "Basic"),
-            ("input", "Input"),
-            ("layout", "Layout"),
-            ("data", "Data"),
-            ("media", "Media"),
-            ("dashboard", "Dashboard"),
-            ("bar", "Bar"),
-            ("line", "Line/Area"),
-            ("pie", "Pie/Scatter"),
-            ("gauge", "Stacked/Gauge"),
-        ]
-        buttons = []
-        for tid, label in tabs:
-            # Highlight the selected tab with a different kind
-            btn = Button(
-                label,
-                kind=Kind.INFO if tid == current_tab_id else Kind.NORMAL,
-            ).on_click(lambda _, t=tid: self._tab_id.set(t))
-            buttons.append(btn)
-        return (
-            Row(*buttons)
-            .height(38)
-            .height_policy(SizePolicy.FIXED)
-            .bg_color(theme.colors.bg_secondary)
-        )
 
     def _build_tab_content(self, theme, tab_id):
         """Build only the content for the selected tab (lazy building)."""

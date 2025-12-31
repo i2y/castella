@@ -101,8 +101,9 @@ class ChartTransform:
             )
 
     def attach(self, observer: Any) -> None:
-        """Attach an observer."""
-        self._observers.append(observer)
+        """Attach an observer. Duplicates are ignored."""
+        if observer not in self._observers:
+            self._observers.append(observer)
 
     def detach(self, observer: Any) -> None:
         """Detach an observer."""

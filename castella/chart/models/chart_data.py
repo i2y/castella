@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Self
+from contextlib import contextmanager
+from typing import Any, Generator, Self
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
@@ -36,16 +37,20 @@ class ChartDataBase(BaseModel):
     _observers: list[Any] = PrivateAttr(default_factory=list)
     _series_visibility: dict[int, bool] = PrivateAttr(default_factory=dict)
     _selected_points: set[tuple[int, int]] = PrivateAttr(default_factory=set)
+    _batch_updating: bool = PrivateAttr(default=False)
 
     def attach(self, observer: Any) -> None:
         """Attach an observer to be notified of changes.
 
+        Duplicate observers are ignored to prevent accumulation.
+
         Args:
             observer: An object with on_notify() and optionally on_attach() methods.
         """
-        self._observers.append(observer)
-        if hasattr(observer, "on_attach"):
-            observer.on_attach(self)
+        if observer not in self._observers:
+            self._observers.append(observer)
+            if hasattr(observer, "on_attach"):
+                observer.on_attach(self)
 
     def detach(self, observer: Any) -> None:
         """Detach an observer.
@@ -61,11 +66,35 @@ class ChartDataBase(BaseModel):
     def notify(self, event: Any = None) -> None:
         """Notify all observers of a change.
 
+        Notifications are skipped when inside a batch_update() context.
+
         Args:
             event: Optional event data to pass to observers.
         """
+        if self._batch_updating:
+            return
         for observer in self._observers:
             observer.on_notify(event)
+
+    @contextmanager
+    def batch_update(self) -> Generator[None, None, None]:
+        """Context manager for batch updates.
+
+        While inside this context, notify() calls are suppressed.
+        A single notify() is called when the context exits.
+
+        Example:
+            with chart_data.batch_update():
+                chart_data.series = new_series1
+                chart_data.set_series([series1, series2])
+            # notify() is called once here
+        """
+        self._batch_updating = True
+        try:
+            yield
+        finally:
+            self._batch_updating = False
+            self.notify()
 
     # Series visibility management
 
