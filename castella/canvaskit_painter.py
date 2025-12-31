@@ -12,13 +12,6 @@ from castella import core
 from castella.models.style import Shadow
 
 
-def code2rgb(color_code):
-    r = int(color_code[1:3], 16)
-    g = int(color_code[3:5], 16)
-    b = int(color_code[5:7], 16)
-    return (r, g, b, 1.0)
-
-
 def code2rgba(color_code: str) -> tuple[int, int, int, float]:
     """Parse hex color code with optional alpha channel."""
     r = int(color_code[1:3], 16)
@@ -32,10 +25,6 @@ def code2rgba(color_code: str) -> tuple[int, int, int, float]:
 
 
 def to_ck_color(color: str) -> int:
-    return window.CK.Color(*code2rgb(color))
-
-
-def to_ck_color_with_alpha(color: str) -> int:
     """Convert hex color (with optional alpha) to CanvasKit color."""
     return window.CK.Color(*code2rgba(color))
 
@@ -120,7 +109,7 @@ class Painter:
     ) -> None:
         """Draw a drop shadow behind a rectangle."""
         paint = window.CK.Paint.new()
-        paint.setColor(to_ck_color_with_alpha(shadow.color))
+        paint.setColor(to_ck_color(shadow.color))
         paint.setStyle(window.CK.PaintStyle.Fill)
         paint.setAntiAlias(True)
         paint.setMaskFilter(

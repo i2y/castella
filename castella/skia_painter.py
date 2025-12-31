@@ -12,13 +12,6 @@ from castella.font_fallback import segment_text_by_font
 from castella.models.style import Shadow
 
 
-def _code2rgb(color_code):
-    r = int(color_code[1:3], 16)
-    g = int(color_code[3:5], 16)
-    b = int(color_code[5:7], 16)
-    return (r, g, b)
-
-
 def _code2rgba(color_code: str) -> tuple[int, int, int, int]:
     """Parse hex color code with optional alpha channel."""
     r = int(color_code[1:3], 16)
@@ -32,10 +25,6 @@ def _code2rgba(color_code: str) -> tuple[int, int, int, int]:
 
 
 def _to_skia_color(color: str) -> int:
-    return skia.ColorSetRGB(*_code2rgb(color))
-
-
-def _to_skia_color_with_alpha(color: str) -> int:
     """Convert hex color (with optional alpha) to Skia color."""
     r, g, b, a = _code2rgba(color)
     return skia.ColorSetARGB(a, r, g, b)
@@ -184,7 +173,7 @@ class Painter:
     ) -> None:
         """Draw a drop shadow behind a rectangle."""
         paint = skia.Paint(
-            Color=_to_skia_color_with_alpha(shadow.color),
+            Color=_to_skia_color(shadow.color),
             Style=skia.Paint.kFill_Style,
             AntiAlias=True,
         )
