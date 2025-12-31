@@ -44,6 +44,20 @@ def get_setup_error() -> Optional[str]:
 
 
 if _available:
+    import warnings
+
+    # Suppress PyObjC warnings about NSRange pointers from IME methods
+    try:
+        from objc import ObjCPointerWarning
+
+        warnings.filterwarnings(
+            "ignore",
+            message="PyObjCPointer created:.*_NSRange",
+            category=ObjCPointerWarning,
+        )
+    except ImportError:
+        pass
+
     import glfw
 
     # Get the GLFW shared library for native function access
@@ -94,6 +108,8 @@ if _available:
     # Store original method implementations for swizzling
     _original_set_marked_text = None
     _original_insert_text = None
+    _original_unmark_text = None
+    _original_do_command_by_selector = None
 
     # Global callback storage (set by MacOSIMEManager)
     _ime_preedit_callback: Optional[Callable[[str, int], None]] = None
@@ -147,6 +163,30 @@ if _available:
 
         # Note: We don't call _ime_commit_callback here because
         # GLFW's char callback will handle the committed text
+
+    def _swizzled_unmark_text(self):
+        """Swizzled unmarkText implementation.
+
+        This is called when IME composition is cancelled (e.g., pressing Escape
+        or moving cursor outside the preedit area).
+        """
+        # Clear preedit
+        if _ime_preedit_callback:
+            _ime_preedit_callback("", 0)
+
+        # Call original implementation
+        if _original_unmark_text:
+            _original_unmark_text(self)
+
+    def _swizzled_do_command_by_selector(self, aSelector):
+        """Swizzled doCommandBySelector: implementation.
+
+        This is called when special keys (like backspace, enter) are pressed
+        during IME composition.
+        """
+        # Call original implementation
+        if _original_do_command_by_selector:
+            _original_do_command_by_selector(self, aSelector)
 
     def _swizzled_first_rect_for_character_range(self, aRange, actualRange):
         """Swizzled firstRectForCharacterRange:actualRange: implementation.
@@ -326,6 +366,44 @@ if _available:
                                     ctypes.c_void_p(original_method),
                                     ctypes.c_void_p(new_method),
                                 )
+                    except Exception:
+                        pass
+
+                    # Swizzle unmarkText to handle IME cancellation
+                    try:
+                        global _original_unmark_text
+
+                        unmark_sel = objc.selector(
+                            _swizzled_unmark_text,
+                            selector=b"unmarkText",
+                            signature=b"v@:",
+                        )
+
+                        original_unmark = view_class.instanceMethodForSelector_(
+                            b"unmarkText"
+                        )
+                        if original_unmark:
+                            _original_unmark_text = original_unmark
+                            objc.classAddMethod(view_class, unmark_sel.selector, unmark_sel)
+                    except Exception:
+                        pass
+
+                    # Swizzle doCommandBySelector: to intercept special keys
+                    try:
+                        global _original_do_command_by_selector
+
+                        cmd_sel = objc.selector(
+                            _swizzled_do_command_by_selector,
+                            selector=b"doCommandBySelector:",
+                            signature=b"v@::",
+                        )
+
+                        original_cmd = view_class.instanceMethodForSelector_(
+                            b"doCommandBySelector:"
+                        )
+                        if original_cmd:
+                            _original_do_command_by_selector = original_cmd
+                            objc.classAddMethod(view_class, cmd_sel.selector, cmd_sel)
                     except Exception:
                         pass
 

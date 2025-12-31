@@ -5,6 +5,7 @@ from castella.core import (
     CaretDrawable,
     FillStyle,
     FontSizePolicy,
+    IMEPreeditEvent,
     InputCharEvent,
     InputKeyEvent,
     KeyAction,
@@ -45,6 +46,9 @@ class MultilineInputState(ObservableBase):
         self._selection_start: tuple[int, int] | None = None  # (row, col)
         self._selection_end: tuple[int, int] | None = None  # (row, col)
         self._is_selecting: bool = False
+        # IME preedit state
+        self._preedit_text: str = ""
+        self._preedit_cursor: int = 0
 
     def value(self) -> str:
         """Return full text as a single string joined with newlines."""
@@ -100,6 +104,26 @@ class MultilineInputState(ObservableBase):
             return
         self._editing = False
         self.notify()
+
+    def set_preedit(self, text: str, cursor: int) -> None:
+        """Set IME preedit (composition) text."""
+        self._preedit_text = text
+        self._preedit_cursor = cursor
+        self.notify()
+
+    def clear_preedit(self) -> None:
+        """Clear IME preedit text."""
+        self._preedit_text = ""
+        self._preedit_cursor = 0
+        self.notify()
+
+    def get_preedit(self) -> tuple[str, int]:
+        """Get current preedit text and cursor position."""
+        return (self._preedit_text, self._preedit_cursor)
+
+    def has_preedit(self) -> bool:
+        """Check if there is active preedit text."""
+        return bool(self._preedit_text)
 
     def insert(self, char: str) -> None:
         """Insert character at cursor position."""
@@ -374,13 +398,25 @@ class MultilineInput(Widget):
         state = cast(MultilineInputState, self._state)
         display_lines: list[tuple[int, str, int]] = []
 
+        # Get preedit info
+        preedit_text, _ = state.get_preedit()
+        cursor_row, cursor_col = state.get_cursor_pos()
+
         if not self._wrap or line_width <= 0:
             for row_idx in range(state.line_count()):
-                display_lines.append((row_idx, state.get_line(row_idx), 0))
+                line = state.get_line(row_idx)
+                # Insert preedit at cursor position
+                if preedit_text and row_idx == cursor_row:
+                    line = line[:cursor_col] + preedit_text + line[cursor_col:]
+                display_lines.append((row_idx, line, 0))
             return display_lines
 
         for row_idx in range(state.line_count()):
             line = state.get_line(row_idx)
+            # Insert preedit at cursor position
+            if preedit_text and row_idx == cursor_row:
+                line = line[:cursor_col] + preedit_text + line[cursor_col:]
+
             if not line:
                 display_lines.append((row_idx, "", 0))
                 continue
@@ -421,13 +457,20 @@ class MultilineInput(Widget):
         state = cast(MultilineInputState, self._state)
         cursor_row, cursor_col = state.get_cursor_pos()
 
+        # Adjust cursor column for preedit text
+        preedit_text, preedit_cursor = state.get_preedit()
+        display_cursor_col = cursor_col
+        if preedit_text:
+            # Position cursor within the preedit text
+            display_cursor_col = cursor_col + preedit_cursor
+
         for display_idx, (logical_row, text, start_col) in enumerate(display_lines):
             if logical_row != cursor_row:
                 continue
 
             end_col = start_col + len(text)
-            if start_col <= cursor_col <= end_col:
-                text_before = text[: cursor_col - start_col]
+            if start_col <= display_cursor_col <= end_col:
+                text_before = text[: display_cursor_col - start_col]
                 x_offset = p.measure_text(text_before)
                 return (display_idx, x_offset)
 
@@ -630,6 +673,9 @@ class MultilineInput(Widget):
 
     def input_char(self, ev: InputCharEvent) -> None:
         state = cast(MultilineInputState, self._state)
+        # Clear any preedit when text is committed
+        if state.has_preedit():
+            state.clear_preedit()
         # Delete selection if any before inserting
         if state.has_selection():
             state.delete_selection()
@@ -639,11 +685,31 @@ class MultilineInput(Widget):
         # Request redraw without triggering component re-render
         self.update(True)
 
+    def ime_preedit(self, ev: IMEPreeditEvent) -> None:
+        """Handle IME preedit (composition) event."""
+        state = cast(MultilineInputState, self._state)
+        if ev.text:
+            state.set_preedit(ev.text, ev.cursor_pos)
+        else:
+            state.clear_preedit()
+
     def input_key(self, ev: InputKeyEvent) -> None:
         if ev.action is KeyAction.RELEASE:
             return
 
         state = cast(MultilineInputState, self._state)
+
+        # During IME preedit, let IME handle key events
+        if state.has_preedit():
+            preedit_text, _ = state.get_preedit()
+            # Workaround: When preedit has only 1 character and backspace/escape
+            # is pressed, the IME may not send any callback. Handle it here.
+            if len(preedit_text) == 1:
+                if ev.key is KeyCode.BACKSPACE or ev.key is KeyCode.ESCAPE:
+                    state.clear_preedit()
+                    return
+            return
+
         state._manual_scroll = False  # Reset manual scroll on any key input
 
         # Handle Cmd+C / Ctrl+C (Copy)

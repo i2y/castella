@@ -359,6 +359,13 @@ class Input(Text):
 
         # During IME preedit, let IME handle key events
         if state.has_preedit():
+            preedit_text, _ = state.get_preedit()
+            # Workaround: When preedit has only 1 character and backspace/escape
+            # is pressed, the IME may not send any callback. Handle it here.
+            if len(preedit_text) == 1:
+                if ev.key is KeyCode.BACKSPACE or ev.key is KeyCode.ESCAPE:
+                    state.clear_preedit()
+                    return
             return
 
         if ev.key is KeyCode.BACKSPACE:
