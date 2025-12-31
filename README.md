@@ -23,6 +23,7 @@ The primary final goal of Castella is to provide features for Python programmers
 - Z-index support enables layered UIs with modals, popups, and overlays.
 - **A2A Protocol support** - Connect to AI agents via Google's Agent-to-Agent protocol with `A2AClient`.
 - **A2UI Protocol support** - Render agent-generated UIs with 17 standard components, tested with Google's sample agents.
+- **MCP (Model Context Protocol) support** - AI agents can introspect and control UIs programmatically via MCP.
 - **AgentChat** - Build chat interfaces with AI agents in just 3 lines of code.
 
 ## Dependencies
@@ -117,6 +118,38 @@ surface = client.send("Find me restaurants in Tokyo")
 # Render in Castella
 if surface:
     App(Frame("A2UI Demo", 800, 600), A2UIComponent(surface)).run()
+```
+
+## MCP Example
+
+Enable AI agents to control your UI via [MCP (Model Context Protocol)](https://modelcontextprotocol.github.io/):
+
+```python
+from castella import App, Column, Button, Input, Text
+from castella.frame import Frame
+from castella.mcp import CastellaMCPServer
+
+def build_ui():
+    return Column(
+        Text("Hello MCP!"),
+        Input("").semantic_id("name-input"),
+        Button("Submit").semantic_id("submit-btn"),
+    )
+
+app = App(Frame("MCP Demo", 800, 600), build_ui())
+mcp = CastellaMCPServer(app, name="my-app")
+
+# Run SSE server for HTTP clients
+mcp.run_sse_in_background(host="localhost", port=8765)
+
+app.run()
+```
+
+AI agents can then introspect the UI tree and control widgets:
+```python
+# Client example (AI agent)
+call_tool("type_text", element_id="name-input", text="Hello")
+call_tool("click", element_id="submit-btn")
 ```
 
 You can see some other examples in [examples](examples) directory.

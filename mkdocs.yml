@@ -46,6 +46,7 @@ nav:
       - Charts: chart.md
   - AI Agent:
       - Agent UI: agent.md
+      - MCP: mcp.md
   - Advanced:
       - Z-Index and Layering: z-index.md
       - Hot Restarting: hot-restarting.md

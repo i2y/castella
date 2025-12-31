@@ -281,3 +281,36 @@ $env:CASTELLA_IS_TERMINAL_MODE="true"; uv run python your_script.py
 ```
 
 If you only have the TUI package installed, terminal mode is enabled automatically.
+
+## Optional Features
+
+Castella provides several optional extras for additional functionality:
+
+### AI Agent Support
+
+For A2A (Agent-to-Agent) and A2UI (Agent-to-User Interface) protocols:
+
+```bash
+uv add "castella[agent,glfw]"
+```
+
+See the [Agent UI documentation](agent.md) for details.
+
+### MCP (Model Context Protocol) Support
+
+For AI agents to introspect and control UIs programmatically:
+
+```bash
+uv add "castella[mcp,glfw]"
+```
+
+See the [MCP documentation](mcp.md) for details.
+
+### Combined Installation
+
+You can combine multiple extras:
+
+```bash
+# Desktop with agent and MCP support
+uv add "castella[glfw,agent,mcp]"
+```

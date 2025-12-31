@@ -62,3 +62,9 @@ try:
     )
 except ImportError:
     pass
+
+# MCP support (optional - requires 'mcp' package)
+try:
+    from castella.mcp import CastellaMCPServer as CastellaMCPServer
+except ImportError:
+    pass

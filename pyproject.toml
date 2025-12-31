@@ -56,6 +56,9 @@ tui = [
 agent = [
     "python-a2a>=0.5.0",
 ]
+mcp = [
+    "mcp>=1.0.0",
+]
 [project.urls]
 homepage = "https://github.com/i2y/castella"
 repository = "https://github.com/i2y/castella"
@@ -85,6 +88,7 @@ dev = [
     "windows-curses>=2.3.3; sys_platform == 'win32'",
     "prompt-toolkit>=3.0.48",
     "pyperclip>=1.9.0",
+    "mcp>=1.0.0",
 ]
 
 [build-system]

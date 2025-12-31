@@ -2,6 +2,9 @@
 
 Castella provides comprehensive support for building AI agent interfaces with A2A (Agent-to-Agent) and A2UI (Agent-to-User Interface) protocols.
 
+!!! tip "MCP Support"
+    Castella also supports [MCP (Model Context Protocol)](mcp.md) for AI agents to introspect and control UIs programmatically. See the [MCP documentation](mcp.md) for details.
+
 ## Quick Start
 
 The simplest way to create a chat UI for an AI agent:

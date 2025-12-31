@@ -19,6 +19,7 @@ The primary final goal of Castella is to provide features for Python programmers
 - Z-index support enables layered UIs with modals, popups, and overlays.
 - **A2A Protocol support** - Connect to AI agents via Google's Agent-to-Agent protocol with `A2AClient`.
 - **A2UI Protocol support** - Render agent-generated UIs with 17 standard components, tested with Google's sample agents.
+- **MCP (Model Context Protocol) support** - AI agents can introspect and control UIs programmatically via [MCP](mcp.md).
 - **AgentChat** - Build chat interfaces with AI agents in just 3 lines of code.
 
 ## Dependencies

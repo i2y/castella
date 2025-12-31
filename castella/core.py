@@ -295,6 +295,7 @@ class Widget(ABC):
         self._flex = 1
         self._z_index: int = 1
         self._dirty = True
+        self._semantic_id_hint: str | None = None
         self._enable_to_detach = True
         self._parent: Self | None = None
         self._widget_styles = get_theme().get_widget_styles(self)
@@ -605,6 +606,25 @@ class Widget(ABC):
         if z < 1:
             raise ValueError("z_index must be a positive integer (>= 1)")
         self._z_index = z
+        return self
+
+    def get_semantic_id_hint(self) -> str | None:
+        return self._semantic_id_hint
+
+    def semantic_id(self, hint: str) -> Self:
+        """Set a semantic ID hint for MCP accessibility.
+
+        This hint is used by CastellaMCPServer to provide a stable,
+        human-readable identifier for this widget that persists across
+        view rebuilds.
+
+        Args:
+            hint: A short, descriptive identifier (e.g., "submit-btn", "email-input")
+
+        Returns:
+            Self for method chaining
+        """
+        self._semantic_id_hint = hint
         return self
 
     def parent(self, parent: Self) -> None:
