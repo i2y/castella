@@ -329,13 +329,13 @@ TOKYO_NIGHT_LIGHT_PALETTE = ColorPalette(
     bg_warning="#e9e9ed",  # Warning background
     bg_pushed="#a9aab1",  # Pressed state
     bg_selected="#2e7de9",  # Blue selection
-    # Foreground/Text colors
-    fg="#3760bf",  # Foreground
-    text_primary="#3760bf",  # Foreground
-    text_info="#007197",  # Cyan
-    text_danger="#f52a65",  # Red
-    text_success="#587539",  # Green
-    text_warning="#8c6c3e",  # Yellow
+    # Foreground/Text colors (darkened for better contrast on light backgrounds)
+    fg="#1a1b26",  # Dark navy (Tokyo Night Dark fg)
+    text_primary="#1a1b26",  # Dark navy
+    text_info="#005a7a",  # Darker cyan
+    text_danger="#c41e3a",  # Darker red
+    text_success="#3d5229",  # Darker green
+    text_warning="#6a4e1f",  # Darker orange/brown
     # Border colors
     border_primary="#6172b0",  # Comment
     border_secondary="#a8aecb",  # Dark3

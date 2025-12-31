@@ -81,10 +81,10 @@ class ChartTheme:
         # Use border_secondary as a secondary text color (lighter/dimmer)
         text_secondary = palette.border_primary
 
-        # Tooltip text should contrast with tooltip_bg
+        # Tooltip text should contrast with tooltip_bg (bg_secondary)
         # For dark themes, bg_secondary is dark so use light text
-        # For light themes, bg_secondary is light so tooltip_bg is dark, use light text
-        tooltip_text = palette.text_primary if is_dark else "#ffffff"
+        # For light themes, bg_secondary is light so use dark text
+        tooltip_text = "#ffffff" if is_dark else palette.text_primary
 
         return cls(
             background=palette.bg_primary,
