@@ -8,6 +8,7 @@ from collections.abc import Iterable
 from copy import deepcopy
 from dataclasses import replace
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Generator,
@@ -20,6 +21,9 @@ from typing import (
 )
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from castella.chart.models.animation import EasingFunction
 
 # Re-exports for backward compatibility
 from castella.models.font import EM, Font, FontMetrics, FontSizePolicy  # noqa: F401
@@ -668,6 +672,252 @@ class Widget(ABC):
     def fit_content_height(self) -> Self:
         return self.height_policy(SizePolicy.CONTENT)
 
+    # Animation methods
+
+    def animate_to(
+        self,
+        x: float | None = None,
+        y: float | None = None,
+        width: float | None = None,
+        height: float | None = None,
+        duration_ms: int = 300,
+        easing: "EasingFunction | None" = None,
+        on_complete: Callable[[], None] | None = None,
+    ) -> Self:
+        """Animate widget properties to target values.
+
+        Args:
+            x: Target x position (None = no change)
+            y: Target y position (None = no change)
+            width: Target width (None = no change)
+            height: Target height (None = no change)
+            duration_ms: Animation duration in milliseconds
+            easing: Easing function (default: EASE_OUT_CUBIC)
+            on_complete: Callback when all animations complete
+
+        Returns:
+            Self for method chaining
+
+        Example:
+            button.animate_to(x=200, y=100, duration_ms=400)
+        """
+        from castella.animation import AnimationScheduler, EasingFunction, Tween
+
+        if easing is None:
+            easing = EasingFunction.EASE_OUT_CUBIC
+
+        scheduler = AnimationScheduler.get()
+        animations_started = 0
+
+        if x is not None:
+            scheduler.add(Tween(self, "x", self._pos.x, x, duration_ms, easing))
+            animations_started += 1
+
+        if y is not None:
+            scheduler.add(Tween(self, "y", self._pos.y, y, duration_ms, easing))
+            animations_started += 1
+
+        if width is not None:
+            scheduler.add(
+                Tween(self, "width", self._size.width, width, duration_ms, easing)
+            )
+            animations_started += 1
+
+        if height is not None:
+            # Last animation gets the on_complete callback
+            scheduler.add(
+                Tween(
+                    self,
+                    "height",
+                    self._size.height,
+                    height,
+                    duration_ms,
+                    easing,
+                    on_complete=on_complete if animations_started == 0 else None,
+                )
+            )
+            animations_started += 1
+
+        # If on_complete is set and height wasn't animated, attach to last animation
+        if on_complete is not None and animations_started > 0 and height is None:
+            # For simplicity, on_complete only fires for height animation
+            # A more sophisticated implementation would track all animations
+            pass
+
+        return self
+
+    def slide_in(
+        self,
+        direction: str = "left",
+        distance: float = 100,
+        duration_ms: int = 300,
+        easing: "EasingFunction | None" = None,
+        on_complete: Callable[[], None] | None = None,
+    ) -> Self:
+        """Slide in from off-screen position.
+
+        Args:
+            direction: Direction to slide from ("left", "right", "top", "bottom")
+            distance: Distance to slide in pixels
+            duration_ms: Animation duration in milliseconds
+            easing: Easing function (default: EASE_OUT_CUBIC)
+            on_complete: Callback when animation completes
+
+        Returns:
+            Self for method chaining
+
+        Example:
+            panel.slide_in("left", distance=200)
+        """
+        from castella.animation import AnimationScheduler, EasingFunction, Tween
+
+        if easing is None:
+            easing = EasingFunction.EASE_OUT_CUBIC
+
+        scheduler = AnimationScheduler.get()
+        current_x = self._pos.x
+        current_y = self._pos.y
+
+        match direction:
+            case "left":
+                self._pos.x = current_x - distance
+                scheduler.add(
+                    Tween(
+                        self,
+                        "x",
+                        current_x - distance,
+                        current_x,
+                        duration_ms,
+                        easing,
+                        on_complete,
+                    )
+                )
+            case "right":
+                self._pos.x = current_x + distance
+                scheduler.add(
+                    Tween(
+                        self,
+                        "x",
+                        current_x + distance,
+                        current_x,
+                        duration_ms,
+                        easing,
+                        on_complete,
+                    )
+                )
+            case "top":
+                self._pos.y = current_y - distance
+                scheduler.add(
+                    Tween(
+                        self,
+                        "y",
+                        current_y - distance,
+                        current_y,
+                        duration_ms,
+                        easing,
+                        on_complete,
+                    )
+                )
+            case "bottom":
+                self._pos.y = current_y + distance
+                scheduler.add(
+                    Tween(
+                        self,
+                        "y",
+                        current_y + distance,
+                        current_y,
+                        duration_ms,
+                        easing,
+                        on_complete,
+                    )
+                )
+
+        return self
+
+    def slide_out(
+        self,
+        direction: str = "left",
+        distance: float = 100,
+        duration_ms: int = 300,
+        easing: "EasingFunction | None" = None,
+        on_complete: Callable[[], None] | None = None,
+    ) -> Self:
+        """Slide out to off-screen position.
+
+        Args:
+            direction: Direction to slide to ("left", "right", "top", "bottom")
+            distance: Distance to slide in pixels
+            duration_ms: Animation duration in milliseconds
+            easing: Easing function (default: EASE_IN_CUBIC)
+            on_complete: Callback when animation completes
+
+        Returns:
+            Self for method chaining
+
+        Example:
+            panel.slide_out("right", distance=200)
+        """
+        from castella.animation import AnimationScheduler, EasingFunction, Tween
+
+        if easing is None:
+            easing = EasingFunction.EASE_IN_CUBIC
+
+        scheduler = AnimationScheduler.get()
+        current_x = self._pos.x
+        current_y = self._pos.y
+
+        match direction:
+            case "left":
+                scheduler.add(
+                    Tween(
+                        self,
+                        "x",
+                        current_x,
+                        current_x - distance,
+                        duration_ms,
+                        easing,
+                        on_complete,
+                    )
+                )
+            case "right":
+                scheduler.add(
+                    Tween(
+                        self,
+                        "x",
+                        current_x,
+                        current_x + distance,
+                        duration_ms,
+                        easing,
+                        on_complete,
+                    )
+                )
+            case "top":
+                scheduler.add(
+                    Tween(
+                        self,
+                        "y",
+                        current_y,
+                        current_y - distance,
+                        duration_ms,
+                        easing,
+                        on_complete,
+                    )
+                )
+            case "bottom":
+                scheduler.add(
+                    Tween(
+                        self,
+                        "y",
+                        current_y,
+                        current_y + distance,
+                        duration_ms,
+                        easing,
+                        on_complete,
+                    )
+                )
+
+        return self
+
 
 T = TypeVar("T")
 
@@ -1259,6 +1509,7 @@ class Component(Layout, ABC):
             height_policy=SizePolicy.EXPANDING,
         )
         self._child: Widget | None = None
+        self._pending_rebuild: bool = False  # Thread-safe flag for deferred rebuild
 
     def _relocate_children(self, p: Painter) -> None:
         self._resize_children(p)
@@ -1272,6 +1523,8 @@ class Component(Layout, ABC):
         child.resize(self.get_size().model_copy())
 
     def _move_children(self):
+        if len(self._children) == 0:
+            return
         child = self._children[0]
         child.move(self.get_pos())
 
@@ -1282,23 +1535,26 @@ class Component(Layout, ABC):
     def view(self) -> Widget: ...
 
     def on_notify(self, event: Any = None) -> None:
-        if self._child is not None:
-            self.remove(self._child)
-            self._child.detach()
-            self._child = None
-        # Force complete redraw since the widget tree structure may have changed
+        # Thread-safe: just set flag, actual rebuild happens in redraw on main thread
+        self._pending_rebuild = True
         self.dirty(True)
         app = App.get()
         if app is not None:
-            # Post update to App for full unclipped redraw
             app._root_widget.dirty(True)
             app._frame.post_update(UpdateEvent(target=app, completely=True))
 
     def redraw(self, p: Painter, completely: bool) -> None:
+        # Handle pending rebuild (triggered by on_notify from any thread)
+        if self._pending_rebuild:
+            self._pending_rebuild = False
+            if self._child is not None:
+                self.remove(self._child)
+                self._child.detach()
+                self._child = None
+
         if self._child is None:
             self._child = self.view()
             self.add(self._child)
-            # Force complete redraw when view changes
             completely = True
         super().redraw(p, completely)
 

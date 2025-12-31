@@ -121,7 +121,7 @@ class Theme(BaseModel):
             return deepcopy(generate_switch_styles(self.colors, font, radius))
         elif class_name == "checkbox":
             return deepcopy(generate_checkbox_styles(self.colors, font, radius))
-        elif class_name == "slider":
+        elif class_name in ("slider", "progressbar"):
             return deepcopy(generate_slider_styles(self.colors, font, radius))
         elif class_name in ("layout", "row", "column", "box"):
             return deepcopy(generate_layout_styles(self.colors))

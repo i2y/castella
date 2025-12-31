@@ -23,6 +23,10 @@ from castella.row import Row as Row
 from castella.spacer import Spacer as Spacer
 from castella.switch import Switch as Switch
 from castella.slider import Slider as Slider, SliderState as SliderState
+from castella.progressbar import (
+    ProgressBar as ProgressBar,
+    ProgressBarState as ProgressBarState,
+)
 from castella.text import Text as Text, SimpleText as SimpleText
 from castella.checkbox import CheckBox as CheckBox
 from castella.radio_buttons import (
@@ -62,6 +66,17 @@ try:
     )
 except ImportError:
     pass
+
+# Animation support
+from castella.animation import (
+    Animation as Animation,
+    AnimationScheduler as AnimationScheduler,
+    AnimatedState as AnimatedState,
+    Tween as Tween,
+    ValueTween as ValueTween,
+    EasingFunction as EasingFunction,
+    AnimationConfig as AnimationConfig,
+)
 
 # MCP support (optional - requires 'mcp' package)
 try:

@@ -167,6 +167,16 @@ class WidgetIntrospector:
                 return f"Slider: {value}"
             return "Slider"
 
+        # ProgressBar
+        if widget_type == "ProgressBar":
+            state = getattr(widget, "_state", None)
+            if state is not None:
+                value = getattr(state, "_value", 0)
+                max_val = getattr(state, "_max", 100)
+                percent = int((value / max_val) * 100) if max_val > 0 else 0
+                return f"ProgressBar: {percent}%"
+            return "ProgressBar"
+
         # Tabs
         if widget_type == "Tabs":
             state = getattr(widget, "_state", None)
@@ -212,6 +222,12 @@ class WidgetIntrospector:
 
         # Slider
         if widget_type == "Slider":
+            state = getattr(widget, "_state", None)
+            if state is not None:
+                return getattr(state, "_value", None)
+
+        # ProgressBar
+        if widget_type == "ProgressBar":
             state = getattr(widget, "_state", None)
             if state is not None:
                 return getattr(state, "_value", None)
