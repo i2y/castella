@@ -6,7 +6,7 @@ Run with:
     uv run python examples/slider_demo.py
 """
 
-from castella import App, Box, Column, Row, Slider, SliderState, Text, SizePolicy
+from castella import App, Box, Column, Row, Slider, SliderState, Text
 from castella.core import Component, State
 from castella.frame import Frame
 from castella.theme import ThemeManager
@@ -41,69 +41,59 @@ class SliderDemo(Component):
             # Title
             Text("Slider Widget Demo")
             .text_color(theme.colors.text_primary)
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
 
             # Basic Slider
             Box(
                 Column(
                     Text(f"Basic Slider: {self._basic_value():.1f}")
-                    .height(24)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(24),
                     Slider(self._basic_value(), min_val=0, max_val=100)
                     .on_change(lambda v: self._basic_value.set(v))
-                    .height(40)
-                    .height_policy(SizePolicy.FIXED),
-                ).height_policy(SizePolicy.CONTENT)
-            ).bg_color(theme.colors.bg_secondary).height(100).height_policy(SizePolicy.FIXED),
+                    .fixed_height(40),
+                ).fit_content_height()
+            ).bg_color(theme.colors.bg_secondary).fixed_height(100),
 
             # Volume Slider with SliderState
             Box(
                 Column(
                     Text(f"Volume: {self._volume.value():.0f}%")
-                    .height(24)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(24),
                     Slider(self._volume)
-                    .height(40)
-                    .height_policy(SizePolicy.FIXED),
-                ).height_policy(SizePolicy.CONTENT)
-            ).bg_color(theme.colors.bg_tertiary).height(100).height_policy(SizePolicy.FIXED),
+                    .fixed_height(40),
+                ).fit_content_height()
+            ).bg_color(theme.colors.bg_tertiary).fixed_height(100),
 
             # Temperature Slider with negative range
             Box(
                 Column(
                     Text(f"Temperature: {self._temperature.value():.1f}°C")
-                    .height(24)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(24),
                     Slider(self._temperature)
-                    .height(40)
-                    .height_policy(SizePolicy.FIXED),
-                ).height_policy(SizePolicy.CONTENT)
-            ).bg_color(theme.colors.bg_secondary).height(100).height_policy(SizePolicy.FIXED),
+                    .fixed_height(40),
+                ).fit_content_height()
+            ).bg_color(theme.colors.bg_secondary).fixed_height(100),
 
             # Multiple sliders in a row
             Box(
                 Row(
                     Column(
-                        Text("R").height(24).height_policy(SizePolicy.FIXED),
+                        Text("R").fixed_height(24),
                         Slider(self._red)
-                        .height(30)
-                        .height_policy(SizePolicy.FIXED),
+                        .fixed_height(30),
                     ),
                     Column(
-                        Text("G").height(24).height_policy(SizePolicy.FIXED),
+                        Text("G").fixed_height(24),
                         Slider(self._green)
-                        .height(30)
-                        .height_policy(SizePolicy.FIXED),
+                        .fixed_height(30),
                     ),
                     Column(
-                        Text("B").height(24).height_policy(SizePolicy.FIXED),
+                        Text("B").fixed_height(24),
                         Slider(self._blue)
-                        .height(30)
-                        .height_policy(SizePolicy.FIXED),
+                        .fixed_height(30),
                     ),
                 )
-            ).bg_color(theme.colors.bg_tertiary).height(100).height_policy(SizePolicy.FIXED),
+            ).bg_color(theme.colors.bg_tertiary).fixed_height(100),
         ).bg_color(theme.colors.bg_primary)
 
 

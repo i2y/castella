@@ -174,7 +174,7 @@ App(Frame("Todo", 300, 300), TodoList()).run()
 ### Basic Usage
 
 ```python
-from castella import ScrollState, Column, Component, ListState, Text, SizePolicy
+from castella import ScrollState, Column, Component, ListState, Text
 
 class MessageList(Component):
     def __init__(self):
@@ -185,8 +185,7 @@ class MessageList(Component):
 
     def view(self):
         return Column(
-            *[Text(msg).height(30).height_policy(SizePolicy.FIXED)
-              for msg in self._messages],
+            *[Text(msg).fixed_height(30) for msg in self._messages],
             scrollable=True,
             scroll_state=self._scroll,  # Scroll position preserved!
         )

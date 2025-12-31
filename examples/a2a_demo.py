@@ -127,7 +127,6 @@ def run_ui_demo():
     from castella import App, Column, Text
     from castella.a2a.types import AgentCard, AgentSkill
     from castella.agent import AgentCardView
-    from castella.core import SizePolicy
     from castella.frame import Frame
 
     # Create mock agent cards for demo
@@ -187,12 +186,10 @@ def run_ui_demo():
     ui = Column(
         Text("A2A Agent Cards Demo")
         .text_color(theme.colors.text_primary)
-        .height(32)
-        .height_policy(SizePolicy.FIXED),
+        .fixed_height(32),
         Text("Connected Agents:")
         .text_color(theme.colors.text_info)
-        .height(24)
-        .height_policy(SizePolicy.FIXED),
+        .fixed_height(24),
         AgentCardView(weather_card, show_url=True),
         AgentCardView(travel_card, show_url=True),
     )

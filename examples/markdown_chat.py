@@ -68,9 +68,9 @@ class ChatApp(Component):
         for msg in self._messages:
             message_widgets.append(
                 Column(
-                    Text(msg["sender"]).height(24).height_policy(SizePolicy.FIXED),
+                    Text(msg["sender"]).fixed_height(24),
                     Markdown(msg["content"], base_font_size=13, padding=8),
-                ).height_policy(SizePolicy.CONTENT)
+                ).fit_content_height()
             )
 
         return Column(
@@ -78,7 +78,7 @@ class ChatApp(Component):
             Text("Markdown Chat").height(40),
             # Messages area - use Box with scroll_state to preserve position
             Box(
-                Column(*message_widgets).height_policy(SizePolicy.CONTENT),
+                Column(*message_widgets).fit_content_height(),
                 scroll_state=self._scroll,  # Preserves scroll position on re-render
             )
             .width_policy(SizePolicy.EXPANDING)

@@ -7,7 +7,7 @@ Demonstrates the Tree widget with:
 - Single and multi-selection modes
 """
 
-from castella import App, Tree, TreeState, TreeNode, Column, Row, Button, Text, SizePolicy
+from castella import App, Tree, TreeState, TreeNode, Column, Row, Button, Text
 from castella.frame import Frame
 
 
@@ -104,16 +104,15 @@ def main():
         Button("Expand All").on_click(expand_all),
         Button("Collapse All").on_click(collapse_all),
         Button("Toggle Multi-select").on_click(toggle_multi_select),
-    ).height(40).height_policy(SizePolicy.FIXED)
+    ).fixed_height(40)
 
     # Main layout
     content = Column(
         Text("Tree Widget Demo", font_size=18)
-        .height(30)
-        .height_policy(SizePolicy.FIXED),
+        .fixed_height(30),
         controls,
         tree,
-        status_text.height(30).height_policy(SizePolicy.FIXED),
+        status_text.fixed_height(30),
     )
 
     App(Frame("Tree Demo", 500, 600), content).run()

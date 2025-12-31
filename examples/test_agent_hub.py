@@ -4,10 +4,7 @@ First run: python examples/dummy_a2a_server.py
 Then run this script.
 """
 
-from castella import App
 from castella.agent import AgentHub
-from castella.a2a import A2AClient
-from castella.frame import Frame
 
 
 def main():

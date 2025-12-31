@@ -38,6 +38,7 @@ nav:
       - Hello World: hello-world.md
   - Core Concepts:
       - Layout: layout.md
+      - Sizing: sizing.md
       - State Management: state.md
       - Custom Widgets: custom-widgets.md
       - Styling: style.md

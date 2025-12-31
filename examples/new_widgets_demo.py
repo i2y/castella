@@ -15,7 +15,7 @@ from castella import (
     DateTimeInput,
     DateTimeInputState,
 )
-from castella.core import Component, SizePolicy, State
+from castella.core import Component, State
 from castella.frame import Frame
 from castella.theme import ThemeManager
 
@@ -60,8 +60,7 @@ class NewWidgetsDemo(Component):
         return Column(
             Text("New Widgets Demo")
             .text_color(theme.colors.text_primary)
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             tabs,
         ).bg_color(theme.colors.bg_primary)
 
@@ -72,21 +71,18 @@ class NewWidgetsDemo(Component):
         return Column(
             Text("Slider Widget")
             .text_color(theme.colors.text_primary)
-            .height(30)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(30),
             Text(f"Value: {value:.1f}")
             .text_color(theme.colors.text_info)
-            .height(24)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(24),
             Slider(self._slider_value)
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             Spacer(),
             Row(
                 Button("Set 0").on_click(lambda _: self._slider_value.set(0)),
                 Button("Set 50").on_click(lambda _: self._slider_value.set(50)),
                 Button("Set 100").on_click(lambda _: self._slider_value.set(100)),
-            ).height(50).height_policy(SizePolicy.FIXED),
+            ).fixed_height(50),
         ).bg_color(theme.colors.bg_secondary)
 
     def _build_datetime_demo(self, theme):
@@ -97,24 +93,19 @@ class NewWidgetsDemo(Component):
         return Column(
             Text("DateTimeInput Widget")
             .text_color(theme.colors.text_primary)
-            .height(30)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(30),
             Text(f"Display: {display_value}")
             .text_color(theme.colors.text_info)
-            .height(24)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(24),
             Text(f"ISO: {iso_value}")
             .text_color(theme.colors.text_info)
-            .height(24)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(24),
             DateTimeInput(state=self._datetime_state, label="Select Date & Time")
-            .height(100)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(100),
             Spacer(),
             Button("Clear")
             .on_click(lambda _: self._datetime_state.set(None))
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
         ).bg_color(theme.colors.bg_secondary)
 
 

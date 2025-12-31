@@ -352,7 +352,7 @@ series = CategoricalSeries.from_values(
 ## Complete Example
 
 ```python
-from castella import App, Component, Column, Row, Button, SizePolicy
+from castella import App, Component, Column, Row, Button
 from castella.frame import Frame
 from castella.chart import (
     BarChart, LineChart, PieChart, GaugeChart, GaugeStyle,
@@ -404,7 +404,7 @@ class ChartDemo(Component):
             Row(
                 GaugeChart(self._gauge_data, style=GaugeStyle.HALF_CIRCLE),
                 Button("Randomize").on_click(self._randomize),
-            ).height(200).height_policy(SizePolicy.FIXED),
+            ).fixed_height(200),
         )
 
     def _randomize(self, _):

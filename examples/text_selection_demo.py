@@ -1,7 +1,6 @@
 """Demo for text selection and copy/cut/paste functionality."""
 
-from castella import App, Column, Component, Row, Text
-from castella.core import SizePolicy
+from castella import App, Column, Component, Text
 from castella.frame import Frame
 from castella.multiline_input import MultilineInput, MultilineInputState
 from castella.multiline_text import MultilineText
@@ -20,17 +19,13 @@ class TextSelectionDemo(Component):
     def view(self):
         return Column(
             Text("Text Selection Demo", font_size=24)
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             Text("MultilineInput (editable - copy/cut/paste):", font_size=14)
-            .height(24)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(24),
             MultilineInput(self._input_state, font_size=14, wrap=True)
-            .height(150)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(150),
             Text("MultilineText (read-only - copy only):", font_size=14)
-            .height(24)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(24),
             MultilineText(
                 "This is read-only text.\n"
                 "You can select and copy (Cmd+C).\n"
@@ -39,8 +34,7 @@ class TextSelectionDemo(Component):
                 font_size=14,
                 wrap=True,
             )
-            .height(150)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(150),
         )
 
 

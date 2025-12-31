@@ -144,7 +144,7 @@ Input(text()).on_change(lambda t: text.set(t))
 Multi-line text editor with scrolling support.
 
 ```python
-from castella import MultilineInput, MultilineInputState, SizePolicy
+from castella import MultilineInput, MultilineInputState
 
 # Basic usage
 editor = MultilineInput("Initial text", font_size=14)
@@ -157,11 +157,7 @@ editor = MultilineInput(state, font_size=14, wrap=True)
 editor = MultilineInput("", font_size=14).on_change(lambda text: print(text))
 
 # With fixed height (enables vertical scrolling)
-editor = (
-    MultilineInput(state, font_size=14, wrap=True)
-    .height(200)
-    .height_policy(SizePolicy.FIXED)
-)
+editor = MultilineInput(state, font_size=14, wrap=True).fixed_height(200)
 ```
 
 ### Features

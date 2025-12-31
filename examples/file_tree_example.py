@@ -17,7 +17,6 @@ from castella import (
     Row,
     Button,
     Text,
-    SizePolicy,
 )
 from castella.frame import Frame
 
@@ -71,16 +70,15 @@ def main():
         Button("Collapse All").on_click(collapse_all),
         Button("Toggle Hidden").on_click(toggle_hidden),
         Button("Refresh").on_click(refresh),
-    ).height(40).height_policy(SizePolicy.FIXED)
+    ).fixed_height(40)
 
     # Main layout
     content = Column(
         Text("FileTree Demo", font_size=18)
-        .height(30)
-        .height_policy(SizePolicy.FIXED),
+        .fixed_height(30),
         controls,
         file_tree,
-        status_text.height(30).height_policy(SizePolicy.FIXED),
+        status_text.fixed_height(30),
     )
 
     App(Frame("FileTree Demo", 500, 700), content).run()

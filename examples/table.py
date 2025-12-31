@@ -1,7 +1,7 @@
 """Basic DataTable example with live updates using the new DataTableState API."""
 
 from pydantic import BaseModel, Field
-from castella import App, DataTable, DataTableState, ColumnConfig
+from castella import App, DataTable, DataTableState
 from castella.frame import Frame
 
 

@@ -1,6 +1,6 @@
 """Chart demo - showcasing the new native chart widgets."""
 
-from castella import App, Component, Column, Row, Text, Button, SizePolicy
+from castella import App, Component, Column, Row, Text, Button
 from castella.frame import Frame
 from castella.chart import (
     BarChart,
@@ -90,8 +90,7 @@ class ChartDemo(Component):
     def view(self):
         return Column(
             Text("Native Chart Demo", font_size=24)
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             Row(
                 # Bar Chart
                 BarChart(
@@ -142,8 +141,7 @@ class ChartDemo(Component):
                 Button("Toggle Series").on_click(self._toggle_series),
                 Button("Reset").on_click(self._reset_data),
             )
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
         )
 
     def _add_random_data(self, _):

@@ -72,7 +72,7 @@ class MarkdownEditor(Component):
                         on_link_click=lambda url: print(f"Link: {url}"),
                     )
                     .width_policy(SizePolicy.EXPANDING)
-                    .height_policy(SizePolicy.CONTENT),
+                    .fit_content_height(),
                     scroll_state=self._preview_scroll,
                 )
                 .width_policy(SizePolicy.EXPANDING)

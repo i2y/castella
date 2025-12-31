@@ -1,13 +1,9 @@
 """Extended chart demo - showcasing all chart types including new ones."""
 
-from castella import App, Component, Column, Row, Text, Button, SizePolicy
+from castella import App, Component, Column, Row, Text, Button
 from castella.frame import Frame
 from castella.chart import (
     # Basic charts
-    BarChart,
-    LineChart,
-    PieChart,
-    # New charts
     ScatterChart,
     PointShape,
     AreaChart,
@@ -124,8 +120,7 @@ class ExtendedChartDemo(Component):
     def view(self):
         return Column(
             Text("Extended Chart Demo", font_size=24)
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             # Row 1: Scatter and Area charts
             Row(
                 ScatterChart(
@@ -173,7 +168,7 @@ class ExtendedChartDemo(Component):
                 Button("Update Gauges").on_click(self._update_gauges),
                 Button("Randomize Scatter").on_click(self._randomize_scatter),
                 Button("Toggle Stacked").on_click(self._toggle_stacked),
-            ).height(40).height_policy(SizePolicy.FIXED),
+            ).fixed_height(40),
         )
 
     def _update_gauges(self, _):

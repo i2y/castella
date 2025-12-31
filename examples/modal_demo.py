@@ -7,8 +7,7 @@ Run with:
 """
 
 from castella import (
-    App, Box, Button, Column, Row, Text, Modal, ModalState,
-    SizePolicy, Input,
+    App, Box, Button, Column, Row, Text, Modal, ModalState, Input,
 )
 from castella.core import Component, State
 from castella.frame import Frame
@@ -41,55 +40,48 @@ class ModalDemo(Component):
         # Basic modal content
         basic_content = Column(
             Text("This is a basic modal dialog.")
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             Text("Click outside or the X button to close.")
-            .height(30)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(30),
         )
 
         # Confirm modal content
         confirm_content = Column(
             Text("Are you sure you want to proceed?")
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             Row(
                 Button("Cancel").on_click(lambda _: self._confirm_modal.close()),
                 Button("Confirm").on_click(self._on_confirm),
-            ).height(50).height_policy(SizePolicy.FIXED),
+            ).fixed_height(50),
         )
 
         # Form modal content
         form_content = Column(
             Text("Enter your name:")
-            .height(30)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(30),
             Input(self._name())
             .on_change(lambda v: self._name.set(v))
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             Row(
                 Button("Cancel").on_click(lambda _: self._form_modal.close()),
                 Button("Submit").on_click(self._on_submit),
-            ).height(50).height_policy(SizePolicy.FIXED),
+            ).fixed_height(50),
         )
 
         # Main content with buttons to open modals
         main_content = Column(
             Text("Modal Widget Demo")
             .text_color(theme.colors.text_primary)
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
 
             Text(f"Submitted name: {self._submitted_name() or '(none)'}")
-            .height(30)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(30),
 
             Row(
                 Button("Basic Modal").on_click(lambda _: self._basic_modal.open()),
                 Button("Confirm Dialog").on_click(lambda _: self._confirm_modal.open()),
                 Button("Form Modal").on_click(lambda _: self._form_modal.open()),
-            ).height(60).height_policy(SizePolicy.FIXED),
+            ).fixed_height(60),
         ).bg_color(theme.colors.bg_primary).z_index(1)
 
         # Create modals

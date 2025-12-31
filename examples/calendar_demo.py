@@ -1,13 +1,11 @@
 """Demo for the enhanced DateTimeInput with calendar picker."""
 
-from datetime import date, timedelta
 
 from castella import (
     App,
     Column,
     DateTimeInput,
     DateTimeInputState,
-    SizePolicy,
     Spacer,
     Text,
 )
@@ -30,11 +28,9 @@ def main():
     ui = Column(
         Text("DateTimeInput Calendar Picker Demo")
         .text_color(theme.colors.text_info)
-        .height(40)
-        .height_policy(SizePolicy.FIXED),
+        .fixed_height(40),
         Text("Select a date:").text_color(theme.colors.text_primary)
-        .height(24)
-        .height_policy(SizePolicy.FIXED),
+        .fixed_height(24),
         DateTimeInput(state=date_state, label="Birthday")
         .on_change(lambda v: print(f"Date selected: {v}")),
         Spacer(),

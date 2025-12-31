@@ -396,16 +396,14 @@ class AllWidgetsDemo(Component):
         main_content = Column(
             Text("All Widgets Demo (Tabs Version)", font_size=20)
             .text_color(theme.colors.text_primary)
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             tabs,
             Row(
                 Text(self._status(), font_size=12).text_color(theme.colors.fg),
                 Spacer(),
                 Button("Toggle Theme").on_click(self._toggle_theme),
             )
-            .height(35)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(35),
         ).bg_color(theme.colors.bg_primary).z_index(1)
 
         # Modal overlay
@@ -470,34 +468,27 @@ class AllWidgetsDemo(Component):
             # Text widget
             Text("Text Widget", font_size=16)
             .text_color(theme.colors.text_primary)
-            .height(30)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(30),
             Text(f"Count: {count}", font_size=24)
             .text_color(theme.colors.text_info)
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             # SimpleText widget
             Text("SimpleText Widget:", font_size=14)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
             SimpleText(f"Simple text showing count = {count}")
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
             # MultilineText widget
             Text("MultilineText Widget:", font_size=14)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
             MultilineText(f"Status: {msg}\nCount is {count}", font_size=12, kind=kind)
-            .height(50)
-            .height_policy(SizePolicy.FIXED),
-            Spacer().height(10).height_policy(SizePolicy.FIXED),
+            .fixed_height(50),
+            Spacer().fixed_height(10),
             # Button widgets with Kind styling
             Text("Button Widget (with Kind styling):", font_size=14)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
             Row(
                 Button("-5", kind=Kind.DANGER).on_click(
                     lambda _: self._counter.set(self._counter() - 5)
@@ -515,8 +506,7 @@ class AllWidgetsDemo(Component):
                     lambda _: self._counter.set(self._counter() + 5)
                 ),
             )
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             Row(
                 Button("Normal", kind=Kind.NORMAL),
                 Button("Info", kind=Kind.INFO),
@@ -524,8 +514,7 @@ class AllWidgetsDemo(Component):
                 Button("Warning", kind=Kind.WARNING),
                 Button("Danger", kind=Kind.DANGER),
             )
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             Spacer(),
         ).bg_color(theme.colors.bg_secondary)
 
@@ -535,51 +524,43 @@ class AllWidgetsDemo(Component):
             # Input widget
             Text("Input Widget:", font_size=14)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
             Input(self._input_text())
             .on_change(lambda t: self._input_text.set(t))
-            .height(35)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(35),
             # MultilineInput widget
             Text("MultilineInput Widget:", font_size=14)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
             MultilineInput(self._multiline_state, font_size=12, wrap=True)
-            .height(80)
-            .height_policy(SizePolicy.FIXED),
-            Spacer().height(10).height_policy(SizePolicy.FIXED),
+            .fixed_height(80),
+            Spacer().fixed_height(10),
             # CheckBox widgets
             Text("CheckBox Widget:", font_size=14)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
             Row(
                 CheckBox(self._checkbox1)
                 .on_change(lambda v: self._checkbox1.set(v))
                 .fixed_size(25, 25),
                 Text("Normal", font_size=12),
-                Spacer().width(20).width_policy(SizePolicy.FIXED),
+                Spacer().fixed_width(20),
                 CheckBox(self._checkbox2, is_circle=True)
                 .on_change(lambda v: self._checkbox2.set(v))
                 .fixed_size(25, 25),
                 Text("Circle", font_size=12),
                 Spacer(),
             )
-            .height(30)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(30),
             # RadioButtons widget
             Text("RadioButtons Widget:", font_size=14)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
-            RadioButtons(self._radio_state).height(80).height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
+            RadioButtons(self._radio_state).fixed_height(80),
             # Switch widget
             Text("Switch Widget:", font_size=14)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
             Row(
                 Switch(self._switch_on())
                 .on_change(lambda v: self._switch_on.set(v))
@@ -587,26 +568,21 @@ class AllWidgetsDemo(Component):
                 Text("ON" if self._switch_on() else "OFF", font_size=12),
                 Spacer(),
             )
-            .height(30)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(30),
             # Slider widget
             Text("Slider Widget:", font_size=14)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
             Row(
                 Slider(self._slider_state).flex(1),
                 Text(f"{self._slider_state.value():.0f}", font_size=12)
-                .width(40)
-                .width_policy(SizePolicy.FIXED),
+                .fixed_width(40),
             )
-            .height(35)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(35),
             # DateTimeInput widget
             Text("DateTimeInput Widget:", font_size=14)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
             DateTimeInput(state=self._datetime_state, label="Select Date & Time")
             .height_policy(SizePolicy.EXPANDING),
             Text(
@@ -614,8 +590,7 @@ class AllWidgetsDemo(Component):
                 font_size=11,
             )
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
         ).bg_color(theme.colors.bg_secondary)
 
     def _build_layout_tab(self, theme):
@@ -626,44 +601,39 @@ class AllWidgetsDemo(Component):
             # Row with flex demonstration
             Text("Row with flex() - 1:2:1 proportion:", font_size=14)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
             Row(
                 Button("1").flex(1),
                 Button("2").flex(2),
                 Button("1").flex(1),
             )
-            .height(35)
-            .height_policy(SizePolicy.FIXED),
-            Spacer().height(15).height_policy(SizePolicy.FIXED),
+            .fixed_height(35),
+            Spacer().fixed_height(15),
             # Nested layouts
             Text("Nested Column/Row layouts:", font_size=14)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
             Row(
                 Column(
-                    Button("A1").height(30).height_policy(SizePolicy.FIXED),
-                    Button("A2").height(30).height_policy(SizePolicy.FIXED),
-                ).width(100).width_policy(SizePolicy.FIXED),
+                    Button("A1").fixed_height(30),
+                    Button("A2").fixed_height(30),
+                ).fixed_width(100),
                 Column(
-                    Button("B1").height(30).height_policy(SizePolicy.FIXED),
-                    Button("B2").height(30).height_policy(SizePolicy.FIXED),
-                    Button("B3").height(30).height_policy(SizePolicy.FIXED),
-                ).width(100).width_policy(SizePolicy.FIXED),
+                    Button("B1").fixed_height(30),
+                    Button("B2").fixed_height(30),
+                    Button("B3").fixed_height(30),
+                ).fixed_width(100),
                 Column(
-                    Button("C1").height(30).height_policy(SizePolicy.FIXED),
-                ).width(100).width_policy(SizePolicy.FIXED),
+                    Button("C1").fixed_height(30),
+                ).fixed_width(100),
                 Spacer(),
             )
-            .height(100)
-            .height_policy(SizePolicy.FIXED),
-            Spacer().height(15).height_policy(SizePolicy.FIXED),
+            .fixed_height(100),
+            Spacer().fixed_height(15),
             # Box with z-index
             Text("Box with z-index layering:", font_size=14)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
             Row(
                 Button("Red Top", kind=Kind.DANGER).on_click(
                     lambda _: self._z_top.set(1)
@@ -675,8 +645,7 @@ class AllWidgetsDemo(Component):
                     lambda _: self._z_top.set(3)
                 ),
             )
-            .height(35)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(35),
             Box(
                 MultilineText("R", font_size=14, kind=Kind.DANGER)
                 .fixed_size(60, 50)
@@ -688,21 +657,18 @@ class AllWidgetsDemo(Component):
                 .fixed_size(60, 50)
                 .z_index(3 if top == 3 else 1),
             )
-            .height(55)
-            .height_policy(SizePolicy.FIXED),
-            Spacer().height(15).height_policy(SizePolicy.FIXED),
+            .fixed_height(55),
+            Spacer().fixed_height(15),
             # Spacer demonstration
             Text("Spacer fills remaining space:", font_size=14)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
             Row(
                 Button("Left"),
                 Spacer(),
                 Button("Right"),
             )
-            .height(35)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(35),
             Spacer(),
         ).bg_color(theme.colors.bg_secondary)
 
@@ -714,22 +680,19 @@ class AllWidgetsDemo(Component):
                 Column(
                     Text("DataTable Widget:", font_size=14)
                     .text_color(theme.colors.fg)
-                    .height(25)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(25),
                     DataTable(self._table_state)
                     .on_cell_click(
                         lambda e: self._status.set(f"Clicked: {e.value}")
                     ),
                     Text("Tree Widget:", font_size=14)
                     .text_color(theme.colors.fg)
-                    .height(25)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(25),
                     Tree(self._tree_state)
                     .on_select(lambda n: self._status.set(f"Selected: {n.label}")),
                     Text("FileTree Widget:", font_size=14)
                     .text_color(theme.colors.fg)
-                    .height(25)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(25),
                     FileTree(self._file_tree_state)
                     .on_file_select(lambda p: self._status.set(f"File: {p.name}")),
                 ).flex(1),
@@ -737,8 +700,7 @@ class AllWidgetsDemo(Component):
                 Column(
                     Text("Markdown Widget:", font_size=14)
                     .text_color(theme.colors.fg)
-                    .height(25)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(25),
                     Markdown(
                         """# Markdown Demo
 
@@ -762,11 +724,9 @@ def hello():
                     ),
                     Text("Modal Widget:", font_size=14)
                     .text_color(theme.colors.fg)
-                    .height(25)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(25),
                     Button("Open Modal").on_click(lambda _: self._modal_state.open())
-                    .height(35)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(35),
                 ).flex(1),
             ),
         ).bg_color(theme.colors.bg_secondary)
@@ -776,17 +736,14 @@ def hello():
         return Column(
             Text("NetImage Widget:", font_size=14)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
             Text("Loading image from URL...", font_size=11)
             .text_color(theme.colors.fg)
-            .height(20)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(20),
             NetImage("https://picsum.photos/400/300"),
             Text("NetImage supports various image formats from URLs.", font_size=12)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
         ).bg_color(theme.colors.bg_secondary)
 
     def _build_dashboard_tab(self, theme):
@@ -798,22 +755,19 @@ def hello():
                 Spacer(),
                 Button("Refresh All").on_click(self._refresh_dashboard),
             )
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             # Top row: Bar chart and Line chart
             Row(
                 Column(
                     Text("Regional Sales", font_size=12)
                     .text_color(theme.colors.fg)
-                    .height(20)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(20),
                     BarChart(self._bar_data, show_values=False, enable_tooltip=True),
                 ),
                 Column(
                     Text("Stock Trends", font_size=12)
                     .text_color(theme.colors.fg)
-                    .height(20)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(20),
                     LineChart(self._line_data, smooth=True, show_points=True, enable_tooltip=True),
                 ),
             ),
@@ -822,22 +776,19 @@ def hello():
                 Column(
                     Text("Browser Share", font_size=12)
                     .text_color(theme.colors.fg)
-                    .height(20)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(20),
                     PieChart(self._pie_data, donut=True, inner_radius_ratio=0.5, enable_tooltip=True),
                 ),
                 Column(
                     Text("Traffic Growth", font_size=12)
                     .text_color(theme.colors.fg)
-                    .height(20)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(20),
                     AreaChart(self._area_data, fill_opacity=0.3, enable_tooltip=True),
                 ),
                 Column(
                     Text("Correlation", font_size=12)
                     .text_color(theme.colors.fg)
-                    .height(20)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(20),
                     ScatterChart(self._scatter_data, point_radius=6, enable_tooltip=True),
                 ),
             ),
@@ -846,15 +797,13 @@ def hello():
                 Column(
                     Text("Product Sales", font_size=12)
                     .text_color(theme.colors.fg)
-                    .height(20)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(20),
                     StackedBarChart(self._stacked_data, enable_tooltip=True),
                 ),
                 Column(
                     Text("System Status", font_size=12)
                     .text_color(theme.colors.fg)
-                    .height(20)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(20),
                     # 2x2 grid layout for gauges
                     Column(
                         Row(
@@ -1000,15 +949,13 @@ def hello():
                 Button("Randomize Data").on_click(self._randomize_bar_data),
                 Button("Toggle Series").on_click(self._toggle_bar_series),
             )
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             Row(
                 # Vertical BarChart
                 Column(
                     Text("Vertical Bar Chart", font_size=14)
                     .text_color(theme.colors.fg)
-                    .height(22)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(22),
                     BarChart(
                         self._bar_data,
                         show_values=True,
@@ -1021,8 +968,7 @@ def hello():
                 Column(
                     Text("Horizontal Bar Chart", font_size=14)
                     .text_color(theme.colors.fg)
-                    .height(22)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(22),
                     BarChart(
                         self._bar_data,
                         show_values=True,
@@ -1075,16 +1021,14 @@ def hello():
                 Button("Randomize Line").on_click(self._randomize_line_data),
                 Button("Randomize Area").on_click(self._randomize_area_data),
             )
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             # LineChart section
             Text(
                 "Stock Price Movement - 3 companies over 12 months (smooth Catmull-Rom splines)",
                 font_size=12,
             )
             .text_color(theme.colors.fg)
-            .height(22)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(22),
             LineChart(
                 self._line_data,
                 smooth=True,
@@ -1098,8 +1042,7 @@ def hello():
                 font_size=12,
             )
             .text_color(theme.colors.fg)
-            .height(22)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(22),
             AreaChart(
                 self._area_data,
                 fill_opacity=0.4,
@@ -1189,15 +1132,13 @@ def hello():
                 Button("Randomize Pie Data").on_click(self._randomize_pie_data),
                 Button("Randomize Scatter").on_click(self._randomize_scatter_data),
             )
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             # Two PieCharts - expanding
             Row(
                 Column(
                     Text("Browser Market Share 2024 (Donut)", font_size=14)
                     .text_color(theme.colors.fg)
-                    .height(25)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(25),
                     PieChart(
                         self._pie_data,
                         donut=True,
@@ -1210,8 +1151,7 @@ def hello():
                 Column(
                     Text("Desktop OS Market Share (Pie)", font_size=14)
                     .text_color(theme.colors.fg)
-                    .height(25)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(25),
                     PieChart(
                         self._pie_data_2,
                         donut=False,
@@ -1227,8 +1167,7 @@ def hello():
                 font_size=12,
             )
             .text_color(theme.colors.fg)
-            .height(22)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(22),
             ScatterChart(
                 self._scatter_data,
                 point_shape=PointShape.CIRCLE,
@@ -1299,16 +1238,14 @@ def hello():
                 Button("Randomize Stacked").on_click(self._randomize_stacked_data),
                 Button("Simulate Metrics").on_click(self._randomize_gauge_data),
             )
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             # StackedBarChart section
             Text(
                 "Product Category Sales - 4 categories (Electronics, Clothing, Home, Sports) over 6 months",
                 font_size=12,
             )
             .text_color(theme.colors.fg)
-            .height(22)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(22),
             StackedBarChart(
                 self._stacked_data,
                 show_values=False,
@@ -1318,8 +1255,7 @@ def hello():
             # GaugeCharts section - System Dashboard (2x2 grid)
             Text("System Metrics Dashboard", font_size=14)
             .text_color(theme.colors.fg)
-            .height(25)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(25),
             Column(
                 # Top row: CPU and Memory
                 Row(

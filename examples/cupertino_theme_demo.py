@@ -16,7 +16,6 @@ from castella import (
     Row,
     State,
     Text,
-    SizePolicy,
     Kind,
     Switch,
     CheckBox,
@@ -75,33 +74,33 @@ class CupertinoThemeDemo(Component):
 
         return Column(
             # Header
-            Text("Cupertino Theme Demo").height(40).height_policy(SizePolicy.FIXED),
+            Text("Cupertino Theme Demo").fixed_height(40),
 
             # Theme info section
             Row(
                 Column(
-                    Text(f"Theme: {theme.name}").height(24).height_policy(SizePolicy.FIXED),
-                    Text(f"Mode: {'Dark' if theme.is_dark else 'Light'}").height(24).height_policy(SizePolicy.FIXED),
-                    Text(f"Border Radius: {theme.spacing.border_radius}px").height(24).height_policy(SizePolicy.FIXED),
-                ).width(250).width_policy(SizePolicy.FIXED),
+                    Text(f"Theme: {theme.name}").fixed_height(24),
+                    Text(f"Mode: {'Dark' if theme.is_dark else 'Light'}").fixed_height(24),
+                    Text(f"Border Radius: {theme.spacing.border_radius}px").fixed_height(24),
+                ).fixed_width(250),
                 Column(
-                    Text(f"Font: {theme.typography.font_family[:35]}...").height(24).height_policy(SizePolicy.FIXED),
-                    Text(f"Base Size: {theme.typography.base_size}px").height(24).height_policy(SizePolicy.FIXED),
-                    Text(f"Border Width: {theme.spacing.border_width}px").height(24).height_policy(SizePolicy.FIXED),
+                    Text(f"Font: {theme.typography.font_family[:35]}...").fixed_height(24),
+                    Text(f"Base Size: {theme.typography.base_size}px").fixed_height(24),
+                    Text(f"Border Width: {theme.spacing.border_width}px").fixed_height(24),
                 ),
-            ).height(80).height_policy(SizePolicy.FIXED),
+            ).fixed_height(80),
 
             # Divider
-            Text("").height(10).height_policy(SizePolicy.FIXED),
+            Text("").fixed_height(10),
 
             # Theme toggle buttons
             Row(
                 Button("Toggle Dark/Light").on_click(self._toggle_dark_light),
                 Button(f"Style: {'Cupertino' if is_cupertino else 'Castella'}").on_click(self._toggle_theme_style),
-            ).height(50).height_policy(SizePolicy.FIXED),
+            ).fixed_height(50),
 
             # Divider
-            Text("--- Button Kinds (semantic colors) ---").height(35).height_policy(SizePolicy.FIXED),
+            Text("--- Button Kinds (semantic colors) ---").fixed_height(35),
 
             # Button showcase with different Kinds
             Row(
@@ -110,63 +109,63 @@ class CupertinoThemeDemo(Component):
                 Button("Success", kind=Kind.SUCCESS),
                 Button("Warning", kind=Kind.WARNING),
                 Button("Danger", kind=Kind.DANGER),
-            ).height(50).height_policy(SizePolicy.FIXED),
+            ).fixed_height(50),
 
             # Divider
-            Text("--- Input Fields ---").height(35).height_policy(SizePolicy.FIXED),
+            Text("--- Input Fields ---").fixed_height(35),
 
             # Input showcase
             Row(
                 Input(self._input_text()).on_change(lambda t: self._input_text.set(t)),
-            ).height(40).height_policy(SizePolicy.FIXED),
+            ).fixed_height(40),
 
             # Divider
-            Text("--- Toggle Controls ---").height(35).height_policy(SizePolicy.FIXED),
+            Text("--- Toggle Controls ---").fixed_height(35),
 
             # Switch and Checkbox
             Row(
                 Column(
-                    Text("Switch:").height(24).height_policy(SizePolicy.FIXED),
+                    Text("Switch:").fixed_height(24),
                     Switch(self._switch_state),
-                ).width(150).width_policy(SizePolicy.FIXED),
+                ).fixed_width(150),
                 Column(
-                    Text("Checkbox:").height(24).height_policy(SizePolicy.FIXED),
+                    Text("Checkbox:").fixed_height(24),
                     CheckBox(self._checkbox_state),
-                ).width(150).width_policy(SizePolicy.FIXED),
-            ).height(60).height_policy(SizePolicy.FIXED),
+                ).fixed_width(150),
+            ).fixed_height(60),
 
             # Divider
-            Text("--- Text Styles ---").height(35).height_policy(SizePolicy.FIXED),
+            Text("--- Text Styles ---").fixed_height(35),
 
             # Text with different kinds
             Row(
-                Text("Normal").width(100).width_policy(SizePolicy.FIXED),
-                Text("Info", kind=Kind.INFO).width(100).width_policy(SizePolicy.FIXED),
-                Text("Success", kind=Kind.SUCCESS).width(100).width_policy(SizePolicy.FIXED),
-                Text("Warning", kind=Kind.WARNING).width(100).width_policy(SizePolicy.FIXED),
-                Text("Danger", kind=Kind.DANGER).width(100).width_policy(SizePolicy.FIXED),
-            ).height(30).height_policy(SizePolicy.FIXED),
+                Text("Normal").fixed_width(100),
+                Text("Info", kind=Kind.INFO).fixed_width(100),
+                Text("Success", kind=Kind.SUCCESS).fixed_width(100),
+                Text("Warning", kind=Kind.WARNING).fixed_width(100),
+                Text("Danger", kind=Kind.DANGER).fixed_width(100),
+            ).fixed_height(30),
 
             # Divider
-            Text("--- Color Palette ---").height(35).height_policy(SizePolicy.FIXED),
+            Text("--- Color Palette ---").fixed_height(35),
 
             # Colors info
             Row(
                 Column(
-                    Text(f"Canvas: {theme.colors.bg_canvas}").height(20).height_policy(SizePolicy.FIXED),
-                    Text(f"Primary: {theme.colors.bg_primary}").height(20).height_policy(SizePolicy.FIXED),
-                    Text(f"Tertiary: {theme.colors.bg_tertiary}").height(20).height_policy(SizePolicy.FIXED),
-                ).width(200).width_policy(SizePolicy.FIXED),
+                    Text(f"Canvas: {theme.colors.bg_canvas}").fixed_height(20),
+                    Text(f"Primary: {theme.colors.bg_primary}").fixed_height(20),
+                    Text(f"Tertiary: {theme.colors.bg_tertiary}").fixed_height(20),
+                ).fixed_width(200),
                 Column(
-                    Text(f"Text: {theme.colors.text_primary}").height(20).height_policy(SizePolicy.FIXED),
-                    Text(f"Border: {theme.colors.border_primary}").height(20).height_policy(SizePolicy.FIXED),
-                    Text(f"Selected: {theme.colors.bg_selected}").height(20).height_policy(SizePolicy.FIXED),
-                ).width(200).width_policy(SizePolicy.FIXED),
-            ).height(70).height_policy(SizePolicy.FIXED),
+                    Text(f"Text: {theme.colors.text_primary}").fixed_height(20),
+                    Text(f"Border: {theme.colors.border_primary}").fixed_height(20),
+                    Text(f"Selected: {theme.colors.bg_selected}").fixed_height(20),
+                ).fixed_width(200),
+            ).fixed_height(70),
 
             # Footer note
-            Text("").height(20).height_policy(SizePolicy.FIXED),
-            Text("Notice: Rounded corners are visible on buttons and inputs!").height(24).height_policy(SizePolicy.FIXED),
+            Text("").fixed_height(20),
+            Text("Notice: Rounded corners are visible on buttons and inputs!").fixed_height(24),
         )
 
 

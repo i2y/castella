@@ -23,7 +23,6 @@ from castella import (
     Text,
     Input,
     CheckBox,
-    SizePolicy,
     Component,
     State,
 )
@@ -50,47 +49,41 @@ class DemoApp(Component):
         return Column(
             Text(f"[{self._status()}]")
             .semantic_id("status")
-            .height(30)
-            .height_policy(SizePolicy.FIXED)
+            .fixed_height(30)
             .bg_color("#2c3e50"),
 
             Row(
-                Text("Name:").width(60).width_policy(SizePolicy.FIXED),
+                Text("Name:").fixed_width(60),
                 Input(self._name())
                 .semantic_id("name-input")
                 .on_change(lambda t: self._name.set(t)),
-            ).height(40).height_policy(SizePolicy.FIXED),
+            ).fixed_height(40),
 
             Text(f"Hello, {self._name() or 'World'}!")
             .semantic_id("greeting")
-            .height(35)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(35),
 
             Row(
                 Button("−")
                 .semantic_id("decrement-btn")
                 .on_click(lambda _: self._dec())
-                .width(50)
-                .width_policy(SizePolicy.FIXED),
+                .fixed_width(50),
                 Text(f" {self._counter()} ")
                 .semantic_id("counter")
-                .width(80)
-                .width_policy(SizePolicy.FIXED),
+                .fixed_width(80),
                 Button("+")
                 .semantic_id("increment-btn")
                 .on_click(lambda _: self._inc())
-                .width(50)
-                .width_policy(SizePolicy.FIXED),
-            ).height(45).height_policy(SizePolicy.FIXED),
+                .fixed_width(50),
+            ).fixed_height(45),
 
             Row(
                 CheckBox(self._checked)
                 .semantic_id("my-checkbox")
                 .on_change(lambda c: self._checked.set(c))
-                .width(35)
-                .width_policy(SizePolicy.FIXED),
+                .fixed_width(35),
                 Text("ON" if self._checked() else "OFF"),
-            ).height(35).height_policy(SizePolicy.FIXED),
+            ).fixed_height(35),
         )
 
     def _inc(self):

@@ -8,7 +8,7 @@ Or in a regular terminal with prompt_toolkit installed:
     uv run python examples/ascii_chart_demo.py
 """
 
-from castella import App, Component, Column, Row, Text, Button, SizePolicy
+from castella import App, Component, Column, Row, Text
 from castella.frame import Frame
 from castella.chart import (
     ASCIIBarChart,
@@ -46,7 +46,7 @@ class ASCIIChartDemo(Component):
 
     def view(self):
         return Column(
-            Text("ASCII Chart Demo").height(30).height_policy(SizePolicy.FIXED),
+            Text("ASCII Chart Demo").fixed_height(30),
             Row(
                 Column(
                     ASCIIBarChart(self._bar_data, width=30, show_values=True),

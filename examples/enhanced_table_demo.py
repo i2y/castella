@@ -102,11 +102,10 @@ class TableDemo(Component):
         return Column(
             # Header
             Text("Enhanced DataTable Demo")
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             # Filter row
             Row(
-                Text("Filter:").width(60).width_policy(SizePolicy.FIXED),
+                Text("Filter:").fixed_width(60),
                 Input(self._filter_text())
                 .on_change(self._on_filter_change)
                 .flex(1),
@@ -117,8 +116,7 @@ class TableDemo(Component):
                     SizePolicy.FIXED
                 ),
             )
-            .height(40)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(40),
             # Table
             DataTable(self._table_state)
             .on_sort(self._on_sort)
@@ -129,8 +127,7 @@ class TableDemo(Component):
                 Text(f"Rows: {self._table_state.view_row_count}/{self._table_state.row_count}"),
                 Text(self._status()).flex(1),
             )
-            .height(30)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(30),
         )
 
 

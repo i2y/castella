@@ -7,11 +7,9 @@ Run with:
     uv run python examples/agent_chat_demo.py
 """
 
-import sys
-from datetime import datetime
 
 from castella import App, Column, Text, Button, Box, Row, ScrollState
-from castella.core import ListState, SizePolicy, Component, State
+from castella.core import ListState, Component
 from castella.frame import Frame
 from castella.markdown import Markdown
 from castella.multiline_input import MultilineInput, MultilineInputState
@@ -88,11 +86,10 @@ class SimpleChatDemo(Component):
                 Column(
                     Text(role_label)
                     .text_color(role_color)
-                    .height(20)
-                    .height_policy(SizePolicy.FIXED),
+                    .fixed_height(20),
                     content_widget,
-                ).height_policy(SizePolicy.CONTENT)
-            ).bg_color(bg_color).height_policy(SizePolicy.CONTENT)
+                ).fit_content_height()
+            ).bg_color(bg_color).fit_content_height()
 
             msg_widgets.append(msg_box)
 
@@ -101,8 +98,7 @@ class SimpleChatDemo(Component):
             # Title
             Text("Agent Chat Demo")
             .text_color(theme.colors.text_primary)
-            .height(32)
-            .height_policy(SizePolicy.FIXED),
+            .fixed_height(32),
 
             # Message area (scrollable with preserved position)
             Column(
@@ -114,15 +110,12 @@ class SimpleChatDemo(Component):
             # Input area
             Row(
                 MultilineInput(self._input_state, font_size=14)
-                .height(40)
-                .height_policy(SizePolicy.FIXED),
+                .fixed_height(40),
                 Button("Send")
                 .on_click(self._send_message)
-                .width(80)
-                .width_policy(SizePolicy.FIXED)
-                .height(40)
-                .height_policy(SizePolicy.FIXED),
-            ).height(56).height_policy(SizePolicy.FIXED),
+                .fixed_width(80)
+                .fixed_height(40),
+            ).fixed_height(56),
         )
 
 

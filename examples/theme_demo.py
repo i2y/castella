@@ -16,7 +16,6 @@ from castella import (
     Row,
     State,
     Text,
-    SizePolicy,
     Kind,
 )
 from castella.frame import Frame
@@ -24,8 +23,6 @@ from castella.theme import (
     ThemeManager,
     DARK_THEME,
     LIGHT_THEME,
-    DARK_PALETTE,
-    LIGHT_PALETTE,
     Theme,
     ColorPalette,
     Typography,
@@ -160,34 +157,34 @@ class ThemeDemo(Component):
 
         return Column(
             # Header
-            Text(f"Theme Demo - Current: {self._theme_name()}").height(40).height_policy(SizePolicy.FIXED),
+            Text(f"Theme Demo - Current: {self._theme_name()}").fixed_height(40),
 
             # Theme info
             Row(
-                Text(f"Dark mode: {theme.is_dark}").width(150).width_policy(SizePolicy.FIXED),
-                Text(f"BG: {theme.colors.bg_canvas}").width(150).width_policy(SizePolicy.FIXED),
-                Text(f"Text: {theme.colors.text_primary}").width(150).width_policy(SizePolicy.FIXED),
-            ).height(30).height_policy(SizePolicy.FIXED),
+                Text(f"Dark mode: {theme.is_dark}").fixed_width(150),
+                Text(f"BG: {theme.colors.bg_canvas}").fixed_width(150),
+                Text(f"Text: {theme.colors.text_primary}").fixed_width(150),
+            ).fixed_height(30),
 
             # Divider
-            Text("--- Theme Selection ---").height(30).height_policy(SizePolicy.FIXED),
+            Text("--- Theme Selection ---").fixed_height(30),
 
             # Theme buttons row 1
             Row(
                 Button("Toggle Dark/Light").on_click(self._toggle_dark_light),
                 Button("Default Dark").on_click(self._apply_default_dark),
                 Button("Default Light").on_click(self._apply_default_light),
-            ).height(50).height_policy(SizePolicy.FIXED),
+            ).fixed_height(50),
 
             # Theme buttons row 2
             Row(
                 Button("Cyberpunk").on_click(self._apply_cyberpunk),
                 Button("Ocean").on_click(self._apply_ocean),
                 Button("Custom Derived").on_click(self._apply_custom),
-            ).height(50).height_policy(SizePolicy.FIXED),
+            ).fixed_height(50),
 
             # Divider
-            Text("--- Widget Showcase ---").height(30).height_policy(SizePolicy.FIXED),
+            Text("--- Widget Showcase ---").fixed_height(30),
 
             # Sample widgets
             Row(
@@ -197,24 +194,24 @@ class ThemeDemo(Component):
                     Text("Success Text", kind=Kind.SUCCESS),
                     Text("Warning Text", kind=Kind.WARNING),
                     Text("Danger Text", kind=Kind.DANGER),
-                ).width(200).width_policy(SizePolicy.FIXED),
+                ).fixed_width(200),
                 Column(
                     Button("Normal Button"),
                     Button("Hover me!"),
                     Input(self._input_text()).on_change(lambda t: self._input_text.set(t)),
-                ).width(200).width_policy(SizePolicy.FIXED),
-            ).height(200).height_policy(SizePolicy.FIXED),
+                ).fixed_width(200),
+            ).fixed_height(200),
 
             # Typography info
-            Text("--- Typography ---").height(30).height_policy(SizePolicy.FIXED),
-            Text(f"Font family: {theme.typography.font_family or 'system default'}").height(24).height_policy(SizePolicy.FIXED),
-            Text(f"Base size: {theme.typography.base_size}px").height(24).height_policy(SizePolicy.FIXED),
-            Text(f"Scale ratio: {theme.typography.scale_ratio}").height(24).height_policy(SizePolicy.FIXED),
+            Text("--- Typography ---").fixed_height(30),
+            Text(f"Font family: {theme.typography.font_family or 'system default'}").fixed_height(24),
+            Text(f"Base size: {theme.typography.base_size}px").fixed_height(24),
+            Text(f"Scale ratio: {theme.typography.scale_ratio}").fixed_height(24),
 
             # Spacing info
-            Text("--- Spacing ---").height(30).height_policy(SizePolicy.FIXED),
-            Text(f"Padding: sm={theme.spacing.padding_sm}, md={theme.spacing.padding_md}, lg={theme.spacing.padding_lg}").height(24).height_policy(SizePolicy.FIXED),
-            Text(f"Border radius: {theme.spacing.border_radius}px").height(24).height_policy(SizePolicy.FIXED),
+            Text("--- Spacing ---").fixed_height(30),
+            Text(f"Padding: sm={theme.spacing.padding_sm}, md={theme.spacing.padding_md}, lg={theme.spacing.padding_lg}").fixed_height(24),
+            Text(f"Border radius: {theme.spacing.border_radius}px").fixed_height(24),
         )
 
 

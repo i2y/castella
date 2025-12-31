@@ -18,11 +18,9 @@ the weather UI as components stream in.
 """
 
 import asyncio
-import sys
 import threading
-from typing import Callable
 
-from castella import App, Box, Button, Column, Row, SizePolicy, Text
+from castella import App, Box, Button, Column, Row, Text
 from castella.a2ui import A2UIRenderer, UserAction
 from castella.core import Component, State
 from castella.frame import Frame
@@ -140,14 +138,13 @@ class A2UISSEClient(Component):
             Button("Form").on_click(
                 lambda _: self._switch_endpoint("/ui/form")
             ),
-        ).height(50).height_policy(SizePolicy.FIXED)
+        ).fixed_height(50)
 
         # Status bar
         status_bar = (
             Text(f"Status: {self._status()}")
             .text_color(theme.colors.text_info)
-            .height(24)
-            .height_policy(SizePolicy.FIXED)
+            .fixed_height(24)
         )
 
         # Main content
