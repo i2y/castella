@@ -26,6 +26,7 @@ class Text(Widget):
         kind: Kind = Kind.NORMAL,
         align: TextAlign = TextAlign.CENTER,
         font_size: int | None = None,
+        transparent_bg: bool = False,
     ):
         if isinstance(text, SimpleValue):
             state = text
@@ -35,6 +36,7 @@ class Text(Widget):
         self._kind = kind
         self._font_size = font_size
         self._align = align
+        self._transparent_bg = transparent_bg
 
         super().__init__(
             state=state,
@@ -57,11 +59,12 @@ class Text(Widget):
     def redraw(self, p: Painter, _: bool) -> None:
         state: State = cast(State, self._state)
 
-        p.style(self._rect_style)
         size = self.get_size()
-        rect = Rect(origin=Point(x=0, y=0), size=size)
-        p.fill_rect(rect)
-        p.stroke_rect(rect)
+        if not self._transparent_bg:
+            p.style(self._rect_style)
+            rect = Rect(origin=Point(x=0, y=0), size=size)
+            p.fill_rect(rect)
+            p.stroke_rect(rect)
 
         width = size.width
         height = size.height
@@ -145,6 +148,7 @@ class SimpleText(Widget):
         kind: Kind = Kind.NORMAL,
         align: TextAlign = TextAlign.CENTER,
         font_size: int | None = None,
+        transparent_bg: bool = False,
     ):
         if isinstance(text, SimpleValue):
             state = text
@@ -154,6 +158,7 @@ class SimpleText(Widget):
         self._kind = kind
         self._font_size = font_size
         self._align = align
+        self._transparent_bg = transparent_bg
 
         super().__init__(
             state=state,
@@ -176,11 +181,11 @@ class SimpleText(Widget):
     def redraw(self, p: Painter, _: bool) -> None:
         state: State = cast(State, self._state)
 
-        p.style(self._rect_style)
         size = self.get_size()
-        rect = Rect(origin=Point(x=0, y=0), size=size)
-        p.fill_rect(rect)
-        # p.stroke_rect(rect)
+        if not self._transparent_bg:
+            p.style(self._rect_style)
+            rect = Rect(origin=Point(x=0, y=0), size=size)
+            p.fill_rect(rect)
 
         width = size.width
         height = size.height

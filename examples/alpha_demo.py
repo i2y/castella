@@ -35,16 +35,13 @@ class AlphaDemo(Component):
                 Button("75%").on_click(lambda _: self._alpha.set(192)),
                 Button("100%").on_click(lambda _: self._alpha.set(255)),
             ).fixed_height(45),
-            # Demo 1: Layout bg_color - layered boxes showing transparency
-            Text("Layout bg_color with layers:"),
-            Box(
-                # Base: red column
-                Column().bg_color("#ff0000").fixed_size(300, 50).z_index(1),
-                # Overlay: green with 50% alpha - should blend with red
-                Column().bg_color("#00ff0080").fixed_size(200, 50).z_index(2),
-                # Top: blue with adjustable alpha
-                Column().bg_color(f"#0000ff{alpha_hex}").fixed_size(100, 50).z_index(3),
-            ).fixed_height(60),
+            # Demo 1: Text with transparent_bg inside colored Column
+            Text("Text with transparent_bg inside colored layouts:"),
+            Row(
+                Column(Text("On Red", transparent_bg=True)).bg_color("#ff0000").width_policy(SizePolicy.EXPANDING),
+                Column(Text("On Green", transparent_bg=True)).bg_color("#00ff00").width_policy(SizePolicy.EXPANDING),
+                Column(Text("On Blue", transparent_bg=True)).bg_color("#0000ff").width_policy(SizePolicy.EXPANDING),
+            ).fixed_height(50),
             # Demo 2: Overlay with Layout
             Text("Box with alpha background:"),
             Box(
