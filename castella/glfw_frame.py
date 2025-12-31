@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import platform
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Optional
 
 import glfw
 import skia
@@ -12,6 +12,7 @@ from OpenGL import GL
 from castella.frame.base import BaseFrame
 from castella.models.geometry import Point, Size
 from castella.models.events import (
+    IMEPreeditEvent,
     InputCharEvent,
     InputKeyEvent,
     KeyAction,
@@ -19,6 +20,26 @@ from castella.models.events import (
     MouseEvent,
     WheelEvent,
 )
+
+# macOS IME support
+if platform.system() == "Darwin":
+    try:
+        from castella.frame.macos_ime import (
+            MacOSIMEManager,
+            is_available as is_ime_available,
+        )
+    except ImportError:
+
+        def is_ime_available() -> bool:
+            return False
+
+        MacOSIMEManager = None
+else:
+
+    def is_ime_available() -> bool:
+        return False
+
+    MacOSIMEManager = None
 
 if TYPE_CHECKING:
     from castella.protocols.painter import BasePainter
@@ -63,6 +84,12 @@ class Frame(BaseFrame):
 
         self.context = skia.GrDirectContext.MakeGL()
         self._update_surface_and_painter()
+
+        # Initialize macOS IME support
+        self._ime_manager: Optional[MacOSIMEManager] = None
+        if platform.system() == "Darwin" and is_ime_available() and MacOSIMEManager:
+            self._ime_manager = MacOSIMEManager(window)
+            self._ime_manager.set_preedit_handler(self._on_ime_preedit)
 
     def _update_surface_and_painter(self) -> None:
         """Create/recreate the Skia surface for the current window size."""
@@ -116,7 +143,21 @@ class Frame(BaseFrame):
         self._callback_on_cursor_pos(MouseEvent(pos=Point(x=x, y=y)))
 
     def _input_char(self, window, char: int) -> None:
+        # Clear any preedit text when a character is committed
+        if self._ime_manager:
+            self._callback_on_ime_preedit(IMEPreeditEvent(text="", cursor_pos=0))
         self._callback_on_input_char(InputCharEvent(char=chr(char)))
+
+    def _on_ime_preedit(self, text: str, cursor_pos: int) -> None:
+        """Handle IME preedit text from macOS."""
+        self._callback_on_ime_preedit(
+            IMEPreeditEvent(text=text, cursor_pos=cursor_pos)
+        )
+
+    def set_ime_cursor_rect(self, x: int, y: int, w: int, h: int) -> None:
+        """Set IME cursor rectangle for candidate window positioning."""
+        if self._ime_manager:
+            self._ime_manager.set_cursor_rect(x, y, w, h)
 
     def _input_key(
         self, window, key: int, scancode: int, action: int, mods: int

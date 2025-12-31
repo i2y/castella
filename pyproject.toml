@@ -29,6 +29,7 @@ glfw = [
     "mdit-py-plugins>=0.4.0",
     "pygments>=2.17.0",
     "matplotlib>=3.9.0",
+    "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
 ]
 sdl = [
     "glcontext>=2.5.0",

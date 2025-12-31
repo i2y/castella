@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable, cast
 
 from castella.models.geometry import Point, Rect, Size
 from castella.models.events import (
+    IMEPreeditEvent,
     InputCharEvent,
     InputKeyEvent,
     MouseEvent,
@@ -55,6 +56,7 @@ class BaseFrame(ABC):
         self._callback_on_cursor_pos: Callable[[MouseEvent], None] = lambda ev: None
         self._callback_on_input_char: Callable[[InputCharEvent], None] = lambda ev: None
         self._callback_on_input_key: Callable[[InputKeyEvent], None] = lambda ev: None
+        self._callback_on_ime_preedit: Callable[[IMEPreeditEvent], None] = lambda ev: None
         self._callback_on_redraw: Callable[[Any, bool], None] = lambda p, c: None
 
     # ========== Event Handler Registration (Unified API) ==========
@@ -82,6 +84,24 @@ class BaseFrame(ABC):
     def on_input_key(self, handler: Callable[[InputKeyEvent], None]) -> None:
         """Register handler for key input events."""
         self._callback_on_input_key = handler
+
+    def on_ime_preedit(self, handler: Callable[[IMEPreeditEvent], None]) -> None:
+        """Register handler for IME preedit (composition) events."""
+        self._callback_on_ime_preedit = handler
+
+    def set_ime_cursor_rect(self, x: int, y: int, w: int, h: int) -> None:
+        """Set the IME cursor rectangle for candidate window positioning.
+
+        Subclasses should override this to communicate cursor position
+        to the platform's IME system.
+
+        Args:
+            x: X coordinate of the cursor
+            y: Y coordinate of the cursor
+            w: Width of the cursor rectangle
+            h: Height of the cursor rectangle
+        """
+        pass  # Default no-op, subclasses override
 
     def on_redraw(self, handler: Callable[[Any, bool], None]) -> None:
         """Register handler for redraw events."""

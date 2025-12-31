@@ -142,3 +142,16 @@ class UpdateEvent(BaseModel):
 
     target: Any
     completely: bool = Field(default=False)
+
+
+class IMEPreeditEvent(BaseModel):
+    """IME preedit (composition) event.
+
+    Represents text being composed by an Input Method Editor (IME),
+    such as when typing Japanese or Chinese characters.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    text: str  # The preedit text being composed
+    cursor_pos: int = Field(default=0)  # Cursor position within preedit text

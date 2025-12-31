@@ -39,6 +39,7 @@ from castella.models.style import (
     TextAlign,  # noqa: F401
 )
 from castella.models.events import (
+    IMEPreeditEvent,
     KeyAction,  # noqa: F401
     KeyCode,  # noqa: F401
     MouseEvent,
@@ -1257,6 +1258,13 @@ class App:
             return
         self._focused.input_key(ev)
 
+    def ime_preedit(self, ev: "IMEPreeditEvent") -> None:
+        """Route IME preedit event to the focused widget."""
+        if self._focused is None:
+            return
+        if hasattr(self._focused, "ime_preedit"):
+            self._focused.ime_preedit(ev)
+
     def redraw(self, p: Painter, completely: bool) -> None:
         # Clear entire canvas first to remove any remnants
         # Get current theme's canvas color for proper dark/light mode support
@@ -1311,6 +1319,7 @@ class App:
         self._frame.on_cursor_pos(self.cursor_pos)
         self._frame.on_input_char(self.input_char)
         self._frame.on_input_key(self.input_key)
+        self._frame.on_ime_preedit(self.ime_preedit)
         self._frame.on_redraw(self.redraw)
         self._frame.run()
 

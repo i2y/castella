@@ -17,6 +17,7 @@ from castella.core import (
     TextAlign,
     determine_font,
 )
+from castella.models.events import IMEPreeditEvent
 from castella.text import Text
 
 
@@ -27,6 +28,9 @@ class InputState(ObservableBase):
         self._editing = False
         self._caret = len(text)
         self._caret_set_by_click = False
+        # IME preedit state
+        self._preedit_text: str = ""
+        self._preedit_cursor: int = 0
 
     def set(self, value: str) -> None:
         self._text = value
@@ -105,6 +109,51 @@ class InputState(ObservableBase):
         self._caret = max(0, min(pos, len(self._text)))
         self._caret_set_by_click = True
 
+    # ========== IME Preedit Methods ==========
+
+    def set_preedit(self, text: str, cursor: int) -> None:
+        """Set IME preedit (composition) text.
+
+        Args:
+            text: The preedit text being composed
+            cursor: Cursor position within the preedit text
+        """
+        self._preedit_text = text
+        self._preedit_cursor = cursor
+        self.notify()
+
+    def clear_preedit(self) -> None:
+        """Clear IME preedit text."""
+        self._preedit_text = ""
+        self._preedit_cursor = 0
+        self.notify()
+
+    def get_preedit(self) -> tuple[str, int]:
+        """Get preedit text and cursor position.
+
+        Returns:
+            Tuple of (preedit_text, cursor_position)
+        """
+        return (self._preedit_text, self._preedit_cursor)
+
+    def has_preedit(self) -> bool:
+        """Check if there is preedit text."""
+        return bool(self._preedit_text)
+
+    def get_display_text(self) -> str:
+        """Get full display text including preedit.
+
+        Returns the text as it should be displayed, with preedit
+        text inserted at the current caret position.
+        """
+        if not self._preedit_text:
+            return self._text
+        return (
+            self._text[: self._caret]
+            + self._preedit_text
+            + self._text[self._caret :]
+        )
+
 
 class Input(Text):
     def __init__(
@@ -137,9 +186,35 @@ class Input(Text):
         width = size.width
         height = size.height
 
-        # Determine display text (masked for password mode)
+        # Get preedit text if any
+        preedit_text, preedit_cursor = state.get_preedit()
+        caret_pos_in_text = state.get_caret_pos()
+
+        # Determine display text (with preedit inserted at caret position)
         actual_text = str(state)
-        display_text = "●" * len(actual_text) if self._password else actual_text
+        if preedit_text:
+            # Insert preedit at caret position
+            display_text_raw = (
+                actual_text[:caret_pos_in_text]
+                + preedit_text
+                + actual_text[caret_pos_in_text:]
+            )
+        else:
+            display_text_raw = actual_text
+
+        # Apply password masking (but show preedit text for IME visibility)
+        if self._password:
+            if preedit_text:
+                # Mask confirmed text but show preedit for composition visibility
+                display_text = (
+                    "●" * caret_pos_in_text
+                    + preedit_text
+                    + "●" * (len(actual_text) - caret_pos_in_text)
+                )
+            else:
+                display_text = "●" * len(actual_text)
+        else:
+            display_text = display_text_raw
 
         font_family, font_size = determine_font(
             width,
@@ -176,12 +251,45 @@ class Input(Text):
             max_width=width,
         )
 
+        # Draw preedit underline if composing
+        if preedit_text and state.is_in_editing():
+            # Calculate preedit text position
+            if self._password:
+                text_before_preedit = "●" * caret_pos_in_text
+            else:
+                text_before_preedit = actual_text[:caret_pos_in_text]
+
+            preedit_start_x = pos.x + p.measure_text(text_before_preedit)
+            preedit_width = p.measure_text(preedit_text)
+            underline_y = pos.y + 2
+
+            # Draw underline for preedit text
+            p.fill_rect(
+                Rect(
+                    origin=Point(x=preedit_start_x, y=underline_y),
+                    size=Size(width=preedit_width, height=2),
+                )
+            )
+
         # Store for click-to-position calculation
         self._last_font_size = font_size
         self._last_text_x = pos.x
 
         if state.is_in_editing():
-            caret_pos_x = p.measure_text(display_text[: state.get_caret_pos()])
+            # Caret position: after confirmed text + preedit cursor position
+            if preedit_text:
+                # During preedit, caret is within preedit text
+                if self._password:
+                    text_before_caret = "●" * caret_pos_in_text + preedit_text[:preedit_cursor]
+                else:
+                    text_before_caret = actual_text[:caret_pos_in_text] + preedit_text[:preedit_cursor]
+            else:
+                if self._password:
+                    text_before_caret = "●" * caret_pos_in_text
+                else:
+                    text_before_caret = display_text[:caret_pos_in_text]
+
+            caret_pos_x = p.measure_text(text_before_caret)
             caret_pos = Point(
                 x=pos.x + caret_pos_x,
                 y=pos.y - cap_height - (font_size - cap_height) / 2,
@@ -190,8 +298,34 @@ class Input(Text):
                 p.draw_caret(caret_pos, font_size)
             else:
                 p.fill_rect(
-                    Rect(origin=caret_pos, size=Size(width=5, height=font_size))
+                    Rect(origin=caret_pos, size=Size(width=2, height=font_size))
                 )
+
+            # Notify IME of cursor position for candidate window
+            self._notify_ime_cursor_rect(pos, caret_pos_x, font_size)
+
+    def _notify_ime_cursor_rect(
+        self, text_pos: Point, caret_offset_x: float, font_size: float
+    ) -> None:
+        """Notify the frame of cursor position for IME candidate window."""
+        from castella.core import App
+
+        app = App.get()
+        if app is None:
+            return
+
+        frame = app._frame
+        if not hasattr(frame, "set_ime_cursor_rect"):
+            return
+
+        # Calculate absolute cursor position
+        widget_pos = self.get_pos()
+        frame.set_ime_cursor_rect(
+            int(widget_pos.x + text_pos.x + caret_offset_x),
+            int(widget_pos.y),
+            1,
+            int(self.get_size().height),
+        )
 
     def focused(self) -> None:
         state = cast(InputState, self._state)
@@ -203,14 +337,30 @@ class Input(Text):
 
     def input_char(self, ev: InputCharEvent) -> None:
         state = cast(InputState, self._state)
+        # Clear any preedit when text is committed
+        if state.has_preedit():
+            state.clear_preedit()
         state.insert(ev.char)
         self._callback(state.raw_value())
+
+    def ime_preedit(self, ev: IMEPreeditEvent) -> None:
+        """Handle IME preedit (composition) event."""
+        state = cast(InputState, self._state)
+        if ev.text:
+            state.set_preedit(ev.text, ev.cursor_pos)
+        else:
+            state.clear_preedit()
 
     def input_key(self, ev: InputKeyEvent) -> None:
         if ev.action is KeyAction.RELEASE:
             return
 
         state = cast(InputState, self._state)
+
+        # During IME preedit, let IME handle key events
+        if state.has_preedit():
+            return
+
         if ev.key is KeyCode.BACKSPACE:
             state.delete_prev()
             self._callback(state.raw_value())
