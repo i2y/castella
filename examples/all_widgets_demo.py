@@ -874,36 +874,38 @@ def hello():
         ).bg_color(theme.colors.bg_secondary)
 
     def _refresh_dashboard(self, _):
-        """Refresh all dashboard data with batch update (single notification)."""
+        """Refresh all dashboard data using batch_update() for efficient updates."""
         import random
 
-        # Update all chart data WITHOUT triggering individual notifications
-        # This avoids 7+ intermediate redraws; only one view rebuild at the end
+        # Use batch_update() context manager to batch multiple updates per chart data.
+        # This allows using set_series() (which normally calls notify) while deferring
+        # all notifications until the context exits - resulting in a single notify per object.
 
-        # Bar chart data (silent - no set_series which calls notify)
+        # Bar chart data
         regions = ["North America", "Europe", "Asia Pacific", "Latin America", "Middle East", "Africa"]
-        self._bar_data.series = [
-            CategoricalSeries.from_values(
-                name="2022",
-                categories=regions,
-                values=[random.randint(50, 200) for _ in range(6)],
-                style=SeriesStyle(color="#6366f1"),
-            ),
-            CategoricalSeries.from_values(
-                name="2023",
-                categories=regions,
-                values=[random.randint(60, 220) for _ in range(6)],
-                style=SeriesStyle(color="#22c55e"),
-            ),
-            CategoricalSeries.from_values(
-                name="2024",
-                categories=regions,
-                values=[random.randint(70, 250) for _ in range(6)],
-                style=SeriesStyle(color="#f59e0b"),
-            ),
-        ]
+        with self._bar_data.batch_update():
+            self._bar_data.set_series([
+                CategoricalSeries.from_values(
+                    name="2022",
+                    categories=regions,
+                    values=[random.randint(50, 200) for _ in range(6)],
+                    style=SeriesStyle(color="#6366f1"),
+                ),
+                CategoricalSeries.from_values(
+                    name="2023",
+                    categories=regions,
+                    values=[random.randint(60, 220) for _ in range(6)],
+                    style=SeriesStyle(color="#22c55e"),
+                ),
+                CategoricalSeries.from_values(
+                    name="2024",
+                    categories=regions,
+                    values=[random.randint(70, 250) for _ in range(6)],
+                    style=SeriesStyle(color="#f59e0b"),
+                ),
+            ])
 
-        # Line chart data (silent)
+        # Line chart data
         base_tech = random.randint(120, 180)
         base_health = random.randint(70, 100)
         base_energy = random.randint(60, 90)
@@ -914,13 +916,14 @@ def hello():
             tech_values.append(tech_values[-1] + random.randint(-15, 20))
             health_values.append(health_values[-1] + random.randint(-10, 15))
             energy_values.append(energy_values[-1] + random.randint(-12, 12))
-        self._line_data.series = [
-            NumericSeries.from_y_values(name="TECH Corp", y_values=tech_values, style=SeriesStyle(color="#3b82f6")),
-            NumericSeries.from_y_values(name="HEALTH Inc", y_values=health_values, style=SeriesStyle(color="#22c55e")),
-            NumericSeries.from_y_values(name="ENERGY Ltd", y_values=energy_values, style=SeriesStyle(color="#ef4444")),
-        ]
+        with self._line_data.batch_update():
+            self._line_data.set_series([
+                NumericSeries.from_y_values(name="TECH Corp", y_values=tech_values, style=SeriesStyle(color="#3b82f6")),
+                NumericSeries.from_y_values(name="HEALTH Inc", y_values=health_values, style=SeriesStyle(color="#22c55e")),
+                NumericSeries.from_y_values(name="ENERGY Ltd", y_values=energy_values, style=SeriesStyle(color="#ef4444")),
+            ])
 
-        # Area chart data (silent)
+        # Area chart data
         base_pv = random.randint(10000, 15000)
         pv = [base_pv]
         uv = [int(base_pv * 0.35)]
@@ -929,55 +932,59 @@ def hello():
             pv.append(int(pv[-1] * random.uniform(1.0, 1.15)))
             uv.append(int(pv[-1] * random.uniform(0.3, 0.4)))
             conv.append(int(uv[-1] * random.uniform(0.08, 0.12)))
-        self._area_data.series = [
-            NumericSeries.from_y_values(name="Page Views", y_values=pv, style=SeriesStyle(color="#06b6d4")),
-            NumericSeries.from_y_values(name="Unique Visitors", y_values=uv, style=SeriesStyle(color="#8b5cf6")),
-            NumericSeries.from_y_values(name="Conversions", y_values=conv, style=SeriesStyle(color="#22c55e")),
-        ]
+        with self._area_data.batch_update():
+            self._area_data.set_series([
+                NumericSeries.from_y_values(name="Page Views", y_values=pv, style=SeriesStyle(color="#06b6d4")),
+                NumericSeries.from_y_values(name="Unique Visitors", y_values=uv, style=SeriesStyle(color="#8b5cf6")),
+                NumericSeries.from_y_values(name="Conversions", y_values=conv, style=SeriesStyle(color="#22c55e")),
+            ])
 
-        # Pie chart data (silent)
+        # Pie chart data
         browser_values = [random.uniform(5, 70) for _ in range(7)]
         browser_total = sum(browser_values)
         browser_values = [round(v / browser_total * 100, 1) for v in browser_values]
-        self._pie_data.series = [
-            CategoricalSeries.from_values(
-                name="Browsers",
-                categories=["Chrome", "Safari", "Edge", "Firefox", "Opera", "Samsung", "Other"],
-                values=browser_values,
-            )
-        ]
         os_values = [random.uniform(5, 80) for _ in range(5)]
         os_total = sum(os_values)
         os_values = [round(v / os_total * 100, 1) for v in os_values]
-        self._pie_data_2.series = [
-            CategoricalSeries.from_values(
-                name="OS",
-                categories=["Windows", "macOS", "Linux", "ChromeOS", "Other"],
-                values=os_values,
-            )
-        ]
+        with self._pie_data.batch_update():
+            self._pie_data.set_series([
+                CategoricalSeries.from_values(
+                    name="Browsers",
+                    categories=["Chrome", "Safari", "Edge", "Firefox", "Opera", "Samsung", "Other"],
+                    values=browser_values,
+                )
+            ])
+        with self._pie_data_2.batch_update():
+            self._pie_data_2.set_series([
+                CategoricalSeries.from_values(
+                    name="OS",
+                    categories=["Windows", "macOS", "Linux", "ChromeOS", "Other"],
+                    values=os_values,
+                )
+            ])
 
-        # Scatter chart data (silent)
+        # Scatter chart data
         male_x = [random.randint(165, 190) for _ in range(15)]
         male_y = [int(x * 0.5 + random.randint(-10, 10)) for x in male_x]
         female_x = [random.randint(150, 175) for _ in range(15)]
         female_y = [int(x * 0.4 + random.randint(-8, 8)) for x in female_x]
-        self._scatter_data.series = [
-            NumericSeries.from_values(name="Male", x_values=male_x, y_values=male_y, style=SeriesStyle(color="#3b82f6")),
-            NumericSeries.from_values(name="Female", x_values=female_x, y_values=female_y, style=SeriesStyle(color="#ec4899")),
-        ]
+        with self._scatter_data.batch_update():
+            self._scatter_data.set_series([
+                NumericSeries.from_values(name="Male", x_values=male_x, y_values=male_y, style=SeriesStyle(color="#3b82f6")),
+                NumericSeries.from_values(name="Female", x_values=female_x, y_values=female_y, style=SeriesStyle(color="#ec4899")),
+            ])
 
-        # Stacked bar chart data (silent)
+        # Stacked bar chart data
         categories = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
-        self._stacked_data.series = [
-            CategoricalSeries.from_values(name="Electronics", categories=categories, values=[random.randint(30, 80) for _ in range(6)], style=SeriesStyle(color="#3b82f6")),
-            CategoricalSeries.from_values(name="Clothing", categories=categories, values=[random.randint(20, 60) for _ in range(6)], style=SeriesStyle(color="#22c55e")),
-            CategoricalSeries.from_values(name="Home & Garden", categories=categories, values=[random.randint(15, 50) for _ in range(6)], style=SeriesStyle(color="#f59e0b")),
-            CategoricalSeries.from_values(name="Sports", categories=categories, values=[random.randint(10, 40) for _ in range(6)], style=SeriesStyle(color="#ef4444")),
-        ]
+        with self._stacked_data.batch_update():
+            self._stacked_data.set_series([
+                CategoricalSeries.from_values(name="Electronics", categories=categories, values=[random.randint(30, 80) for _ in range(6)], style=SeriesStyle(color="#3b82f6")),
+                CategoricalSeries.from_values(name="Clothing", categories=categories, values=[random.randint(20, 60) for _ in range(6)], style=SeriesStyle(color="#22c55e")),
+                CategoricalSeries.from_values(name="Home & Garden", categories=categories, values=[random.randint(15, 50) for _ in range(6)], style=SeriesStyle(color="#f59e0b")),
+                CategoricalSeries.from_values(name="Sports", categories=categories, values=[random.randint(10, 40) for _ in range(6)], style=SeriesStyle(color="#ef4444")),
+            ])
 
-        # Gauge chart data (using set_value which calls notify - but gauges are observed by chart widgets, not Component)
-        # Since gauges are only observed by GaugeChart widgets, their notify() only redraws the gauge, not the whole view
+        # Gauge chart data - use set_value() for efficient single-value updates
         self._gauge_cpu.set_value(random.randint(20, 95))
         self._gauge_memory.set_value(random.randint(30, 95))
         self._gauge_disk.set_value(random.randint(20, 90))
