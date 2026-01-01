@@ -10,7 +10,7 @@ Reference: https://a2ui.org/specification/v0.9-a2ui/
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Literal, Union
+from typing import Annotated, Any, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -326,25 +326,28 @@ class MarkdownComponent(BaseComponent):
     base_font_size: int = Field(default=14, alias="baseFontSize")
 
 
-# Union of all component types
-Component = Union[
-    TextComponent,
-    ButtonComponent,
-    TextFieldComponent,
-    CheckBoxComponent,
-    SliderComponent,
-    ImageComponent,
-    DividerComponent,
-    RowComponent,
-    ColumnComponent,
-    CardComponent,
-    ListComponent,
-    DateTimeInputComponent,
-    ChoicePickerComponent,
-    TabsComponent,
-    ModalComponent,
-    IconComponent,
-    MarkdownComponent,
+# Union of all component types with discriminator for efficient parsing
+Component = Annotated[
+    Union[
+        TextComponent,
+        ButtonComponent,
+        TextFieldComponent,
+        CheckBoxComponent,
+        SliderComponent,
+        ImageComponent,
+        DividerComponent,
+        RowComponent,
+        ColumnComponent,
+        CardComponent,
+        ListComponent,
+        DateTimeInputComponent,
+        ChoicePickerComponent,
+        TabsComponent,
+        ModalComponent,
+        IconComponent,
+        MarkdownComponent,
+    ],
+    Field(discriminator="component"),
 ]
 
 
