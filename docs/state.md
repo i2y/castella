@@ -231,3 +231,142 @@ scroll.set(y=50)  # Only change y
     ```
 
 4. **Use operators for numeric states**: `count += 1` is cleaner than `count.set(count() + 1)`.
+
+5. **Use `set()` for atomic list updates**: When shuffling or replacing all items, use `set()` instead of `clear()` + multiple `append()`:
+
+    ```python
+    # DON'T do this - triggers multiple rebuilds
+    items.clear()
+    for item in new_items:
+        items.append(item)
+
+    # DO this instead - single rebuild
+    items.set(new_items)
+    ```
+
+## Widget Lifecycle Hooks
+
+Widgets can override `on_mount()` and `on_unmount()` to perform setup and cleanup when added to or removed from the widget tree.
+
+### on_mount / on_unmount
+
+```python
+from castella import Widget
+
+class TimerWidget(Widget):
+    def on_mount(self):
+        """Called when widget is added to the tree."""
+        self._timer = start_timer(self._tick)
+
+    def on_unmount(self):
+        """Called when widget is removed from the tree."""
+        self._timer.stop()
+
+    def is_mounted(self) -> bool:
+        """Check if currently in the tree."""
+        return self._mounted
+```
+
+### Use Cases
+
+- **Starting/stopping timers**: Begin background tasks when mounted, stop when unmounted
+- **Subscribing to events**: Subscribe on mount, unsubscribe on unmount
+- **Resource management**: Acquire resources on mount, release on unmount
+
+## State Preservation with Caching
+
+When a `Component.view()` is called, widgets are normally recreated. This can cause loss of internal state like timer counts, scroll positions, or animation progress. Castella provides caching APIs to preserve widget state across rebuilds.
+
+### ListState.map_cached()
+
+Use `map_cached()` to create widgets from list items while preserving their state:
+
+```python
+from castella import Column, Component, ListState
+
+class TodoList(Component):
+    def __init__(self):
+        super().__init__()
+        self._items = ListState([...])
+        self._items.attach(self)
+
+    def view(self):
+        # Widgets are cached by item.id - state is preserved!
+        timer_widgets = self._items.map_cached(
+            lambda item: TimerWidget(item.id, item.name)
+        )
+        return Column(*timer_widgets)
+```
+
+**Key features:**
+
+- Widgets are cached by `item.id` (or hash, or `id()`)
+- Reused widgets keep their internal state (timers, counts, etc.)
+- Removed items automatically trigger `on_unmount()`
+- New items create new widgets with `on_mount()` called
+
+**Custom key function:**
+
+```python
+# Use a custom key extraction function
+widgets = self._items.map_cached(
+    factory=lambda item: MyWidget(item),
+    key_fn=lambda item: item.uuid,  # Use custom key
+)
+```
+
+### Component.cache()
+
+Alternative API that identifies caches by source code location:
+
+```python
+class MyComponent(Component):
+    def view(self):
+        # Cache identified by file + line number
+        widgets = self.cache(
+            self._items,
+            lambda item: TimerWidget(item.id, item.name),
+        )
+        return Column(*widgets)
+```
+
+**When to use which:**
+
+- `ListState.map_cached()`: Simpler API, cache lives on the ListState
+- `Component.cache()`: Allows multiple caches in same view(), cache lives on Component
+
+### Example: Shuffle with State Preservation
+
+```python
+from dataclasses import dataclass
+from castella import App, Button, Column, Component, ListState, Row
+from castella.frame import Frame
+
+@dataclass
+class Item:
+    id: int
+    name: str
+
+class ShuffleDemo(Component):
+    def __init__(self):
+        super().__init__()
+        self._items = ListState([Item(1, "A"), Item(2, "B"), Item(3, "C")])
+        self._items.attach(self)
+
+    def _shuffle(self, _):
+        import random
+        items = list(self._items)
+        random.shuffle(items)
+        self._items.set(items)  # Atomic update
+
+    def view(self):
+        widgets = self._items.map_cached(lambda i: TimerWidget(i.id, i.name))
+        return Column(
+            Button("Shuffle").on_click(self._shuffle),
+            *[Row(w) for w in widgets],
+        )
+
+App(Frame("Demo", 400, 300), ShuffleDemo()).run()
+```
+
+When shuffled, timer widgets maintain their counts because the same widget instances are reused.

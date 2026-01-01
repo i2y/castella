@@ -56,7 +56,9 @@ class BaseFrame(ABC):
         self._callback_on_cursor_pos: Callable[[MouseEvent], None] = lambda ev: None
         self._callback_on_input_char: Callable[[InputCharEvent], None] = lambda ev: None
         self._callback_on_input_key: Callable[[InputKeyEvent], None] = lambda ev: None
-        self._callback_on_ime_preedit: Callable[[IMEPreeditEvent], None] = lambda ev: None
+        self._callback_on_ime_preedit: Callable[[IMEPreeditEvent], None] = (
+            lambda ev: None
+        )
         self._callback_on_redraw: Callable[[Any, bool], None] = lambda p, c: None
 
     # ========== Event Handler Registration (Unified API) ==========
@@ -126,9 +128,17 @@ class BaseFrame(ABC):
         return threading.current_thread() is not threading.main_thread()
 
     def _process_pending_updates(self) -> None:
-        """Process all pending updates from background threads."""
-        while not self._update_event_queue.empty():
-            self._post_update(self._update_event_queue.get_nowait())
+        """Process all pending updates from background threads.
+
+        Uses BuildOwner's build_scope to batch component rebuilds,
+        preventing cascade issues when multiple states change.
+        """
+        from castella.build_owner import BuildOwner
+
+        owner = BuildOwner.get()
+        with owner.build_scope():
+            while not self._update_event_queue.empty():
+                self._post_update(self._update_event_queue.get_nowait())
 
     # ========== Common Implementation: _post_update ==========
 

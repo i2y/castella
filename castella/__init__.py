@@ -83,3 +83,7 @@ try:
     from castella.mcp import CastellaMCPServer as CastellaMCPServer
 except ImportError:
     pass
+
+# Build batching support
+from castella.build_owner import BuildOwner as BuildOwner
+from castella.build_owner import batch_updates as batch_updates

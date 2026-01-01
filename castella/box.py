@@ -431,7 +431,8 @@ class Box(Layout):
     def _redraw_children(self, p: Painter, completely: bool) -> None:
         # For overlapping children in Box, we must redraw ALL children
         # when ANY child is dirty OR the Box itself is dirty to maintain proper z-ordering
-        sorted_children = sorted(self._children, key=lambda c: c.get_z_index())
+        # Use cached z-order (lower z_index first, higher on top)
+        sorted_children = list(self._layout_render_node.iter_paint_order())
         needs_redraw = (
             completely or self.is_dirty() or any(c.is_dirty() for c in sorted_children)
         )

@@ -149,9 +149,7 @@ class InputState(ObservableBase):
         if not self._preedit_text:
             return self._text
         return (
-            self._text[: self._caret]
-            + self._preedit_text
-            + self._text[self._caret :]
+            self._text[: self._caret] + self._preedit_text + self._text[self._caret :]
         )
 
 
@@ -280,9 +278,13 @@ class Input(Text):
             if preedit_text:
                 # During preedit, caret is within preedit text
                 if self._password:
-                    text_before_caret = "●" * caret_pos_in_text + preedit_text[:preedit_cursor]
+                    text_before_caret = (
+                        "●" * caret_pos_in_text + preedit_text[:preedit_cursor]
+                    )
                 else:
-                    text_before_caret = actual_text[:caret_pos_in_text] + preedit_text[:preedit_cursor]
+                    text_before_caret = (
+                        actual_text[:caret_pos_in_text] + preedit_text[:preedit_cursor]
+                    )
             else:
                 if self._password:
                     text_before_caret = "●" * caret_pos_in_text

@@ -150,9 +150,7 @@ class Frame(BaseFrame):
 
     def _on_ime_preedit(self, text: str, cursor_pos: int) -> None:
         """Handle IME preedit text from macOS."""
-        self._callback_on_ime_preedit(
-            IMEPreeditEvent(text=text, cursor_pos=cursor_pos)
-        )
+        self._callback_on_ime_preedit(IMEPreeditEvent(text=text, cursor_pos=cursor_pos))
 
     def set_ime_cursor_rect(self, x: int, y: int, w: int, h: int) -> None:
         """Set IME cursor rectangle for candidate window positioning."""

@@ -1371,9 +1371,7 @@ class DataTable(Widget):
             )
         )
 
-    def _render_header_tooltip(
-        self, p: Painter, state: DataTableState, theme
-    ) -> None:
+    def _render_header_tooltip(self, p: Painter, state: DataTableState, theme) -> None:
         """Render tooltip for hovered header column."""
         if self._hovered_header_col < 0 or self._mouse_pos is None:
             return
@@ -1413,8 +1411,16 @@ class DataTable(Widget):
             origin=Point(x=x, y=y),
             size=Size(width=tooltip_width, height=tooltip_height),
         )
-        bg_color = theme.colors.bg_tertiary if hasattr(theme.colors, "bg_tertiary") else "#333333"
-        border_color = theme.colors.border_primary if hasattr(theme.colors, "border_primary") else "#555555"
+        bg_color = (
+            theme.colors.bg_tertiary
+            if hasattr(theme.colors, "bg_tertiary")
+            else "#333333"
+        )
+        border_color = (
+            theme.colors.border_primary
+            if hasattr(theme.colors, "border_primary")
+            else "#555555"
+        )
         p.style(
             Style(
                 fill=FillStyle(color=bg_color),
@@ -1426,7 +1432,11 @@ class DataTable(Widget):
         p.stroke_rect(bg_rect)
 
         # Draw text
-        text_color = theme.colors.text_primary if hasattr(theme.colors, "text_primary") else "#ffffff"
+        text_color = (
+            theme.colors.text_primary
+            if hasattr(theme.colors, "text_primary")
+            else "#ffffff"
+        )
         p.style(Style(fill=FillStyle(color=text_color), font=Font(size=font_size)))
         p.fill_text(text, Point(x=x + padding, y=y + padding + text_height - 4), None)
 

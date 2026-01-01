@@ -27,6 +27,8 @@ The primary final goal of Castella is to provide features for Python programmers
 - ASCII charts for terminal environments (Bar, Pie, Line, Gauge).
 - **Animation system** - Smooth property animations with `ValueTween`, `AnimatedState`, and easing functions.
 - **ProgressBar widget** - Animated progress indicator with customizable colors.
+- **Widget lifecycle hooks** - `on_mount`/`on_unmount` for resource management (timers, subscriptions).
+- **State preservation** - `ListState.map_cached()` and `Component.cache()` preserve widget state across view rebuilds.
 - Castella utilizes GPU via dependent libraries.
 - Z-index support enables layered UIs with modals, popups, and overlays.
 - **A2A Protocol support** - Connect to AI agents via Google's Agent-to-Agent protocol with `A2AClient`.

@@ -334,7 +334,9 @@ if _available:
                             )
 
                             # Add a new method with a different name, then swap
-                            swizzled_sel_name = b"_castella_firstRectForCharacterRange:actualRange:"
+                            swizzled_sel_name = (
+                                b"_castella_firstRectForCharacterRange:actualRange:"
+                            )
 
                             # Create a selector with the same signature
                             first_rect_sel = objc.selector(
@@ -351,7 +353,8 @@ if _available:
                             # Now get our new method
                             swizzled_sel = libobjc.sel_registerName(swizzled_sel_name)
                             new_method = libobjc.class_getInstanceMethod(
-                                ctypes.c_void_p(class_ptr), ctypes.c_void_p(swizzled_sel)
+                                ctypes.c_void_p(class_ptr),
+                                ctypes.c_void_p(swizzled_sel),
                             )
 
                             if new_method:
@@ -384,7 +387,9 @@ if _available:
                         )
                         if original_unmark:
                             _original_unmark_text = original_unmark
-                            objc.classAddMethod(view_class, unmark_sel.selector, unmark_sel)
+                            objc.classAddMethod(
+                                view_class, unmark_sel.selector, unmark_sel
+                            )
                     except Exception:
                         pass
 
@@ -422,9 +427,7 @@ if _available:
             global _ime_preedit_callback
             _ime_preedit_callback = handler
 
-        def set_commit_handler(
-            self, handler: Optional[Callable[[str], None]]
-        ) -> None:
+        def set_commit_handler(self, handler: Optional[Callable[[str], None]]) -> None:
             """Set the callback for committed text.
 
             Args:
@@ -472,9 +475,7 @@ else:
         ) -> None:
             pass
 
-        def set_commit_handler(
-            self, handler: Optional[Callable[[str], None]]
-        ) -> None:
+        def set_commit_handler(self, handler: Optional[Callable[[str], None]]) -> None:
             pass
 
         def set_cursor_rect(self, x: int, y: int, w: int, h: int) -> None:

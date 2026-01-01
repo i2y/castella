@@ -24,6 +24,8 @@ from pydantic import BaseModel, ConfigDict
 
 if TYPE_CHECKING:
     from castella.chart.models.animation import EasingFunction
+    from castella.events import EventManager
+    from castella.render import LayoutRenderNode, RenderNode
 
 # Re-exports for backward compatibility
 from castella.models.font import EM, Font, FontMetrics, FontSizePolicy  # noqa: F401
@@ -302,6 +304,10 @@ class Widget(ABC):
         self._semantic_id_hint: str | None = None
         self._enable_to_detach = True
         self._parent: Self | None = None
+        self._depth: int = 0  # Depth in widget tree (0 = root)
+        self._mounted: bool = False  # Lifecycle: mounted to tree
+        self._cached: bool = False  # Protected from unmount during rebuild
+        self._render_node: "RenderNode | None" = None  # Lazy initialized
         self._widget_styles = get_theme().get_widget_styles(self)
         self._on_update_widget_styles()
 
@@ -327,6 +333,7 @@ class Widget(ABC):
         style_name = f"{kind.value}{state.value}".format(kind, state)
         styles[style_name] = new_style
         self._on_update_widget_styles()
+        self.mark_paint_dirty()  # Style change only needs repaint
         return self
 
     def bg_color(self, rgb: str) -> Self:
@@ -425,6 +432,8 @@ class Widget(ABC):
         self.update()
 
     def detach(self) -> None:
+        # Call unmount lifecycle hook
+        self._do_unmount()
         if self._enable_to_detach:
             # Create a copy to avoid modification during iteration
             # (on_detach removes from self._observable)
@@ -440,6 +449,49 @@ class Widget(ABC):
                 app._focused = None
             if app._downed is self:
                 app._downed = None
+
+    # ========== Lifecycle Hooks ==========
+
+    def on_mount(self) -> None:
+        """Called when widget is mounted to the tree.
+
+        Override this method to perform initialization that requires
+        the widget to be in the tree (e.g., starting timers, subscriptions).
+        """
+        pass
+
+    def on_unmount(self) -> None:
+        """Called when widget is about to be unmounted from the tree.
+
+        Override this method to perform cleanup (e.g., stopping timers,
+        unsubscribing from events, releasing resources).
+        """
+        pass
+
+    def _do_mount(self, parent: Self | None) -> None:
+        """Internal: Perform mount operations."""
+        if not self._mounted:
+            self._mounted = True
+            self._parent = parent
+            self._depth = parent._depth + 1 if parent else 0
+            self.on_mount()
+        else:
+            # Already mounted - just update parent (for cached widgets being re-parented)
+            self._parent = parent
+            self._depth = parent._depth + 1 if parent else 0
+
+    def _do_unmount(self) -> None:
+        """Internal: Perform unmount operations."""
+        # Skip unmount for cached widgets (they're being reused in new layout)
+        if self._cached:
+            return
+        if self._mounted:
+            self.on_unmount()
+            self._mounted = False
+
+    def is_mounted(self) -> bool:
+        """Check if widget is currently mounted to the tree."""
+        return self._mounted
 
     def freeze(self) -> None:
         self._enable_to_detach = False
@@ -482,39 +534,66 @@ class Widget(ABC):
     def redraw(self, p: Painter, completely: bool) -> None: ...
 
     def is_dirty(self) -> bool:
+        """Check if widget needs repainting."""
+        if self._render_node is not None:
+            return self._render_node.is_paint_dirty()
+        return self._dirty
+
+    def is_layout_dirty(self) -> bool:
+        """Check if widget needs layout recalculation."""
+        if self._render_node is not None:
+            return self._render_node.is_layout_dirty()
         return self._dirty
 
     def dirty(self, flag: bool) -> None:
+        """Set dirty flag (for backward compatibility)."""
         self._dirty = flag
+        if self._render_node is not None:
+            if flag:
+                self._render_node.mark_paint_dirty()
+            else:
+                self._render_node.clear_dirty()
+
+    def mark_layout_dirty(self) -> None:
+        """Mark layout as needing recalculation (implies paint dirty)."""
+        self._dirty = True
+        if self._render_node is not None:
+            self._render_node.mark_layout_dirty()
+
+    def mark_paint_dirty(self) -> None:
+        """Mark as needing repaint without affecting layout."""
+        self._dirty = True
+        if self._render_node is not None:
+            self._render_node.mark_paint_dirty()
 
     def move(self, p: Point) -> Self:
         if p != self._pos:
             self._pos = p
-            self._dirty = True
+            self.mark_layout_dirty()
         return self
 
     def move_x(self, x: float) -> Self:
         if x != self._pos.x:
             self._pos.x = x
-            self._dirty = True
+            self.mark_layout_dirty()
         return self
 
     def move_y(self, y: float) -> Self:
         if y != self._pos.y:
             self._pos.y = y
-            self._dirty = True
+            self.mark_layout_dirty()
         return self
 
     def resize(self, s: Size) -> Self:
         if s != self._size:
             self._size = s
-            self._dirty = True
+            self.mark_layout_dirty()
         return self
 
     def width(self, w: float) -> Self:
         if w != self._size.width:
-            self._dirty = True
             self._size.width = w
+            self.mark_layout_dirty()
         return self
 
     def get_width(self) -> float:
@@ -523,7 +602,7 @@ class Widget(ABC):
     def height(self, h: float) -> Self:
         if h != self._size.height:
             self._size.height = h
-            self._dirty = True
+            self.mark_layout_dirty()
         return self
 
     def get_height(self) -> float:
@@ -535,7 +614,7 @@ class Widget(ABC):
     def pos(self, pos: Point) -> Self:
         if pos != self._pos:
             self._pos = pos
-            self._dirty = True
+            self.mark_layout_dirty()
         return self
 
     def get_size(self) -> Size:
@@ -610,6 +689,11 @@ class Widget(ABC):
         if z < 1:
             raise ValueError("z_index must be a positive integer (>= 1)")
         self._z_index = z
+        # Invalidate parent's z-order cache if parent is a Layout
+        if self._parent is not None:
+            parent_node = self._parent._render_node
+            if parent_node is not None and hasattr(parent_node, "invalidate_z_order"):
+                parent_node.invalidate_z_order()
         return self
 
     def get_semantic_id_hint(self) -> str | None:
@@ -632,7 +716,37 @@ class Widget(ABC):
         return self
 
     def parent(self, parent: Self) -> None:
-        self._parent = parent
+        """Set parent and trigger mount lifecycle."""
+        self._do_mount(parent)
+
+    def get_depth(self) -> int:
+        """Get the depth of this widget in the tree (0 = root)."""
+        return self._depth
+
+    @property
+    def render_node(self) -> "RenderNode":
+        """Get the render node for this widget (lazy initialized).
+
+        The render node handles layout and paint operations.
+        Override _create_render_node() to customize behavior.
+        """
+        if self._render_node is None:
+            self._render_node = self._create_render_node()
+        return self._render_node
+
+    def _create_render_node(self) -> "RenderNode":
+        """Create the render node for this widget.
+
+        Override this method to provide a custom RenderNode.
+        The default implementation returns a RenderNodeBase
+        that delegates all operations to the widget.
+
+        Returns:
+            A RenderNode instance.
+        """
+        from castella.render import RenderNodeBase
+
+        return RenderNodeBase(self)
 
     def get_parent(self) -> Self | None:
         return self._parent
@@ -978,7 +1092,9 @@ class ListState(list, State[T]):
 
     def __setattr__(self, name: str, value: Any) -> None:
         super().__setattr__(name, value)
-        self.notify()
+        # Don't notify for internal attributes (e.g., _widget_cache, _observers)
+        if not name.startswith("_"):
+            self.notify()
 
     def __iadd__(self, rhs: Iterable[T]) -> Self:
         super().__iadd__(rhs)
@@ -1046,6 +1162,92 @@ class ListState(list, State[T]):
     def sort(self) -> None:
         super().sort()
         self.notify()
+
+    def set(self, items: Iterable[T]) -> None:
+        """Replace all items at once (single notify).
+
+        Use this instead of clear() + append() to avoid multiple rebuilds.
+        """
+        super().clear()
+        super().extend(items)
+        self.notify()
+
+    def map_cached(
+        self,
+        factory: Callable[[T], "Widget"],
+        key_fn: Callable[[T], Any] | None = None,
+    ) -> list["Widget"]:
+        """Map items to cached widget instances.
+
+        This enables state preservation across view() rebuilds.
+        Widgets are reused for the same items, preserving their internal state.
+        Widgets for removed items are automatically cleaned up.
+
+        Args:
+            factory: Function that creates a widget from an item.
+            key_fn: Optional function to extract a cache key from an item.
+                    Defaults to using item.id, hash(item), or id(item).
+
+        Returns:
+            List of cached (or newly created) widgets.
+
+        Example:
+            def view(self):
+                return Column(
+                    *self._items.map_cached(
+                        lambda item: TimerWidget(item.id, item.name)
+                    )
+                )
+        """
+        # Lazily initialize cache
+        if not hasattr(self, "_widget_cache"):
+            self._widget_cache: dict[Any, Widget] = {}
+
+        cache = self._widget_cache
+        result: list[Widget] = []
+        seen_keys: set = set()
+
+        for item in self:
+            # Determine cache key
+            if key_fn is not None:
+                key = key_fn(item)
+            elif hasattr(item, "id"):
+                key = item.id
+            else:
+                try:
+                    hash(item)
+                    key = item
+                except TypeError:
+                    key = id(item)
+
+            seen_keys.add(key)
+
+            if key not in cache:
+                cache[key] = factory(item)
+
+            widget = cache[key]
+            # Mark as cached to prevent unmount during rebuild
+            widget._cached = True
+            # Remove from old parent (if any) before adding to new layout
+            if widget._parent is not None:
+                old_parent = widget._parent
+                if hasattr(old_parent, "_children") and widget in old_parent._children:
+                    old_parent._children.remove(widget)
+                    # Also remove from render node
+                    if hasattr(old_parent, "_layout_render_node"):
+                        old_parent._layout_render_node.remove_child(widget)
+                widget._parent = None
+            result.append(widget)
+
+        # Cleanup removed items - unmount and remove from cache
+        for key in list(cache.keys()):
+            if key not in seen_keys:
+                widget = cache[key]
+                widget._cached = False  # Allow unmount
+                widget._do_unmount()  # Actually unmount (stops timers, etc.)
+                del cache[key]
+
+        return result
 
 
 class ScrollState(ObservableBase):
@@ -1153,8 +1355,15 @@ class App:
         return cls._instance
 
     def __init__(self, frame: Frame, widget: Widget):
+        from castella.events import EventManager
+
         self._frame = frame
         self._root_widget = widget
+        self._event_manager = EventManager()
+        self._event_manager.set_root(widget)
+
+        # Legacy state - now delegated to EventManager internally
+        # but kept for backward compatibility with widget.detach()
         self._downed: Widget | None = None
         self._focused: Widget | None = None
         self._mouse_overed: Widget | None = None
@@ -1172,6 +1381,20 @@ class App:
     @classmethod
     def get_default_font_family(cls) -> str:
         return cls._default_font_family
+
+    @property
+    def event_manager(self) -> "EventManager":
+        """Access the event manager for advanced event handling.
+
+        Provides access to:
+        - focus: FocusManager for Tab navigation
+        - pointer: PointerTracker for mouse state
+        - gesture: GestureRecognizer for tap/drag detection
+        - keyboard: KeyboardState for key tracking
+        - shortcuts: ShortcutHandler for global shortcuts
+        """
+
+        return self._event_manager
 
     def mouse_down(self, ev: MouseEvent) -> None:
         target, p = self._root_widget.dispatch(ev.pos)
@@ -1354,6 +1577,17 @@ class Layout(Widget, ABC):
         # _widget_styles is initialized in Widget.__init__()
         # _on_update_widget_styles() is called in Widget.__init__()
 
+    def _create_render_node(self) -> "RenderNode":
+        """Create a LayoutRenderNode for z-order caching."""
+        from castella.render import LayoutRenderNode
+
+        return LayoutRenderNode(self)
+
+    @property
+    def _layout_render_node(self) -> "LayoutRenderNode":
+        """Get the layout render node (type-safe access)."""
+        return self.render_node  # type: ignore
+
     def get_children(self) -> Generator[Widget, None, None]:
         yield from self._children
 
@@ -1371,6 +1605,8 @@ class Layout(Widget, ABC):
 
         self._children.append(w)
         w.parent(self)
+        # Sync with render node for z-order caching
+        self._layout_render_node.add_child(w)
 
     def detach(self) -> None:
         super().detach()
@@ -1379,16 +1615,17 @@ class Layout(Widget, ABC):
 
     def remove(self, w: Widget) -> None:
         self._children.remove(w)
+        # Trigger unmount lifecycle before removing
+        w._do_unmount()
         w.delete_parent(self)
+        # Sync with render node
+        self._layout_render_node.remove_child(w)
 
     def dispatch(self, p: Point) -> tuple[Widget | None, Point | None]:
         if self.contain_in_content_area(p):
             p = self._adjust_pos(p)
-            # Sort by z_index in reverse (higher z_index receives events first)
-            sorted_children = sorted(
-                self._children, key=lambda c: c.get_z_index(), reverse=True
-            )
-            for c in sorted_children:
+            # Use cached z-order (higher z_index receives events first)
+            for c in self._layout_render_node.iter_hit_test_order():
                 target, adjusted_p = c.dispatch(p)
                 if target is not None:
                     return target, adjusted_p
@@ -1407,11 +1644,8 @@ class Layout(Widget, ABC):
     ) -> tuple[Widget | None, Point | None]:
         if self.contain_in_content_area(p):
             p = self._adjust_pos(p)
-            # Sort by z_index in reverse (higher z_index receives events first)
-            sorted_children = sorted(
-                self._children, key=lambda c: c.get_z_index(), reverse=True
-            )
-            for c in sorted_children:
+            # Use cached z-order (higher z_index receives events first)
+            for c in self._layout_render_node.iter_hit_test_order():
                 target, adjusted_p = c.dispatch_to_scrollable(p, is_direction_x)
                 if target is not None:
                     return target, adjusted_p
@@ -1460,9 +1694,8 @@ class Layout(Widget, ABC):
     def _relocate_children(self, p: Painter) -> None: ...
 
     def _redraw_children(self, p: Painter, completely: bool) -> None:
-        # Sort children by z_index (lower first, higher on top)
-        sorted_children = sorted(self._children, key=lambda c: c.get_z_index())
-        for c in sorted_children:
+        # Use cached z-order (lower z_index first, higher on top)
+        for c in self._layout_render_node.iter_paint_order():
             if completely or c.is_dirty():
                 p.save()
                 p.translate((c.get_pos() - self.get_pos()))
@@ -1516,6 +1749,7 @@ class Component(Layout, ABC):
         )
         self._child: Widget | None = None
         self._pending_rebuild: bool = False  # Thread-safe flag for deferred rebuild
+        self._widget_cache: dict[tuple, dict] = {}  # Widget instance cache for view()
 
     def _relocate_children(self, p: Painter) -> None:
         self._resize_children(p)
@@ -1540,8 +1774,128 @@ class Component(Layout, ABC):
     @abstractmethod
     def view(self) -> Widget: ...
 
+    def cache(
+        self,
+        items: Iterable[Any],
+        factory: Callable[[Any], "Widget"],
+    ) -> list["Widget"]:
+        """Cache widget instances for items across view() rebuilds.
+
+        This enables state preservation without key-based reconciliation.
+        Widgets are reused for the same items, preserving their internal state.
+        Widgets for removed items are automatically cleaned up.
+
+        The cache is identified by the source code location (file + line number),
+        so multiple cache() calls in the same view() work correctly.
+
+        Args:
+            items: Iterable of items to create widgets for.
+            factory: Function that creates a widget from an item.
+
+        Returns:
+            List of cached (or newly created) widgets.
+
+        Example:
+            def view(self):
+                return Column(
+                    *self.cache(
+                        self._items,
+                        lambda item: TimerWidget(item.id, item.name)
+                    )
+                )
+        """
+        import inspect
+
+        # Identify cache by call site (file + line number)
+        frame = inspect.currentframe()
+        if frame is not None and frame.f_back is not None:
+            caller = frame.f_back
+            cache_id = (caller.f_code.co_filename, caller.f_lineno)
+        else:
+            cache_id = (id(factory),)
+
+        if cache_id not in self._widget_cache:
+            self._widget_cache[cache_id] = {}
+
+        cache = self._widget_cache[cache_id]
+        items_list = list(items)
+
+        result: list[Widget] = []
+        seen_keys: set = set()
+
+        for item in items_list:
+            key = self._get_cache_key(item)
+            seen_keys.add(key)
+
+            if key not in cache:
+                cache[key] = factory(item)
+
+            widget = cache[key]
+            # Mark as cached to prevent unmount during rebuild
+            widget._cached = True
+            # Remove from old parent (if any) before adding to new layout
+            if widget._parent is not None:
+                old_parent = widget._parent
+                if hasattr(old_parent, "_children") and widget in old_parent._children:
+                    old_parent._children.remove(widget)
+                    # Also remove from render node
+                    if hasattr(old_parent, "_layout_render_node"):
+                        old_parent._layout_render_node.remove_child(widget)
+                widget._parent = None
+            result.append(widget)
+
+        # Cleanup removed items - unmount and remove from cache
+        for key in list(cache.keys()):
+            if key not in seen_keys:
+                widget = cache[key]
+                widget._cached = False  # Allow unmount
+                widget._do_unmount()  # Actually unmount (stops timers, etc.)
+                del cache[key]
+
+        return result
+
+    def _get_cache_key(self, item: Any) -> Any:
+        """Extract a cache key from an item.
+
+        Priority:
+        1. item.id if available
+        2. item itself if hashable
+        3. id(item) as fallback
+        """
+        if hasattr(item, "id"):
+            return item.id
+        try:
+            hash(item)
+            return item
+        except TypeError:
+            return id(item)
+
     def on_notify(self, event: Any = None) -> None:
-        # Thread-safe: just set flag, actual rebuild happens in redraw on main thread
+        """Handle state change notification.
+
+        Uses BuildOwner for batched rebuilds when in a build scope,
+        otherwise falls back to immediate rebuild (backward compatibility).
+        """
+        from castella.build_owner import BuildOwner
+
+        owner = BuildOwner.get()
+        if owner.is_in_build_scope():
+            # Batched mode: schedule for rebuild when scope exits
+            owner.schedule_build_for(self)
+        else:
+            # Immediate mode (backward compatibility)
+            self._pending_rebuild = True
+            self.dirty(True)
+            app = App.get()
+            if app is not None:
+                app._root_widget.dirty(True)
+                app._frame.post_update(UpdateEvent(target=app, completely=True))
+
+    def _do_rebuild(self) -> None:
+        """Perform the actual view rebuild.
+
+        Called by BuildOwner during batched rebuilds.
+        """
         self._pending_rebuild = True
         self.dirty(True)
         app = App.get()

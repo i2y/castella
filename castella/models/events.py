@@ -32,8 +32,11 @@ class KeyCode(Enum):
     # Letter keys for shortcuts
     A = auto()
     C = auto()
+    F = auto()
+    S = auto()
     V = auto()
     X = auto()
+    Z = auto()
     UNKNOWN = auto()
 
 
