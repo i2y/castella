@@ -34,6 +34,23 @@ class NodeType(str, Enum):
     MATH_BLOCK = "math_block"
     FOOTNOTE_REF = "footnote_ref"
     FOOTNOTE_DEF = "footnote_def"
+    # Extended syntax
+    ADMONITION = "admonition"
+    DEFINITION_LIST = "definition_list"
+    DEFINITION_TERM = "definition_term"
+    DEFINITION_DESC = "definition_desc"
+    TOC = "toc"
+    MERMAID = "mermaid"
+
+
+class AdmonitionType(str, Enum):
+    """Types of admonition/callout blocks."""
+
+    NOTE = "note"
+    TIP = "tip"
+    IMPORTANT = "important"
+    WARNING = "warning"
+    CAUTION = "caution"
 
 
 class MarkdownNode(BaseModel):
@@ -215,6 +232,73 @@ class DocumentNode(MarkdownNode):
     type: NodeType = NodeType.DOCUMENT
 
 
+# Extended syntax nodes
+
+
+class AdmonitionNode(MarkdownNode):
+    """GitHub-style admonition/callout block.
+
+    Syntax:
+        > [!NOTE]
+        > This is a note
+
+        > [!WARNING]
+        > This is a warning
+    """
+
+    type: NodeType = NodeType.ADMONITION
+    admonition_type: AdmonitionType = AdmonitionType.NOTE
+    title: str = ""  # Custom title if provided
+
+
+class DefinitionListNode(MarkdownNode):
+    """Definition list container.
+
+    Syntax:
+        Term
+        :   Definition here
+    """
+
+    type: NodeType = NodeType.DEFINITION_LIST
+
+
+class DefinitionTermNode(MarkdownNode):
+    """Definition term (dt)."""
+
+    type: NodeType = NodeType.DEFINITION_TERM
+
+
+class DefinitionDescNode(MarkdownNode):
+    """Definition description (dd)."""
+
+    type: NodeType = NodeType.DEFINITION_DESC
+
+
+class TOCNode(MarkdownNode):
+    """Table of Contents placeholder.
+
+    Syntax:
+        [TOC] or [[toc]]
+    """
+
+    type: NodeType = NodeType.TOC
+    max_level: int = 3  # Include h1-h3 by default
+
+
+class MermaidNode(MarkdownNode):
+    """Mermaid diagram block.
+
+    Syntax:
+        ```mermaid
+        graph TD
+            A --> B
+        ```
+    """
+
+    type: NodeType = NodeType.MERMAID
+    content: str = ""
+
+
 # Type alias for all node types
 ASTNode = Union[
     MarkdownNode,
@@ -243,4 +327,11 @@ ASTNode = Union[
     MathBlockNode,
     FootnoteRefNode,
     FootnoteDefNode,
+    # Extended syntax
+    AdmonitionNode,
+    DefinitionListNode,
+    DefinitionTermNode,
+    DefinitionDescNode,
+    TOCNode,
+    MermaidNode,
 ]

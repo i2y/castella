@@ -10,6 +10,15 @@ if TYPE_CHECKING:
 
 
 @dataclass
+class AdmonitionColors:
+    """Colors for a specific admonition type."""
+
+    bg_color: str
+    border_color: str
+    icon: str
+
+
+@dataclass
 class MarkdownTheme:
     """Theme configuration for Markdown rendering."""
 
@@ -51,6 +60,47 @@ class MarkdownTheme:
 
     # Dark mode flag
     is_dark: bool
+
+    # Admonition colors (GitHub-style)
+    admon_note_bg: str = "#1e3a5f"
+    admon_note_border: str = "#58a6ff"
+    admon_tip_bg: str = "#1a3d2e"
+    admon_tip_border: str = "#3fb950"
+    admon_important_bg: str = "#2d1f3d"
+    admon_important_border: str = "#a371f7"
+    admon_warning_bg: str = "#3d2e1a"
+    admon_warning_border: str = "#d29922"
+    admon_caution_bg: str = "#3d1a1a"
+    admon_caution_border: str = "#f85149"
+
+    # Definition list styling
+    deflist_term_color: str = ""  # Will use heading_color if empty
+    deflist_indent: int = 24
+
+    def get_admonition_colors(self, admon_type: str) -> AdmonitionColors:
+        """Get colors for an admonition type."""
+        icons = {
+            "note": "\u2139\ufe0f",  # ℹ️
+            "tip": "\U0001f4a1",  # 💡
+            "important": "\u2757",  # ❗
+            "warning": "\u26a0\ufe0f",  # ⚠️
+            "caution": "\U0001f6d1",  # 🛑
+        }
+
+        colors = {
+            "note": (self.admon_note_bg, self.admon_note_border),
+            "tip": (self.admon_tip_bg, self.admon_tip_border),
+            "important": (self.admon_important_bg, self.admon_important_border),
+            "warning": (self.admon_warning_bg, self.admon_warning_border),
+            "caution": (self.admon_caution_bg, self.admon_caution_border),
+        }
+
+        bg, border = colors.get(
+            admon_type, (self.admon_note_bg, self.admon_note_border)
+        )
+        icon = icons.get(admon_type, "\u2139\ufe0f")
+
+        return AdmonitionColors(bg_color=bg, border_color=border, icon=icon)
 
     @classmethod
     def from_theme(cls, theme: "Theme | None" = None) -> "MarkdownTheme":

@@ -80,6 +80,11 @@ class Markdown(Widget):
         code_theme: str = "monokai",
         enable_math: bool = True,
         enable_syntax_highlight: bool = True,
+        enable_admonitions: bool = True,
+        enable_mermaid: bool = True,
+        enable_deflist: bool = True,
+        enable_toc: bool = True,
+        enable_emoji: bool = True,
         link_color: str | None = None,
         on_link_click: Callable[[str], None] | None = None,
         padding: int = 8,
@@ -98,10 +103,21 @@ class Markdown(Widget):
         self._code_theme = code_theme
         self._enable_math = enable_math
         self._enable_syntax_highlight = enable_syntax_highlight
+        self._enable_admonitions = enable_admonitions
+        self._enable_mermaid = enable_mermaid
+        self._enable_deflist = enable_deflist
+        self._enable_toc = enable_toc
+        self._enable_emoji = enable_emoji
         self._link_color = link_color
         self._link_callback = on_link_click
 
-        self._parser = MarkdownParser(enable_math=enable_math)
+        self._parser = MarkdownParser(
+            enable_math=enable_math,
+            enable_admonitions=enable_admonitions,
+            enable_mermaid=enable_mermaid,
+            enable_deflist=enable_deflist,
+            enable_toc=enable_toc,
+        )
         self._theme: MarkdownTheme | None = None
         self._renderer: MarkdownRenderer | None = None
         self._cached_ast: DocumentNode | None = None
@@ -174,10 +190,19 @@ class Markdown(Widget):
     def _get_content(self) -> str:
         """Get current content from state."""
         if isinstance(self._state, MarkdownState):
-            return self._state.value()
+            content = self._state.value()
         elif isinstance(self._state, SimpleValue):
-            return self._state.value()
-        return ""
+            content = self._state.value()
+        else:
+            content = ""
+
+        # Apply emoji shortcode conversion if enabled
+        if self._enable_emoji and content:
+            from castella.markdown.emoji_map import convert_emoji_shortcodes
+
+            content = convert_emoji_shortcodes(content)
+
+        return content
 
     def _get_ast(self) -> DocumentNode:
         """Get or parse AST."""

@@ -1,14 +1,21 @@
 """Markdown parser using markdown-it-py."""
 
+import re
+
 from markdown_it import MarkdownIt
 from markdown_it.token import Token
 from mdit_py_plugins.footnote import footnote_plugin
 from mdit_py_plugins.tasklists import tasklists_plugin
 
 from castella.markdown.models import (
+    AdmonitionNode,
+    AdmonitionType,
     BlockquoteNode,
     CodeBlockNode,
     CodeInlineNode,
+    DefinitionDescNode,
+    DefinitionListNode,
+    DefinitionTermNode,
     DocumentNode,
     EmphasisNode,
     FootnoteRefNode,
@@ -22,6 +29,7 @@ from castella.markdown.models import (
     MarkdownNode,
     MathBlockNode,
     MathInlineNode,
+    MermaidNode,
     ParagraphNode,
     SoftBreakNode,
     StrikethroughNode,
@@ -31,13 +39,25 @@ from castella.markdown.models import (
     TableRowNode,
     TaskItemNode,
     TextNode,
+    TOCNode,
 )
+
+# Pattern to match GitHub-style admonition markers
+_TOC_PATTERN = re.compile(r"^\s*\[\[?toc\]?\]\s*$", re.I)
+_ADMONITION_PATTERN = re.compile(r"^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]$", re.I)
 
 
 class MarkdownParser:
     """Parses Markdown text into AST nodes."""
 
-    def __init__(self, enable_math: bool = True):
+    def __init__(
+        self,
+        enable_math: bool = True,
+        enable_admonitions: bool = True,
+        enable_mermaid: bool = True,
+        enable_deflist: bool = True,
+        enable_toc: bool = True,
+    ):
         self._md = MarkdownIt("gfm-like", {"linkify": False})
         self._md.enable("table")
         self._md.enable("strikethrough")
@@ -45,7 +65,20 @@ class MarkdownParser:
         footnote_plugin(self._md)
         tasklists_plugin(self._md)
 
+        # Try to load definition list plugin if available
+        if enable_deflist:
+            try:
+                from mdit_py_plugins.deflist import deflist_plugin
+
+                deflist_plugin(self._md)
+            except ImportError:
+                pass
+
         self._enable_math = enable_math
+        self._enable_admonitions = enable_admonitions
+        self._enable_mermaid = enable_mermaid
+        self._enable_deflist = enable_deflist
+        self._enable_toc = enable_toc
 
     def parse(self, content: str) -> DocumentNode:
         """Parse Markdown text into AST.
@@ -80,16 +113,27 @@ class MarkdownParser:
             elif token.type == "paragraph_open":
                 i += 1
                 inline_token = tokens[i]
-                children = (
-                    self._parse_inline(inline_token) if inline_token.children else []
+                # Check for TOC marker
+                raw_content = (
+                    inline_token.content.strip() if inline_token.content else ""
                 )
-                nodes.append(ParagraphNode(children=children))
+                if self._enable_toc and _TOC_PATTERN.match(raw_content):
+                    nodes.append(TOCNode())
+                else:
+                    children = (
+                        self._parse_inline(inline_token)
+                        if inline_token.children
+                        else []
+                    )
+                    nodes.append(ParagraphNode(children=children))
                 i += 2
             elif token.type == "fence":
                 lang = token.info.strip() if token.info else ""
                 content = token.content
                 if self._enable_math and lang in ("math", "latex"):
                     nodes.append(MathBlockNode(content=content.strip()))
+                elif self._enable_mermaid and lang == "mermaid":
+                    nodes.append(MermaidNode(content=content.strip()))
                 else:
                     nodes.append(CodeBlockNode(language=lang, content=content))
                 i += 1
@@ -102,7 +146,20 @@ class MarkdownParser:
                 )
                 inner_tokens = tokens[i + 1 : end_idx]
                 children = self._tokens_to_ast(inner_tokens)
-                nodes.append(BlockquoteNode(children=children))
+
+                # Check if this is a GitHub-style admonition
+                admon_result = self._check_admonition(children)
+                if self._enable_admonitions and admon_result:
+                    admon_type, title, admon_children = admon_result
+                    nodes.append(
+                        AdmonitionNode(
+                            admonition_type=admon_type,
+                            title=title,
+                            children=admon_children,
+                        )
+                    )
+                else:
+                    nodes.append(BlockquoteNode(children=children))
                 i = end_idx + 1
             elif token.type == "bullet_list_open":
                 end_idx = self._find_closing(
@@ -138,6 +195,13 @@ class MarkdownParser:
                 end_idx = self._find_closing(
                     tokens, i, "footnote_block_open", "footnote_block_close"
                 )
+                i = end_idx + 1
+            elif token.type == "dl_open":
+                # Definition list
+                end_idx = self._find_closing(tokens, i, "dl_open", "dl_close")
+                inner_tokens = tokens[i + 1 : end_idx]
+                children = self._parse_deflist_items(inner_tokens)
+                nodes.append(DefinitionListNode(children=children))
                 i = end_idx + 1
             else:
                 i += 1
@@ -292,29 +356,37 @@ class MarkdownParser:
                 inner_tokens = tokens[i + 1 : end_idx]
                 children = self._tokens_to_ast(inner_tokens)
 
-                if is_task and children:
-                    first_child = children[0]
-                    if isinstance(first_child, ParagraphNode) and first_child.children:
-                        first_inline = first_child.children[0]
-                        if isinstance(first_inline, TextNode):
-                            text = first_inline.content
-                            if text.startswith("[x] ") or text.startswith("[X] "):
-                                checked = True
-                                new_text = text[4:]
-                                new_children = [TextNode(content=new_text)] + list(
-                                    first_child.children[1:]
-                                )
-                                children = [
-                                    ParagraphNode(children=new_children)
-                                ] + children[1:]
-                            elif text.startswith("[ ] "):
-                                new_text = text[4:]
-                                new_children = [TextNode(content=new_text)] + list(
-                                    first_child.children[1:]
-                                )
-                                children = [
-                                    ParagraphNode(children=new_children)
-                                ] + children[1:]
+                if is_task:
+                    # Check for checked state in inner tokens (html_inline with checkbox)
+                    for inner_token in inner_tokens:
+                        if inner_token.type == "inline" and inner_token.children:
+                            for child_token in inner_token.children:
+                                if child_token.type == "html_inline":
+                                    html_content = child_token.content
+                                    if 'checked="checked"' in html_content:
+                                        checked = True
+                                        break
+                            break
+
+                    # Clean up leading space in first text node
+                    if children:
+                        first_child = children[0]
+                        if (
+                            isinstance(first_child, ParagraphNode)
+                            and first_child.children
+                        ):
+                            first_inline = first_child.children[0]
+                            if isinstance(first_inline, TextNode):
+                                text = first_inline.content
+                                # Strip leading space added by tasklists plugin
+                                if text.startswith(" "):
+                                    new_text = text[1:]
+                                    new_children = [TextNode(content=new_text)] + list(
+                                        first_child.children[1:]
+                                    )
+                                    children = [
+                                        ParagraphNode(children=new_children)
+                                    ] + children[1:]
 
                     items.append(TaskItemNode(checked=checked, children=children))
                 else:
@@ -433,3 +505,87 @@ class MarkdownParser:
                 if depth == 0:
                     return i
         return len(tokens) - 1
+
+    def _check_admonition(
+        self, children: list[MarkdownNode]
+    ) -> tuple[AdmonitionType, str, list[MarkdownNode]] | None:
+        """Check if blockquote children represent a GitHub-style admonition.
+
+        GitHub-style admonition syntax:
+            > [!NOTE]
+            > Content here
+
+            > [!WARNING]
+            > Some warning message
+
+        Returns:
+            Tuple of (admonition_type, title, remaining_children) if admonition,
+            None otherwise.
+        """
+        if not children:
+            return None
+
+        first_child = children[0]
+        if not isinstance(first_child, ParagraphNode):
+            return None
+
+        if not first_child.children:
+            return None
+
+        first_inline = first_child.children[0]
+        if not isinstance(first_inline, TextNode):
+            return None
+
+        text = first_inline.content.strip()
+        match = _ADMONITION_PATTERN.match(text)
+        if not match:
+            return None
+
+        # Found admonition marker
+        type_str = match.group(1).upper()
+        try:
+            admon_type = AdmonitionType(type_str.lower())
+        except ValueError:
+            return None
+
+        # Build remaining children (remove the [!TYPE] marker)
+        remaining_text = text[match.end() :].strip()
+        new_first_children: list[MarkdownNode] = []
+
+        if remaining_text:
+            new_first_children.append(TextNode(content=remaining_text))
+        new_first_children.extend(first_child.children[1:])
+
+        if new_first_children:
+            new_first_para = ParagraphNode(children=new_first_children)
+            return (admon_type, "", [new_first_para] + list(children[1:]))
+        else:
+            return (admon_type, "", list(children[1:]))
+
+    def _parse_deflist_items(self, tokens: list[Token]) -> list[MarkdownNode]:
+        """Parse definition list items (dt/dd)."""
+        items: list[MarkdownNode] = []
+        i = 0
+
+        while i < len(tokens):
+            token = tokens[i]
+
+            if token.type == "dt_open":
+                end_idx = self._find_closing(tokens, i, "dt_open", "dt_close")
+                inner_tokens = tokens[i + 1 : end_idx]
+                children: list[MarkdownNode] = []
+                for inner_token in inner_tokens:
+                    if inner_token.type == "inline" and inner_token.children:
+                        children.extend(self._parse_inline(inner_token))
+                items.append(DefinitionTermNode(children=children))
+                i = end_idx + 1
+            elif token.type == "dd_open":
+                end_idx = self._find_closing(tokens, i, "dd_open", "dd_close")
+                inner_tokens = tokens[i + 1 : end_idx]
+                children = self._tokens_to_ast(inner_tokens)
+                items.append(DefinitionDescNode(children=children))
+                i = end_idx + 1
+            else:
+                i += 1
+
+        return items

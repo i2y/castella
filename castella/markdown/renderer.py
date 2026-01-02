@@ -18,9 +18,13 @@ from castella.models.font import Font, FontSlant, FontWeight
 from castella.markdown.code_highlighter import CodeHighlighter
 from castella.markdown.math_renderer import MathRenderer
 from castella.markdown.models import (
+    AdmonitionNode,
     BlockquoteNode,
     CodeBlockNode,
     CodeInlineNode,
+    DefinitionDescNode,
+    DefinitionListNode,
+    DefinitionTermNode,
     DocumentNode,
     EmphasisNode,
     HardBreakNode,
@@ -33,6 +37,7 @@ from castella.markdown.models import (
     MarkdownNode,
     MathBlockNode,
     MathInlineNode,
+    MermaidNode,
     ParagraphNode,
     SoftBreakNode,
     StrikethroughNode,
@@ -42,6 +47,7 @@ from castella.markdown.models import (
     TableRowNode,
     TaskItemNode,
     TextNode,
+    TOCNode,
 )
 from castella.markdown.theme import MarkdownTheme
 
@@ -120,6 +126,7 @@ class MarkdownRenderer:
         self._link_regions: list[ClickRegion] = []
         self._list_depth: int = 0
         self._list_counters: list[int] = []
+        self._headings: list[tuple[int, str]] = []  # (level, text) for TOC
 
     def render(
         self,
@@ -148,12 +155,37 @@ class MarkdownRenderer:
         self._list_depth = 0
         self._list_counters = []
 
+        # Collect headings for TOC
+        self._headings = self._collect_headings(ast)
+
         content_width = max(1.0, width - padding * 2)
 
         for node in ast.children:
             self._render_node(painter, node, content_width)
 
         return self._cursor_y + padding
+
+    def _collect_headings(self, ast: DocumentNode) -> list[tuple[int, str]]:
+        """Collect all headings from the AST for TOC generation."""
+        headings: list[tuple[int, str]] = []
+        for node in ast.children:
+            if isinstance(node, HeadingNode):
+                # Extract text from heading children
+                text = self._extract_text(node.children)
+                headings.append((node.level, text))
+        return headings
+
+    def _extract_text(self, nodes: list[MarkdownNode]) -> str:
+        """Extract plain text from a list of nodes."""
+        parts: list[str] = []
+        for node in nodes:
+            if isinstance(node, TextNode):
+                parts.append(node.content)
+            elif isinstance(node, CodeInlineNode):
+                parts.append(node.content)
+            elif hasattr(node, "children"):
+                parts.append(self._extract_text(node.children))
+        return "".join(parts)
 
     def _render_node(self, p: Painter, node: MarkdownNode, width: float) -> None:
         """Render a single AST node."""
@@ -175,6 +207,15 @@ class MarkdownRenderer:
             self._render_math_block(p, node, width)
         elif isinstance(node, ImageNode):
             self._render_image(p, node, width)
+        # Extended syntax nodes
+        elif isinstance(node, AdmonitionNode):
+            self._render_admonition(p, node, width)
+        elif isinstance(node, DefinitionListNode):
+            self._render_deflist(p, node, width)
+        elif isinstance(node, MermaidNode):
+            self._render_mermaid(p, node, width)
+        elif isinstance(node, TOCNode):
+            self._render_toc(p, node, width)
 
     def _render_heading(self, p: Painter, node: HeadingNode, width: float) -> None:
         """Render a heading."""
@@ -389,14 +430,16 @@ class MarkdownRenderer:
                 )
             )
             if node.checked:
-                check_style = Style(fill=FillStyle(color=self._theme.text_color))
-                p.style(check_style)
-                p.fill_rect(
-                    Rect(
-                        origin=Point(x=marker_x + 2, y=box_y + 2),
-                        size=Size(width=box_size - 4, height=box_size - 4),
-                    )
+                # Draw checkmark (✓)
+                check_style = Style(
+                    fill=FillStyle(color=self._theme.link_color),
+                    font=Font(
+                        family=self._theme.text_font,
+                        size=self._theme.base_font_size,
+                    ),
                 )
+                p.style(check_style)
+                p.fill_text("✓", Point(x=marker_x + 1, y=marker_y - 1), None)
         elif ordered:
             counter = self._list_counters[-1] if self._list_counters else 1
             marker = f"{counter}."
@@ -638,6 +681,9 @@ class MarkdownRenderer:
 
         This is an approximation - actual rendering may differ slightly.
         """
+        # Collect headings for TOC height estimation
+        self._headings = self._collect_headings(ast)
+
         total_height = padding * 2
 
         for node in ast.children:
@@ -702,5 +748,326 @@ class MarkdownRenderer:
                     p, child, width - self._theme.blockquote_indent
                 )
             return height
+        elif isinstance(node, AdmonitionNode):
+            height = self._theme.base_font_size * 2  # Header
+            for child in node.children:
+                height += self._estimate_node_height(p, child, width - 48)
+            return height + self._theme.block_spacing
+        elif isinstance(node, DefinitionListNode):
+            height = 0.0
+            for child in node.children:
+                height += self._estimate_node_height(p, child, width)
+            return height
+        elif isinstance(node, (DefinitionTermNode, DefinitionDescNode)):
+            return self._theme.base_font_size * 1.5
+        elif isinstance(node, MermaidNode):
+            # Calculate actual Mermaid diagram height
+            try:
+                from castella.markdown.mermaid import parse_mermaid
+                from castella.markdown.mermaid.layout import (
+                    calculate_diagram_height,
+                    layout_diagram,
+                )
+
+                diagram = parse_mermaid(node.content)
+                layout_diagram(diagram, max_width=width, padding=20)
+                height = calculate_diagram_height(diagram)
+                return height + self._theme.block_spacing
+            except Exception:
+                # Fallback to placeholder height on error
+                return 200 + self._theme.block_spacing
+        elif isinstance(node, TOCNode):
+            # Estimate TOC height based on number of headings
+            if hasattr(self, "_headings") and self._headings:
+                num_headings = len(self._headings)
+                line_height = (
+                    self._theme.base_font_size * 1.8
+                )  # Slightly more than actual
+                return num_headings * line_height + self._theme.block_spacing * 3
+            return 100 + self._theme.block_spacing
 
         return self._theme.base_font_size * 1.5
+
+    # Extended syntax render methods
+
+    def _render_admonition(
+        self, p: Painter, node: AdmonitionNode, width: float
+    ) -> None:
+        """Render a GitHub-style admonition block."""
+        admon_colors = self._theme.get_admonition_colors(node.admonition_type.value)
+
+        border_width = 4
+        padding = 12
+        icon_size = self._theme.base_font_size + 4
+        header_height = icon_size + padding
+
+        start_y = self._cursor_y
+
+        # First pass: render children to measure content height
+        # Save cursor position
+        saved_x = self._cursor_x
+        saved_y = self._cursor_y
+
+        self._cursor_x += border_width + padding
+        self._cursor_y += header_height
+
+        content_start_y = self._cursor_y
+        content_width = width - border_width - padding * 2
+
+        for child in node.children:
+            self._render_node(p, child, content_width)
+
+        content_height = self._cursor_y - content_start_y
+        total_height = header_height + content_height + padding
+
+        # Restore and draw background
+        self._cursor_x = saved_x
+        self._cursor_y = saved_y
+
+        # Draw background
+        bg_style = Style(fill=FillStyle(color=admon_colors.bg_color))
+        p.style(bg_style)
+        p.fill_rect(
+            Rect(
+                origin=Point(x=self._cursor_x + border_width, y=start_y),
+                size=Size(width=width - border_width, height=total_height),
+            )
+        )
+
+        # Draw left border
+        border_style = Style(fill=FillStyle(color=admon_colors.border_color))
+        p.style(border_style)
+        p.fill_rect(
+            Rect(
+                origin=Point(x=self._cursor_x, y=start_y),
+                size=Size(width=border_width, height=total_height),
+            )
+        )
+
+        # Draw icon and type label
+        icon_style = Style(
+            fill=FillStyle(color=admon_colors.border_color),
+            font=Font(family=self._theme.text_font, size=icon_size),
+        )
+        p.style(icon_style)
+        p.fill_text(
+            admon_colors.icon,
+            Point(
+                x=self._cursor_x + border_width + padding,
+                y=start_y + padding + icon_size * 0.85,
+            ),
+            None,
+        )
+
+        # Draw type label
+        label = node.admonition_type.value.capitalize()
+        if node.title:
+            label = node.title
+
+        label_style = Style(
+            fill=FillStyle(color=admon_colors.border_color),
+            font=Font(
+                family=self._theme.text_font,
+                size=self._theme.base_font_size,
+                weight=FontWeight.BOLD,
+            ),
+        )
+        p.style(label_style)
+        p.fill_text(
+            label,
+            Point(
+                x=self._cursor_x + border_width + padding + icon_size + 8,
+                y=start_y + padding + self._theme.base_font_size,
+            ),
+            None,
+        )
+
+        # Re-render content (over the background)
+        self._cursor_x = saved_x + border_width + padding
+        self._cursor_y = saved_y + header_height
+
+        for child in node.children:
+            self._render_node(p, child, content_width)
+
+        self._cursor_x = saved_x
+        self._cursor_y = start_y + total_height + self._theme.block_spacing
+
+    def _render_deflist(
+        self, p: Painter, node: DefinitionListNode, width: float
+    ) -> None:
+        """Render a definition list."""
+        for child in node.children:
+            if isinstance(child, DefinitionTermNode):
+                self._render_defterm(p, child, width)
+            elif isinstance(child, DefinitionDescNode):
+                self._render_defdesc(p, child, width)
+
+    def _render_defterm(
+        self, p: Painter, node: DefinitionTermNode, width: float
+    ) -> None:
+        """Render a definition term (dt)."""
+        segments = self._collect_segments(node.children, RenderContext(bold=True))
+        text = "".join(s.text for s in segments if isinstance(s, TextSegment))
+
+        term_color = self._theme.deflist_term_color or self._theme.heading_color
+
+        style = Style(
+            fill=FillStyle(color=term_color),
+            font=Font(
+                family=self._theme.text_font,
+                size=self._theme.base_font_size,
+                weight=FontWeight.BOLD,
+            ),
+        )
+        p.style(style)
+        p.fill_text(
+            text,
+            Point(x=self._cursor_x, y=self._cursor_y + self._theme.base_font_size),
+            width,
+        )
+
+        self._cursor_y += self._theme.base_font_size * 1.5
+
+    def _render_defdesc(
+        self, p: Painter, node: DefinitionDescNode, width: float
+    ) -> None:
+        """Render a definition description (dd)."""
+        indent = self._theme.deflist_indent
+        self._cursor_x += indent
+
+        for child in node.children:
+            self._render_node(p, child, width - indent)
+
+        self._cursor_x -= indent
+
+    def _render_mermaid(self, p: Painter, node: MermaidNode, width: float) -> None:
+        """Render a Mermaid diagram.
+
+        Currently displays as a code block with placeholder.
+        Full Mermaid rendering will be implemented separately.
+        """
+        # Try to use the mermaid renderer if available
+        try:
+            from castella.markdown.mermaid import MermaidDiagramRenderer
+
+            diagram_renderer = MermaidDiagramRenderer(self._theme)
+            height = diagram_renderer.render(p, node.content, width, self._cursor_y)
+            if height > 0:
+                self._cursor_y += height + self._theme.block_spacing
+                return
+            # If height is 0, fall through to fallback rendering
+        except Exception:
+            # On any error, fall back to placeholder rendering
+            pass
+
+        # Fallback: render as styled code block with indicator
+        placeholder_height = 60
+        content_height = node.content.count("\n") * 14 + placeholder_height
+
+        # Draw background
+        bg_style = Style(fill=FillStyle(color=self._theme.code_bg_color))
+        p.style(bg_style)
+        p.fill_rect(
+            Rect(
+                origin=Point(x=self._cursor_x, y=self._cursor_y),
+                size=Size(width=width, height=content_height),
+            )
+        )
+
+        # Draw "Mermaid Diagram" label
+        label_style = Style(
+            fill=FillStyle(color=self._theme.text_color),
+            font=Font(
+                family=self._theme.text_font,
+                size=self._theme.base_font_size,
+                weight=FontWeight.BOLD,
+            ),
+        )
+        p.style(label_style)
+        p.fill_text(
+            "📊 Mermaid Diagram",
+            Point(x=self._cursor_x + 8, y=self._cursor_y + 20),
+            None,
+        )
+
+        # Draw code content
+        code_style = Style(
+            fill=FillStyle(color=self._theme.code_color),
+            font=Font(
+                family=self._theme.code_font, size=self._theme.base_font_size - 2
+            ),
+        )
+        p.style(code_style)
+
+        y = self._cursor_y + 40
+        for line in node.content.split("\n")[:10]:  # Show first 10 lines
+            p.fill_text(line, Point(x=self._cursor_x + 8, y=y), width - 16)
+            y += 14
+
+        if node.content.count("\n") > 10:
+            p.fill_text("...", Point(x=self._cursor_x + 8, y=y), None)
+
+        self._cursor_y += content_height + self._theme.block_spacing
+
+    def _render_toc(self, p: Painter, node: TOCNode, width: float) -> None:
+        """Render a Table of Contents from collected headings."""
+        if not self._headings:
+            return
+
+        font_size = self._theme.base_font_size
+        line_height = font_size * 1.6
+        padding = 12
+        indent_per_level = 16
+
+        # Calculate TOC height
+        toc_height = padding * 2 + len(self._headings) * line_height + font_size
+
+        # Draw background
+        bg_style = Style(fill=FillStyle(color=self._theme.blockquote_bg_color))
+        p.style(bg_style)
+        p.fill_rect(
+            Rect(
+                origin=Point(x=self._cursor_x, y=self._cursor_y),
+                size=Size(width=width, height=toc_height),
+            )
+        )
+
+        # Draw title "Table of Contents"
+        title_style = Style(
+            fill=FillStyle(color=self._theme.heading_color),
+            font=Font(
+                family=self._theme.text_font,
+                size=font_size,
+                weight=FontWeight.BOLD,
+            ),
+        )
+        p.style(title_style)
+        p.fill_text(
+            "Table of Contents",
+            Point(x=self._cursor_x + padding, y=self._cursor_y + padding + font_size),
+            None,
+        )
+
+        # Draw heading entries
+        item_style = Style(
+            fill=FillStyle(color=self._theme.link_color),
+            font=Font(family=self._theme.text_font, size=font_size - 1),
+        )
+        p.style(item_style)
+
+        y = self._cursor_y + padding + font_size + line_height
+        min_level = min(h[0] for h in self._headings) if self._headings else 1
+
+        for level, text in self._headings:
+            indent = (level - min_level) * indent_per_level
+            # Bullet point based on level
+            bullet = "•" if level == min_level else "◦"
+            display_text = f"{bullet} {text}"
+            p.fill_text(
+                display_text,
+                Point(x=self._cursor_x + padding + indent, y=y),
+                width - padding * 2 - indent,
+            )
+            y += line_height
+
+        self._cursor_y += toc_height + self._theme.block_spacing
