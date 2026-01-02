@@ -349,8 +349,8 @@ requires-dist = [
     { name = "pysdl2", marker = "extra == 'sdl'", specifier = ">=0.9.16" },
     { name = "pysdl2-dll", marker = "extra == 'sdl'", specifier = ">=2.30.2" },
     { name = "python-a2a", marker = "extra == 'agent'", specifier = ">=0.5.0" },
-    { name = "skia-python", marker = "extra == 'glfw'", specifier = ">=87.6" },
-    { name = "skia-python", marker = "extra == 'sdl'", specifier = ">=87.6" },
+    { name = "skia-python", marker = "extra == 'glfw'", specifier = ">=138.0" },
+    { name = "skia-python", marker = "extra == 'sdl'", specifier = ">=138.0" },
     { name = "windows-curses", marker = "sys_platform == 'win32' and extra == 'tui'", specifier = ">=2.3.3" },
     { name = "zengl", marker = "extra == 'sdl'", specifier = ">=2.4.1" },
 ]
@@ -378,7 +378,7 @@ dev = [
     { name = "pysdl2", specifier = ">=0.9.16" },
     { name = "pysdl2-dll", specifier = ">=2.30.2" },
     { name = "ruff", specifier = ">=0.8.0" },
-    { name = "skia-python", specifier = ">=87.6" },
+    { name = "skia-python", specifier = ">=138.0" },
     { name = "windows-curses", marker = "sys_platform == 'win32'", specifier = ">=2.3.3" },
     { name = "zengl", specifier = ">=2.4.1" },
 ]
