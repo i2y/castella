@@ -43,10 +43,9 @@ class InitialStateEditor(Component):
 
         # Editor state
         self._input_state = MultilineInputState("{}")
-        self._error = State[str | None](None)
+        self._error: str | None = None  # Don't use State - avoid focus loss on change
         self._collapsed = State[bool](collapsed)
 
-        self._error.attach(self)
         self._collapsed.attach(self)
 
         # Set initial height based on collapsed state
@@ -58,6 +57,10 @@ class InitialStateEditor(Component):
         self._collapsed.set(collapsed)
         # Update component height
         self.fixed_height(COLLAPSED_HEIGHT if collapsed else EXPANDED_HEIGHT)
+        # Force parent layout recalculation
+        if self._parent:
+            self._parent.mark_layout_dirty()
+            self._parent.update(completely=True)
 
     def view(self):
         """Build the editor UI."""
@@ -78,7 +81,7 @@ class InitialStateEditor(Component):
             return Column(header)
 
         # Editor content
-        error = self._error()
+        error = self._error
 
         editor = MultilineInput(
             self._input_state,
@@ -115,11 +118,11 @@ class InitialStateEditor(Component):
         """
         try:
             parsed = json.loads(text)
-            self._error.set(None)
+            self._error = None
             if self._on_state_change:
                 self._on_state_change(parsed)
         except json.JSONDecodeError as e:
-            self._error.set(f"Invalid JSON: {e.msg}")
+            self._error = f"Invalid JSON: {e.msg}"
 
     def get_state(self) -> dict:
         """Get the current parsed state.
@@ -139,7 +142,7 @@ class InitialStateEditor(Component):
             state: State dict to display.
         """
         self._input_state.set(json.dumps(state, indent=2))
-        self._error.set(None)
+        self._error = None
 
     def expand(self) -> None:
         """Expand the editor."""

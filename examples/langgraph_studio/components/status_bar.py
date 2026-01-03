@@ -2,9 +2,20 @@
 
 from __future__ import annotations
 
-from castella import Component, Row, Text, Spacer
+from castella import Component, Row, Text, Spacer, TextAlign
+from castella.theme import Kind
 
 from ..models.execution import ExecutionState, ExecutionStatus
+
+
+# Status to Kind mapping
+STATUS_KINDS = {
+    ExecutionStatus.IDLE: Kind.NORMAL,       # Gray
+    ExecutionStatus.RUNNING: Kind.SUCCESS,   # Green
+    ExecutionStatus.PAUSED: Kind.WARNING,    # Yellow
+    ExecutionStatus.ERROR: Kind.DANGER,      # Red
+    ExecutionStatus.COMPLETED: Kind.INFO,    # Blue
+}
 
 
 class StatusBar(Component):
@@ -34,13 +45,14 @@ class StatusBar(Component):
         # Status text with indicator symbol
         status_text = self._get_status_text(execution)
         status_symbol = self._get_status_symbol(execution.status)
+        status_kind = STATUS_KINDS.get(execution.status, Kind.NORMAL)
 
         # Build content with proper spacing
         parts = [
             # Left padding
             Spacer().fixed_width(12),
-            # Status symbol and text
-            Text(f"{status_symbol} {status_text}"),
+            # Status symbol and text with kind-based color
+            Text(f"{status_symbol} {status_text}", kind=status_kind, align=TextAlign.LEFT, transparent_bg=True),
         ]
 
         # Add spacer before right-aligned content

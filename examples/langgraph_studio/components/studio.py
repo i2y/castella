@@ -76,8 +76,10 @@ class Studio(Component):
             on_state_update=lambda s: self._execution.set(s)
         )
 
-        # Canvas reference for zoom control
-        self._canvas: GraphCanvas | None = None
+        # Canvas - created once to preserve transform state
+        self._canvas = GraphCanvas(graph=None, execution_state=None)
+        self._canvas = self._canvas.on_node_click(self._on_node_click)
+        self._canvas = self._canvas.on_zoom_change(self._on_zoom_change)
 
         # Initial state editor reference
         self._state_editor: InitialStateEditor | None = None
@@ -115,11 +117,9 @@ class Studio(Component):
         execution = self._execution()
         zoom = self._zoom_percent()
 
-        # Build canvas
-        canvas = GraphCanvas(graph=graph, execution_state=execution)
-        canvas = canvas.on_node_click(self._on_node_click)
-        canvas = canvas.on_zoom_change(self._on_zoom_change)
-        self._canvas = canvas
+        # Update canvas with current state (preserve transform)
+        self._canvas._graph = graph
+        self._canvas._execution_state = execution
 
         # Determine button states
         can_run = graph is not None and execution.can_run
@@ -160,7 +160,7 @@ class Studio(Component):
                     on_file_select=self._on_file_select,
                 ).fixed_width(200),
                 # Center: Graph canvas
-                canvas,
+                self._canvas,
                 # Right panel: Tabbed state/node/history
                 RightPanel(
                     execution=execution,

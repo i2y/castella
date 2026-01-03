@@ -609,7 +609,12 @@ class GraphCanvas(Widget):
             self._transform.pan(delta)
             self._last_pan_pos = ev.pos
             self.mark_paint_dirty()
-            self.update()
+            # Force parent redraw to ensure adjacent widgets are refreshed
+            if self._parent:
+                self._parent.mark_paint_dirty()
+                self._parent.update(completely=True)
+            else:
+                self.update()
 
     def cursor_pos(self, ev: MouseEvent) -> None:
         """Handle mouse movement for hover detection."""

@@ -266,6 +266,10 @@ glfw = [
     { name = "pyopengl" },
     { name = "skia-python" },
 ]
+langgraph-studio = [
+    { name = "langchain-core" },
+    { name = "langgraph" },
+]
 mcp = [
     { name = "mcp" },
 ]
@@ -327,6 +331,8 @@ requires-dist = [
     { name = "darkdetect", marker = "extra == 'tui'", specifier = ">=0.8" },
     { name = "glcontext", marker = "extra == 'sdl'", specifier = ">=2.5.0" },
     { name = "glfw", marker = "extra == 'glfw'", specifier = ">=2.7.0" },
+    { name = "langchain-core", marker = "extra == 'langgraph-studio'", specifier = ">=0.3.0" },
+    { name = "langgraph", marker = "extra == 'langgraph-studio'", specifier = ">=0.2.0" },
     { name = "markdown-it-py", marker = "extra == 'glfw'", specifier = ">=3.0.0" },
     { name = "markdown-it-py", marker = "extra == 'sdl'", specifier = ">=3.0.0" },
     { name = "markdown-it-py", marker = "extra == 'tui'", specifier = ">=3.0.0" },
@@ -354,7 +360,7 @@ requires-dist = [
     { name = "windows-curses", marker = "sys_platform == 'win32' and extra == 'tui'", specifier = ">=2.3.3" },
     { name = "zengl", marker = "extra == 'sdl'", specifier = ">=2.4.1" },
 ]
-provides-extras = ["glfw", "sdl", "tui", "agent", "mcp"]
+provides-extras = ["glfw", "sdl", "tui", "agent", "mcp", "langgraph-studio"]
 
 [package.metadata.requires-dev]
 dev = [
