@@ -295,6 +295,10 @@ class MultilineText(Widget):
         lines = list(self._get_lines(p))
         self._last_lines = lines
 
+        # Set text style BEFORE building character position cache
+        # This ensures measure_text uses the correct font
+        p.style(self._text_style)
+
         # Build character position cache for accurate click detection
         self._char_positions_cache = []
         for text in lines:
@@ -306,8 +310,6 @@ class MultilineText(Widget):
         # Draw selection highlight before text
         if self.has_selection():
             self._draw_selection_highlight(p, lines)
-
-        p.style(self._text_style)
         h = self._text_style.font.size
         y = h + padding
         for line in lines:
