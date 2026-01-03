@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import inspect
 from types import ModuleType
-from typing import Any
+from typing import Any, Callable
 
 from castella.models.geometry import Point
 
@@ -318,7 +319,8 @@ def _compute_layout(node_names: list[str], graph: Any) -> dict[str, Point]:
             if src not in predecessors[tgt]:
                 predecessors[tgt].append(src)
 
-    # Assign layers using BFS from start nodes
+    # Assign layers using BFS from start nodes (minimum distance approach)
+    # This handles cyclic graphs by assigning each node its minimum layer
     layers: dict[str, int] = {}
     start_nodes = [n for n in node_names if not predecessors[n]]
 
@@ -331,19 +333,23 @@ def _compute_layout(node_names: list[str], graph: Any) -> dict[str, Point]:
         if not start_nodes:
             start_nodes = [node_names[0]]
 
-    # BFS to assign layers
+    # BFS to assign minimum layers (first visit wins)
+    # This ensures nodes in cycles stay at their earliest possible position
     queue = [(n, 0) for n in start_nodes]
+    visited: set[str] = set(start_nodes)
+    for n in start_nodes:
+        layers[n] = 0
+
     while queue:
         node, layer = queue.pop(0)
-        if node in layers:
-            # Update to max layer for nodes reachable by multiple paths
-            layers[node] = max(layers[node], layer)
-        else:
-            layers[node] = layer
 
         for succ in successors.get(node, []):
-            if succ not in layers or layers[succ] < layer + 1:
+            if succ not in visited:
+                # First time visiting this node - assign layer
+                visited.add(succ)
+                layers[succ] = layer + 1
                 queue.append((succ, layer + 1))
+            # If already visited, don't update layer (keeps minimum distance)
 
     # Handle nodes not reached by BFS
     for node in node_names:
@@ -429,3 +435,61 @@ def _compute_layout(node_names: list[str], graph: Any) -> dict[str, Point]:
                     )
 
     return positions
+
+
+def extract_node_functions(compiled_graph: Any) -> dict[str, Callable]:
+    """Extract the callable functions for each node in the graph.
+
+    Args:
+        compiled_graph: A LangGraph CompiledGraph instance.
+
+    Returns:
+        Dict mapping node IDs to their callable functions.
+    """
+    try:
+        graph = compiled_graph.get_graph()
+        node_data = _get_node_data(graph)
+
+        functions: dict[str, Callable] = {}
+        for node_name, data in node_data.items():
+            if callable(data):
+                functions[node_name] = data
+            elif hasattr(data, "func") and callable(data.func):
+                # Handle wrapped functions (e.g., functools.partial)
+                functions[node_name] = data.func
+            elif hasattr(data, "__call__"):
+                functions[node_name] = data
+
+        return functions
+    except Exception:
+        return {}
+
+
+def get_node_source(func: Callable | None) -> str | None:
+    """Get the source code for a node function.
+
+    Args:
+        func: The function/callable to inspect.
+
+    Returns:
+        Source code string or None if unavailable.
+    """
+    if func is None:
+        return None
+
+    try:
+        # Try to get source directly
+        return inspect.getsource(func)
+    except (OSError, TypeError):
+        # Built-in, dynamically generated, or C function
+        pass
+
+    # Try unwrapping decorated functions
+    try:
+        unwrapped = inspect.unwrap(func)
+        if unwrapped is not func:
+            return inspect.getsource(unwrapped)
+    except (OSError, TypeError, ValueError):
+        pass
+
+    return None

@@ -13,6 +13,7 @@ from ..loader.module_loader import load_module_from_path, ModuleLoadError
 from ..loader.graph_extractor import (
     find_compiled_graph,
     extract_graph_model,
+    extract_node_functions,
     GraphExtractionError,
 )
 from ..executor.runner import GraphExecutor
@@ -71,6 +72,9 @@ class Studio(Component):
         # Compiled graph reference (for execution)
         self._compiled_graph: Any = None
 
+        # Node functions for source code display
+        self._node_functions: dict = {}
+
         # Executor (updates state via callback)
         self._executor = GraphExecutor(
             on_state_update=lambda s: self._execution.set(s)
@@ -95,8 +99,9 @@ class Studio(Component):
             module = load_module_from_path(self._initial_file)
             compiled_graph = find_compiled_graph(module)
             graph_model = extract_graph_model(compiled_graph)
+            node_functions = extract_node_functions(compiled_graph)
             # Store for first view() call
-            self._pending_initial_load = (compiled_graph, graph_model)
+            self._pending_initial_load = (compiled_graph, graph_model, node_functions)
         except Exception:
             self._pending_initial_load = None
 
@@ -104,9 +109,10 @@ class Studio(Component):
         """Build the Studio UI."""
         # Apply pending initial load on first view (set values without notify)
         if self._pending_initial_load is not None:
-            compiled_graph, graph_model = self._pending_initial_load
+            compiled_graph, graph_model, node_functions = self._pending_initial_load
             self._pending_initial_load = None
             self._compiled_graph = compiled_graph
+            self._node_functions = node_functions
             # Set internal values directly to avoid triggering rebuild during view()
             self._graph._value = graph_model
             # Set executor's graph directly without notify
@@ -166,6 +172,7 @@ class Studio(Component):
                     execution=execution,
                     graph=graph,
                     selected_node_id=self._selected_node_id(),
+                    node_functions=self._node_functions,
                 ).fixed_width(300),
             ),
             # Initial state editor (collapsible)
@@ -197,6 +204,9 @@ class Studio(Component):
             graph_model = extract_graph_model(compiled_graph)
             self._graph.set(graph_model)
 
+            # Extract node functions for source code display
+            self._node_functions = extract_node_functions(compiled_graph)
+
             # Set up executor with the graph
             self._executor.set_graph(compiled_graph)
 
@@ -207,11 +217,13 @@ class Studio(Component):
             self._error_message.set(str(e))
             self._graph.set(None)
             self._compiled_graph = None
+            self._node_functions = {}
 
         except Exception as e:
             self._error_message.set(f"Unexpected error: {e}")
             self._graph.set(None)
             self._compiled_graph = None
+            self._node_functions = {}
 
     # ========== Execution Controls ==========
 

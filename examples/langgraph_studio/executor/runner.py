@@ -6,7 +6,7 @@ import threading
 import time
 from typing import Any, Callable
 
-from ..models.execution import ExecutionState, ExecutionStatus, StepResult
+from ..models.execution import ExecutionState, ExecutionStatus, StepResult, ToolCallInfo
 
 
 class GraphExecutor:
@@ -252,7 +252,10 @@ class GraphExecutor:
                 # Process the step event
                 self._process_step_event(event)
 
-            # Show __end__ node highlighted before completing
+            # Record edge to __end__ and show __end__ node highlighted
+            previous_node = self._state.current_node_id
+            if previous_node and previous_node != "__end__":
+                self._state.executed_edges.append((previous_node, "__end__"))
             self._state.current_node_id = "__end__"
             self._notify_update()
             time.sleep(0.3)
@@ -280,6 +283,11 @@ class GraphExecutor:
         start_time = time.perf_counter()
 
         for node_name, node_output in event.items():
+            # Record edge transition (from previous node to this node)
+            previous_node = self._state.current_node_id
+            if previous_node and previous_node != node_name:
+                self._state.executed_edges.append((previous_node, node_name))
+
             # Update current node
             self._state.current_node_id = node_name
 
@@ -290,6 +298,9 @@ class GraphExecutor:
             if isinstance(node_output, dict):
                 self._state.current_state.update(node_output)
 
+            # Extract tool calls from current state
+            tool_calls = self._extract_tool_calls(self._state.current_state)
+
             # Record step
             duration_ms = (time.perf_counter() - start_time) * 1000
             step_result = StepResult(
@@ -297,6 +308,7 @@ class GraphExecutor:
                 state_before=state_before,
                 state_after=self._state.current_state.copy(),
                 duration_ms=duration_ms,
+                tool_calls=tool_calls,
             )
             self._state.step_history.append(step_result)
             self._state.total_steps += 1
@@ -305,6 +317,54 @@ class GraphExecutor:
 
             # Small delay for visualization
             time.sleep(0.1)
+
+    def _extract_tool_calls(self, state: dict[str, Any]) -> list[ToolCallInfo]:
+        """Extract tool call information from LangGraph state.
+
+        LangGraph agents typically store messages in a 'messages' key,
+        where AIMessage objects may contain tool_calls, and ToolMessage
+        objects contain the results.
+
+        Args:
+            state: Current graph state.
+
+        Returns:
+            List of ToolCallInfo objects.
+        """
+        tool_calls: list[ToolCallInfo] = []
+
+        try:
+            # Try to import LangChain message types
+            from langchain_core.messages import AIMessage, ToolMessage
+        except ImportError:
+            # LangChain not installed, skip tool extraction
+            return tool_calls
+
+        messages = state.get("messages", [])
+        if not isinstance(messages, list):
+            return tool_calls
+
+        # Map tool call IDs to their results
+        tool_results: dict[str, Any] = {}
+        for msg in messages:
+            if isinstance(msg, ToolMessage):
+                tool_results[msg.tool_call_id] = msg.content
+
+        # Extract tool calls from AIMessages
+        for msg in messages:
+            if isinstance(msg, AIMessage) and hasattr(msg, "tool_calls"):
+                for tc in msg.tool_calls:
+                    if isinstance(tc, dict):
+                        tool_calls.append(
+                            ToolCallInfo(
+                                tool_call_id=tc.get("id", ""),
+                                tool_name=tc.get("name", "unknown"),
+                                arguments=tc.get("args", {}),
+                                result=tool_results.get(tc.get("id")),
+                            )
+                        )
+
+        return tool_calls
 
     def _notify_update(self) -> None:
         """Notify UI of state update.

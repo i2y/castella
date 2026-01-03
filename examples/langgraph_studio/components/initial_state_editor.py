@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Callable
 
-from castella import Component, Column, Row, Text, Button, Spacer, State, SizePolicy, Widget
+from castella import Component, Column, Row, Text, Button, Spacer, State, SizePolicy
 from castella.multiline_input import MultilineInput, MultilineInputState
 
 

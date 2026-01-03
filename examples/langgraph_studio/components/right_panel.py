@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Callable
 
 from castella import Component, Column, Row, Text, Button, Spacer, State, SizePolicy, Kind
+from castella import Markdown
 from castella.multiline_text import MultilineText
 
-from ..models.graph import GraphModel, NodeModel
-from ..models.execution import ExecutionState, StepResult
+from ..models.graph import GraphModel
+from ..models.execution import ExecutionState, StepResult, compute_state_diff
+from ..loader.graph_extractor import get_node_source
 
 
 # UI Constants
@@ -33,6 +35,7 @@ class RightPanel(Component):
         execution: ExecutionState,
         graph: GraphModel | None = None,
         selected_node_id: str | None = None,
+        node_functions: dict[str, Callable] | None = None,
     ):
         """Initialize the right panel.
 
@@ -40,12 +43,14 @@ class RightPanel(Component):
             execution: Current execution state.
             graph: Graph model for node lookups.
             selected_node_id: ID of the selected node (for Node tab).
+            node_functions: Dict mapping node IDs to their callable functions.
         """
         super().__init__()
 
         self._execution = execution
         self._graph = graph
         self._selected_node_id = selected_node_id
+        self._node_functions = node_functions or {}
 
         # Tab state
         self._tab_id = State[str]("state")
@@ -221,6 +226,24 @@ class RightPanel(Component):
                 label += f" [{edge.condition_label}]"
             content_widgets.append(self._text_row(label))
 
+        # Source code section
+        func = self._node_functions.get(node_id)
+        if func:
+            source = get_node_source(func)
+            if source:
+                content_widgets.append(Spacer().fixed_height(SECTION_SPACING))
+                content_widgets.append(self._section_header("Source Code"))
+                content_widgets.append(Spacer().fixed_height(4))
+                # Use Markdown for syntax highlighting
+                md_content = f"```python\n{source}\n```"
+                content_widgets.append(
+                    Row(
+                        Spacer().fixed_width(SECTION_SPACING),
+                        Markdown(md_content, base_font_size=11).height_policy(SizePolicy.CONTENT),
+                        Spacer().fixed_width(SECTION_SPACING),
+                    ).height_policy(SizePolicy.CONTENT)
+                )
+
         # Metadata section
         if node.metadata:
             content_widgets.append(Spacer().fixed_height(SECTION_SPACING))
@@ -327,32 +350,70 @@ class RightPanel(Component):
         Args:
             step: Step result to display.
         """
-        try:
-            state_str = json.dumps(step.state_after, indent=2, default=str)
-        except Exception:
-            state_str = str(step.state_after)[:200]
-
-        # Use MultilineText for state display
-        state_view = (
-            MultilineText(state_str, font_size=12, wrap=False)
-            .fixed_height(120)
-        )
-
-        error_widget = (
-            self._info_row("Error:", step.error[:50])
-            if step.error else Spacer().fixed_height(0)
-        )
-
-        return Column(
+        widgets = [
             Spacer().fixed_height(SECTION_SPACING),
             self._section_header(f"Step: {step.node_id}"),
             self._info_row("Duration:", f"{step.duration_ms:.2f}ms"),
-            error_widget,
-            Spacer().fixed_height(SECTION_SPACING),
-            self._section_header("State After"),
+        ]
+
+        # Error display
+        if step.error:
+            widgets.append(self._info_row("Error:", step.error[:50]))
+
+        # Input (State Before) section
+        widgets.append(Spacer().fixed_height(SECTION_SPACING))
+        widgets.append(self._section_header("Input (State Before)"))
+        try:
+            input_str = json.dumps(step.state_before, indent=2, default=str)
+        except Exception:
+            input_str = str(step.state_before)[:200]
+        input_view = MultilineText(input_str, font_size=11, wrap=False).fixed_height(80)
+        widgets.append(
             Row(
                 Spacer().fixed_width(SECTION_SPACING),
-                state_view,
+                input_view,
                 Spacer().fixed_width(SECTION_SPACING),
-            ).fixed_height(120),
+            ).fixed_height(80)
         )
+
+        # Output (Changes) section
+        widgets.append(Spacer().fixed_height(SECTION_SPACING))
+        widgets.append(self._section_header("Output (Changes)"))
+        diff = compute_state_diff(step.state_before, step.state_after)
+        output_lines = []
+        if diff["added"]:
+            for k, v in diff["added"].items():
+                val_str = json.dumps(v, default=str)[:60]
+                output_lines.append(f"+ {k}: {val_str}")
+        if diff["modified"]:
+            for k, v in diff["modified"].items():
+                new_val = json.dumps(v["new"], default=str)[:40]
+                output_lines.append(f"~ {k}: -> {new_val}")
+        if diff["removed"]:
+            for k in diff["removed"]:
+                output_lines.append(f"- {k}")
+        if not output_lines:
+            output_lines.append("(no changes)")
+        output_str = "\n".join(output_lines)
+        output_view = MultilineText(output_str, font_size=11, wrap=False).fixed_height(80)
+        widgets.append(
+            Row(
+                Spacer().fixed_width(SECTION_SPACING),
+                output_view,
+                Spacer().fixed_width(SECTION_SPACING),
+            ).fixed_height(80)
+        )
+
+        # Tool Calls section
+        if step.tool_calls:
+            widgets.append(Spacer().fixed_height(SECTION_SPACING))
+            widgets.append(self._section_header(f"Tool Calls ({len(step.tool_calls)})"))
+            for tc in step.tool_calls:
+                widgets.append(self._info_row("Tool:", tc.tool_name))
+                args_str = json.dumps(tc.arguments, default=str)[:60]
+                widgets.append(self._text_row(f"  Args: {args_str}"))
+                if tc.result is not None:
+                    result_str = str(tc.result)[:60]
+                    widgets.append(self._text_row(f"  Result: {result_str}"))
+
+        return Column(*widgets, scrollable=True)

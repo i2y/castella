@@ -40,6 +40,7 @@ NODE_BORDER_COLOR = "#374151"  # Default border
 SELECTED_BORDER_COLOR = "#ffffff"  # Selected border
 EDGE_COLOR = "#9ca3af"  # Edge lines
 CONDITIONAL_EDGE_COLOR = "#8b5cf6"  # Conditional edges
+EXECUTED_EDGE_COLOR = "#22c55e"  # Executed edges (green)
 CANVAS_BORDER_COLOR = "#3b4261"  # Canvas border
 
 
@@ -443,12 +444,18 @@ class GraphCanvas(Widget):
             y=(target.position.y + target.size[1] / 2) * scale,
         )
 
-        # Determine edge color
-        edge_color = (
-            CONDITIONAL_EDGE_COLOR
-            if edge.edge_type == "conditional"
-            else EDGE_COLOR
-        )
+        # Check if edge was executed
+        is_executed = False
+        if self._execution_state and self._execution_state.executed_edges:
+            is_executed = (edge.source_node_id, edge.target_node_id) in self._execution_state.executed_edges
+
+        # Determine edge color (executed edges are highlighted green)
+        if is_executed:
+            edge_color = EXECUTED_EDGE_COLOR
+        elif edge.edge_type == "conditional":
+            edge_color = CONDITIONAL_EDGE_COLOR
+        else:
+            edge_color = EDGE_COLOR
 
         # Draw bezier curve
         self._draw_bezier_edge(p, start, end, edge_color, scale)
