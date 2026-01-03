@@ -6,9 +6,15 @@ import inspect
 from types import ModuleType
 from typing import Any, Callable
 
-from castella.models.geometry import Point
-
-from ..models.graph import GraphModel, NodeModel, EdgeModel
+from castella.graph import (
+    GraphModel,
+    NodeModel,
+    NodeType,
+    EdgeModel,
+    EdgeType,
+    SugiyamaLayout,
+    LayoutConfig,
+)
 
 
 class GraphExtractionError(Exception):
@@ -85,7 +91,7 @@ def extract_graph_model(compiled_graph: Any) -> GraphModel:
 
     Parses the graph structure returned by get_graph() and converts
     it into our internal GraphModel representation with computed
-    layout positions.
+    layout positions using the Sugiyama algorithm.
 
     Args:
         compiled_graph: A LangGraph CompiledGraph instance.
@@ -109,7 +115,6 @@ def extract_graph_model(compiled_graph: Any) -> GraphModel:
         # Extract nodes
         node_names = _get_node_names(graph)
         node_data_map = _get_node_data(graph)
-        node_positions = _compute_layout(node_names, graph)
 
         for node_name in node_names:
             node_data = node_data_map.get(node_name)
@@ -120,7 +125,6 @@ def extract_graph_model(compiled_graph: Any) -> GraphModel:
                     id=node_name,
                     label=_format_node_label(node_name),
                     node_type=node_type,
-                    position=node_positions.get(node_name, Point(x=0, y=0)),
                     metadata={"original": str(node_data)[:200] if node_data else ""},
                 )
             )
@@ -131,7 +135,7 @@ def extract_graph_model(compiled_graph: Any) -> GraphModel:
             source, target = edge_info[0], edge_info[1]
 
             # Determine if conditional
-            edge_type = "normal"
+            edge_type = EdgeType.NORMAL
             condition_label = None
 
             # Check for conditional edge attributes
@@ -142,21 +146,21 @@ def extract_graph_model(compiled_graph: Any) -> GraphModel:
                 data = edge_info[2]
                 is_conditional = edge_info[3]
                 if is_conditional:
-                    edge_type = "conditional"
+                    edge_type = EdgeType.CONDITIONAL
                     if data:
                         condition_label = str(data)[:30]
             elif len(edge_info) == 3:
                 # Simple format: (source, target, label)
-                edge_type = "conditional"
+                edge_type = EdgeType.CONDITIONAL
                 condition_label = str(edge_info[2])[:30]
 
             edges.append(
                 EdgeModel(
                     id=f"edge_{i}_{source}_{target}",
-                    source_node_id=source,
-                    target_node_id=target,
+                    source_id=source,
+                    target_id=target,
                     edge_type=edge_type,
-                    condition_label=condition_label,
+                    label=condition_label,
                 )
             )
 
@@ -165,7 +169,18 @@ def extract_graph_model(compiled_graph: Any) -> GraphModel:
         if not name:
             name = getattr(graph, "name", "LangGraph")
 
-        return GraphModel(name=str(name), nodes=nodes, edges=edges)
+        # Create graph model
+        graph_model = GraphModel(name=str(name), nodes=nodes, edges=edges)
+
+        # Apply Sugiyama layout
+        layout = SugiyamaLayout(LayoutConfig(
+            direction="LR",
+            layer_spacing=250,
+            node_spacing=120,
+        ))
+        layout.layout(graph_model)
+
+        return graph_model
 
     except Exception as e:
         raise GraphExtractionError(f"Failed to extract graph model: {e}") from e
@@ -245,36 +260,36 @@ def _get_edges(graph: Any) -> list[tuple]:
 
 def _determine_node_type(
     node_name: str, node_data: Any
-) -> str:
+) -> NodeType:
     """Determine the type of a node for visual styling."""
     name_lower = node_name.lower()
 
     # Check for start/end nodes
     if name_lower in ("__start__", "start", "__begin__"):
-        return "start"
+        return NodeType.START
     if name_lower in ("__end__", "end", "__finish__"):
-        return "end"
+        return NodeType.END
 
     # Check node data for type hints
     if node_data:
         data_str = str(node_data).lower()
 
         if "agent" in data_str or "llm" in data_str:
-            return "agent"
+            return NodeType.AGENT
         if "tool" in data_str:
-            return "tool"
+            return NodeType.TOOL
         if "condition" in data_str or "branch" in data_str or "router" in data_str:
-            return "condition"
+            return NodeType.CONDITION
 
     # Check node name for hints
     if "agent" in name_lower:
-        return "agent"
+        return NodeType.AGENT
     if "tool" in name_lower:
-        return "tool"
+        return NodeType.TOOL
     if any(x in name_lower for x in ("condition", "branch", "router", "decide")):
-        return "condition"
+        return NodeType.CONDITION
 
-    return "default"
+    return NodeType.DEFAULT
 
 
 def _format_node_label(node_name: str) -> str:
@@ -285,156 +300,6 @@ def _format_node_label(node_name: str) -> str:
 
     # Convert snake_case to Title Case
     return node_name.replace("_", " ").title()
-
-
-def _compute_layout(node_names: list[str], graph: Any) -> dict[str, Point]:
-    """Compute node positions using a layered layout algorithm.
-
-    Uses topological sorting to assign layers, then positions nodes
-    within each layer for clear visualization. Handles branching by
-    spreading successors vertically.
-
-    Args:
-        node_names: List of node names.
-        graph: The graph object for edge information.
-
-    Returns:
-        Dict mapping node IDs to Point positions.
-    """
-    if not node_names:
-        return {}
-
-    positions: dict[str, Point] = {}
-
-    # Build adjacency lists
-    edges = _get_edges(graph)
-    successors: dict[str, list[str]] = {n: [] for n in node_names}
-    predecessors: dict[str, list[str]] = {n: [] for n in node_names}
-
-    for edge in edges:
-        src, tgt = edge[0], edge[1]
-        if src in successors and tgt in successors:
-            if tgt not in successors[src]:
-                successors[src].append(tgt)
-            if src not in predecessors[tgt]:
-                predecessors[tgt].append(src)
-
-    # Assign layers using BFS from start nodes (minimum distance approach)
-    # This handles cyclic graphs by assigning each node its minimum layer
-    layers: dict[str, int] = {}
-    start_nodes = [n for n in node_names if not predecessors[n]]
-
-    # If no clear start, use nodes with names suggesting start
-    if not start_nodes:
-        for n in node_names:
-            if "start" in n.lower() or n.startswith("__"):
-                start_nodes.append(n)
-                break
-        if not start_nodes:
-            start_nodes = [node_names[0]]
-
-    # BFS to assign minimum layers (first visit wins)
-    # This ensures nodes in cycles stay at their earliest possible position
-    queue = [(n, 0) for n in start_nodes]
-    visited: set[str] = set(start_nodes)
-    for n in start_nodes:
-        layers[n] = 0
-
-    while queue:
-        node, layer = queue.pop(0)
-
-        for succ in successors.get(node, []):
-            if succ not in visited:
-                # First time visiting this node - assign layer
-                visited.add(succ)
-                layers[succ] = layer + 1
-                queue.append((succ, layer + 1))
-            # If already visited, don't update layer (keeps minimum distance)
-
-    # Handle nodes not reached by BFS
-    for node in node_names:
-        if node not in layers:
-            layers[node] = max(layers.values()) + 1 if layers else 0
-
-    # Group nodes by layer
-    layer_nodes: dict[int, list[str]] = {}
-    for node, layer in layers.items():
-        if layer not in layer_nodes:
-            layer_nodes[layer] = []
-        layer_nodes[layer].append(node)
-
-    # Position nodes with improved Y positioning for branching
-    x_spacing = 250
-    y_spacing = 120
-    start_x = 100
-    center_y = 250
-
-    # First pass: assign positions based on predecessor average Y
-    # Process layers in order
-    for layer_idx in sorted(layer_nodes.keys()):
-        nodes_in_layer = layer_nodes[layer_idx]
-
-        if layer_idx == 0:
-            # Start nodes centered
-            total_height = (len(nodes_in_layer) - 1) * y_spacing
-            y_start = center_y - total_height / 2
-            for i, node in enumerate(nodes_in_layer):
-                positions[node] = Point(
-                    x=start_x + layer_idx * x_spacing,
-                    y=y_start + i * y_spacing,
-                )
-        else:
-            # Position based on predecessors
-            node_y_hints: dict[str, list[float]] = {}
-
-            for node in nodes_in_layer:
-                preds = predecessors.get(node, [])
-                y_hints = []
-                for pred in preds:
-                    if pred in positions:
-                        # Get index among siblings (other successors of this predecessor)
-                        siblings = successors.get(pred, [])
-                        sibling_idx = siblings.index(node) if node in siblings else 0
-                        sibling_count = len(siblings)
-
-                        # Spread siblings vertically around predecessor's Y
-                        pred_y = positions[pred].y
-                        if sibling_count > 1:
-                            offset = (sibling_idx - (sibling_count - 1) / 2) * y_spacing
-                            y_hints.append(pred_y + offset)
-                        else:
-                            y_hints.append(pred_y)
-
-                node_y_hints[node] = y_hints
-
-            # Sort nodes by their average Y hint to minimize crossings
-            def avg_y(node: str) -> float:
-                hints = node_y_hints.get(node, [])
-                return sum(hints) / len(hints) if hints else center_y
-
-            nodes_in_layer.sort(key=avg_y)
-
-            # Assign final Y positions, ensuring minimum spacing
-            if len(nodes_in_layer) == 1:
-                positions[nodes_in_layer[0]] = Point(
-                    x=start_x + layer_idx * x_spacing,
-                    y=avg_y(nodes_in_layer[0]),
-                )
-            else:
-                # Space nodes evenly but respect order
-                total_height = (len(nodes_in_layer) - 1) * y_spacing
-                min_y = min(avg_y(n) for n in nodes_in_layer)
-                max_y = max(avg_y(n) for n in nodes_in_layer)
-                actual_spread = max(total_height, max_y - min_y)
-                y_start = (min_y + max_y) / 2 - actual_spread / 2
-
-                for i, node in enumerate(nodes_in_layer):
-                    positions[node] = Point(
-                        x=start_x + layer_idx * x_spacing,
-                        y=y_start + i * y_spacing,
-                    )
-
-    return positions
 
 
 def extract_node_functions(compiled_graph: Any) -> dict[str, Callable]:
