@@ -1,5 +1,6 @@
 """Markdown rendering widget for Castella."""
 
+import webbrowser
 from typing import Callable, Self
 
 from castella.core import (
@@ -10,6 +11,7 @@ from castella.core import (
     Painter,
     Point,
     Rect,
+    ScrollState,
     SimpleValue,
     Size,
     SizePolicy,
@@ -87,6 +89,7 @@ class Markdown(Widget):
         enable_emoji: bool = True,
         link_color: str | None = None,
         on_link_click: Callable[[str], None] | None = None,
+        scroll_state: ScrollState | None = None,
         padding: int = 8,
         kind: Kind = Kind.NORMAL,
     ):
@@ -110,6 +113,8 @@ class Markdown(Widget):
         self._enable_emoji = enable_emoji
         self._link_color = link_color
         self._link_callback = on_link_click
+        self._scroll_state = scroll_state
+        self._hovered_href: str | None = None  # Track hovered link for visual feedback
 
         self._parser = MarkdownParser(
             enable_math=enable_math,
@@ -225,7 +230,9 @@ class Markdown(Widget):
 
         ast = self._get_ast()
         size = self.get_size()
-        self._renderer.render(p, ast, size.width, size.height, float(self._padding))
+        self._renderer.render(
+            p, ast, size.width, size.height, float(self._padding), self._hovered_href
+        )
 
     def measure(self, p: Painter) -> Size:
         if self._renderer is None or self._theme is None:
@@ -238,20 +245,62 @@ class Markdown(Widget):
 
         return Size(width=width, height=height)
 
+    def cursor_pos(self, ev: MouseEvent) -> None:
+        """Handle cursor position for link hover effects."""
+        if self._renderer is None:
+            return
+
+        # ev.pos is already in content coordinates (parent Column adds scroll offset)
+        # ClickRegions are registered in content coordinates, so use ev.pos directly
+        href = self._renderer.get_link_at(ev.pos)
+        if href != self._hovered_href:
+            self._hovered_href = href
+            # Trigger redraw to show/hide hover effect
+            self.update(True)
+
     def mouse_up(self, ev: MouseEvent) -> None:
         """Handle link clicks."""
         if self._renderer is None:
             return
 
+        # ev.pos is already in content coordinates (parent Column adds scroll offset)
         href = self._renderer.get_link_at(ev.pos)
-        if href and self._link_callback:
+        if not href:
+            return
+
+        if href.startswith("#"):
+            # Internal link - scroll to heading
+            heading_id = href[1:]  # Remove '#' prefix
+            self._scroll_to_heading(heading_id)
+        elif self._link_callback:
+            # External link with custom callback
             self._link_callback(href)
+        else:
+            # Default: open external link in browser
+            if href.startswith(("http://", "https://", "mailto:")):
+                webbrowser.open(href)
+
+    def _scroll_to_heading(self, heading_id: str) -> None:
+        """Scroll to the heading with the given ID."""
+        if self._scroll_state is None or self._renderer is None:
+            return
+
+        target_y = self._renderer.get_heading_position(heading_id)
+        if target_y is not None:
+            self._scroll_state.y = int(target_y)
+            # Trigger redraw to reflect the scroll change
+            self.update(True)
 
     def on_link_click(self, callback: Callable[[str], None]) -> Self:
         """Register callback for link clicks."""
         self._link_callback = callback
         if self._renderer:
             self._renderer._on_link_click = callback
+        return self
+
+    def scroll_state(self, state: ScrollState) -> Self:
+        """Set scroll state for TOC navigation."""
+        self._scroll_state = state
         return self
 
     def set_content(self, content: str) -> None:

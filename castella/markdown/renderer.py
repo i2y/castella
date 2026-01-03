@@ -1,5 +1,6 @@
 """Markdown AST renderer."""
 
+import re
 from dataclasses import dataclass
 from typing import Callable
 
@@ -126,7 +127,10 @@ class MarkdownRenderer:
         self._link_regions: list[ClickRegion] = []
         self._list_depth: int = 0
         self._list_counters: list[int] = []
-        self._headings: list[tuple[int, str]] = []  # (level, text) for TOC
+        self._headings: list[tuple[int, str, str]] = []  # (level, text, id) for TOC
+        self._heading_positions: dict[str, float] = {}  # heading_id -> y_position
+        self._heading_id_counts: dict[str, int] = {}  # for deduplication
+        self._hovered_href: str | None = None  # Currently hovered link
 
     def render(
         self,
@@ -135,6 +139,7 @@ class MarkdownRenderer:
         width: float,
         height: float,
         padding: float = 8.0,
+        hovered_href: str | None = None,
     ) -> float:
         """Render AST and return total content height.
 
@@ -144,6 +149,7 @@ class MarkdownRenderer:
             width: Available width
             height: Available height
             padding: Padding around content
+            hovered_href: Currently hovered link href (for visual feedback)
 
         Returns:
             Total height of rendered content
@@ -154,8 +160,12 @@ class MarkdownRenderer:
         self._link_regions.clear()
         self._list_depth = 0
         self._list_counters = []
+        self._heading_positions.clear()
+        self._heading_id_counts.clear()
+        self._heading_render_index = 0  # Track which heading we're rendering
+        self._hovered_href = hovered_href  # Track hovered link for highlighting
 
-        # Collect headings for TOC
+        # Collect headings for TOC (also pre-generates heading IDs)
         self._headings = self._collect_headings(ast)
 
         content_width = max(1.0, width - padding * 2)
@@ -165,14 +175,22 @@ class MarkdownRenderer:
 
         return self._cursor_y + padding
 
-    def _collect_headings(self, ast: DocumentNode) -> list[tuple[int, str]]:
-        """Collect all headings from the AST for TOC generation."""
-        headings: list[tuple[int, str]] = []
+    def _collect_headings(self, ast: DocumentNode) -> list[tuple[int, str, str]]:
+        """Collect all headings from the AST for TOC generation.
+
+        Returns:
+            List of (level, text, heading_id) tuples
+        """
+        headings: list[tuple[int, str, str]] = []
+        # Reset ID counts for consistent generation
+        self._heading_id_counts.clear()
         for node in ast.children:
             if isinstance(node, HeadingNode):
                 # Extract text from heading children
                 text = self._extract_text(node.children)
-                headings.append((node.level, text))
+                # Generate unique heading ID
+                heading_id = self._generate_heading_id(text, node.level)
+                headings.append((node.level, text, heading_id))
         return headings
 
     def _extract_text(self, nodes: list[MarkdownNode]) -> str:
@@ -186,6 +204,31 @@ class MarkdownRenderer:
             elif hasattr(node, "children"):
                 parts.append(self._extract_text(node.children))
         return "".join(parts)
+
+    def _generate_heading_id(self, text: str, level: int) -> str:
+        """Generate URL-safe heading ID from text.
+
+        Args:
+            text: Heading text content
+            level: Heading level (1-6)
+
+        Returns:
+            Unique heading ID like "heading-2-hello-world"
+        """
+        # Convert to lowercase and replace spaces with hyphens
+        slug = text.lower().replace(" ", "-")
+        # Remove non-alphanumeric characters except hyphens
+        slug = re.sub(r"[^\w\-]", "", slug)
+        # Create base ID
+        base_id = f"heading-{level}-{slug}"
+
+        # Handle duplicates by adding suffix
+        if base_id in self._heading_id_counts:
+            self._heading_id_counts[base_id] += 1
+            return f"{base_id}-{self._heading_id_counts[base_id]}"
+        else:
+            self._heading_id_counts[base_id] = 0
+            return base_id
 
     def _render_node(self, p: Painter, node: MarkdownNode, width: float) -> None:
         """Render a single AST node."""
@@ -224,7 +267,18 @@ class MarkdownRenderer:
         self._cursor_y += self._theme.block_spacing
 
         segments = self._collect_segments(node.children, RenderContext())
-        text = "".join(s.text for s in segments)
+        text = "".join(s.text for s in segments if isinstance(s, TextSegment))
+
+        # Use pre-generated heading ID from collection phase
+        if self._heading_render_index < len(self._headings):
+            _, _, heading_id = self._headings[self._heading_render_index]
+            self._heading_render_index += 1
+        else:
+            # Fallback: generate new ID (shouldn't happen normally)
+            heading_id = self._generate_heading_id(text, node.level)
+
+        # Record position for TOC navigation
+        self._heading_positions[heading_id] = self._cursor_y
 
         style = Style(
             fill=FillStyle(color=self._theme.heading_color),
@@ -321,6 +375,19 @@ class MarkdownRenderer:
                             href=segment.href,
                         )
                     )
+                    # Draw underline if hovered
+                    if self._hovered_href == segment.href:
+                        underline_y = self._cursor_y + self._theme.base_font_size + 2
+                        underline_style = Style(
+                            fill=FillStyle(color=self._theme.link_color)
+                        )
+                        p.style(underline_style)
+                        p.fill_rect(
+                            Rect(
+                                origin=Point(x=x, y=underline_y),
+                                size=Size(width=word_width, height=2),
+                            )
+                        )
 
                 x += word_width
 
@@ -673,6 +740,17 @@ class MarkdownRenderer:
             ):
                 return region.href
         return None
+
+    def get_heading_position(self, heading_id: str) -> float | None:
+        """Get the Y position of a heading by its ID.
+
+        Args:
+            heading_id: The heading ID (e.g., "heading-2-hello-world")
+
+        Returns:
+            Y position of the heading, or None if not found
+        """
+        return self._heading_positions.get(heading_id)
 
     def measure_height(
         self, p: Painter, ast: DocumentNode, width: float, padding: float = 8.0
@@ -1048,7 +1126,7 @@ class MarkdownRenderer:
             None,
         )
 
-        # Draw heading entries
+        # Draw heading entries with clickable links
         item_style = Style(
             fill=FillStyle(color=self._theme.link_color),
             font=Font(family=self._theme.text_font, size=font_size - 1),
@@ -1058,16 +1136,50 @@ class MarkdownRenderer:
         y = self._cursor_y + padding + font_size + line_height
         min_level = min(h[0] for h in self._headings) if self._headings else 1
 
-        for level, text in self._headings:
+        for level, text, heading_id in self._headings:
             indent = (level - min_level) * indent_per_level
             # Bullet point based on level
             bullet = "•" if level == min_level else "◦"
             display_text = f"{bullet} {text}"
+
+            entry_x = self._cursor_x + padding + indent
+            link_href = f"#{heading_id}"
+            is_hovered = self._hovered_href == link_href
+
+            # Set text style before each entry (in case underline changed it)
+            p.style(item_style)
             p.fill_text(
                 display_text,
-                Point(x=self._cursor_x + padding + indent, y=y),
+                Point(x=entry_x, y=y),
                 width - padding * 2 - indent,
             )
+
+            # Measure text width for click region
+            text_width = p.measure_text(display_text)
+
+            # Draw underline if hovered
+            if is_hovered:
+                underline_y = y + 2  # Slightly below text baseline
+                underline_style = Style(fill=FillStyle(color=self._theme.link_color))
+                p.style(underline_style)
+                p.fill_rect(
+                    Rect(
+                        origin=Point(x=entry_x, y=underline_y),
+                        size=Size(width=text_width, height=2),
+                    )
+                )
+
+            # Register click region for internal link
+            self._link_regions.append(
+                ClickRegion(
+                    rect=Rect(
+                        origin=Point(x=entry_x, y=y - font_size),
+                        size=Size(width=text_width, height=line_height),
+                    ),
+                    href=link_href,
+                )
+            )
+
             y += line_height
 
         self._cursor_y += toc_height + self._theme.block_spacing

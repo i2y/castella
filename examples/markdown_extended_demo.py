@@ -10,7 +10,7 @@ This example demonstrates all the new Markdown extensions:
 Run with: uv run python examples/markdown_extended_demo.py
 """
 
-from castella import App, Column, Markdown, SizePolicy
+from castella import App, Column, Markdown, ScrollState, SizePolicy
 from castella.frame import Frame
 
 MARKDOWN_CONTENT = """
@@ -173,6 +173,14 @@ class Example:
 > This is a regular blockquote.
 > It can span multiple lines.
 
+### Links
+
+External links open in your browser:
+- [GitHub](https://github.com)
+- [Python.org](https://python.org)
+
+Internal links (TOC entries above) scroll to the heading.
+
 ### Math (LaTeX)
 
 Inline math: $E = mc^2$
@@ -195,7 +203,11 @@ def main():
         height=700,
     )
 
+    # Create ScrollState for TOC navigation
+    scroll_state = ScrollState()
+
     # Create scrollable Markdown view with all extensions enabled
+    # Pass scroll_state to enable TOC link navigation
     markdown = (
         Markdown(
             MARKDOWN_CONTENT,
@@ -204,6 +216,7 @@ def main():
             enable_mermaid=True,
             enable_deflist=True,
             enable_toc=True,
+            scroll_state=scroll_state,  # Enable TOC navigation
         )
         .width_policy(SizePolicy.EXPANDING)
         .height_policy(SizePolicy.CONTENT)
@@ -212,6 +225,7 @@ def main():
     content = Column(
         markdown,
         scrollable=True,
+        scroll_state=scroll_state,  # Share scroll state with Column
     ).width_policy(SizePolicy.EXPANDING).height_policy(SizePolicy.EXPANDING)
 
     App(frame, content).run()
