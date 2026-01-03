@@ -45,6 +45,7 @@ class GraphCanvas(Widget):
         layout_config: LayoutConfig | None = None,
         theme: GraphTheme | None = None,
         auto_layout: bool = True,
+        transform: CanvasTransform | None = None,
     ):
         """Initialize the graph canvas.
 
@@ -53,6 +54,7 @@ class GraphCanvas(Widget):
             layout_config: Layout configuration. Uses defaults if None.
             theme: Visual theme. Uses dark theme if None.
             auto_layout: Whether to automatically layout the graph.
+            transform: Initial transform state. Creates new if None.
         """
         super().__init__(
             state=None,
@@ -67,7 +69,7 @@ class GraphCanvas(Widget):
         self._layout_config = layout_config or LayoutConfig()
         self._theme = theme or DARK_THEME
         self._auto_layout = auto_layout
-        self._transform = CanvasTransform()
+        self._transform = transform or CanvasTransform()
 
         # Apply initial layout if graph provided
         if graph and auto_layout:

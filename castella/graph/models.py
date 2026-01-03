@@ -65,6 +65,7 @@ class EdgeModel(BaseModel):
         target_id: ID of the target node.
         edge_type: Type of edge for styling.
         label: Optional label displayed on the edge.
+        metadata: Additional data attached to the edge.
     """
 
     id: str
@@ -72,6 +73,7 @@ class EdgeModel(BaseModel):
     target_id: str
     edge_type: EdgeType = EdgeType.NORMAL
     label: str | None = None
+    metadata: dict = Field(default_factory=dict)
 
 
 class GraphModel(BaseModel):
