@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import time
 from typing import Callable, Self
 
 from castella.core import (
@@ -88,9 +89,15 @@ class GraphCanvas(Widget):
 
         # Callbacks
         self._on_node_click_cb: Callable[[str], None] | None = None
+        self._on_node_double_click_cb: Callable[[str], None] | None = None
         self._on_node_hover_cb: Callable[[str | None], None] | None = None
         self._on_edge_click_cb: Callable[[str], None] | None = None
         self._on_zoom_change_cb: Callable[[int], None] | None = None
+
+        # Double-click detection
+        self._last_click_time: float = 0.0
+        self._last_click_node_id: str | None = None
+        self._double_click_threshold_ms: float = 400.0  # Max time between clicks
 
     # ========== Fluent Configuration ==========
 
@@ -104,6 +111,18 @@ class GraphCanvas(Widget):
             Self for method chaining.
         """
         self._on_node_click_cb = callback
+        return self
+
+    def on_node_double_click(self, callback: Callable[[str], None]) -> Self:
+        """Set callback for node double-click events.
+
+        Args:
+            callback: Function called with node ID when double-clicked.
+
+        Returns:
+            Self for method chaining.
+        """
+        self._on_node_double_click_cb = callback
         return self
 
     def on_node_hover(self, callback: Callable[[str | None], None]) -> Self:
@@ -644,18 +663,47 @@ class GraphCanvas(Widget):
     def mouse_down(self, ev: MouseEvent) -> None:
         """Handle mouse button press."""
         element = hit_test(self._elements, ev.pos)
+        current_time = time.time() * 1000  # Convert to milliseconds
 
         if element and isinstance(element, GraphNodeElement):
-            self._selected_node_id = element.node_id
-            if self._on_node_click_cb:
-                self._on_node_click_cb(element.node_id)
+            node_id = element.node_id
+            time_diff = current_time - self._last_click_time
+
+            # Check for double-click
+            is_double_click = (
+                self._last_click_node_id == node_id
+                and time_diff < self._double_click_threshold_ms
+            )
+
+            if is_double_click:
+                # Double-click detected
+                if self._on_node_double_click_cb:
+                    self._on_node_double_click_cb(node_id)
+                # Reset to prevent triple-click being detected as double
+                self._last_click_time = 0.0
+                self._last_click_node_id = None
+            else:
+                # Single click
+                self._selected_node_id = node_id
+                if self._on_node_click_cb:
+                    self._on_node_click_cb(node_id)
+                # Record for potential double-click
+                self._last_click_time = current_time
+                self._last_click_node_id = node_id
+
         elif element and isinstance(element, GraphEdgeElement):
             if self._on_edge_click_cb:
                 self._on_edge_click_cb(element.edge_id)
+            # Reset double-click detection
+            self._last_click_time = 0.0
+            self._last_click_node_id = None
         else:
             # Start panning
             self._is_panning = True
             self._last_pan_pos = ev.pos
+            # Reset double-click detection
+            self._last_click_time = 0.0
+            self._last_click_node_id = None
 
         self.mark_paint_dirty()
         self.update()

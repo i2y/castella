@@ -71,7 +71,7 @@ class ContextInspector(Component):
                 rows.append(Spacer().fixed_height(8))
 
         # Context display
-        rows.append(self._build_context_display())
+        rows.extend(self._build_context_display())
 
         return Column(*rows, scrollable=True)
 
@@ -106,20 +106,20 @@ class ContextInspector(Component):
         Args:
             value: New slider value.
         """
-        self._selected_index = int(value) if value < self._slider_state.max_val else None
+        self._selected_index = int(value) if value < self._slider_state.max_val() else None
 
-    def _build_context_display(self) -> Column:
-        """Build the context JSON display."""
+    def _build_context_display(self) -> list:
+        """Build the context JSON display as list of rows."""
         context = self._get_current_context()
 
         if not context:
-            return Column(
+            return [
                 Row(
                     Spacer().fixed_width(12),
                     Text("Empty context").text_color("#6b7280"),
                     Spacer(),
-                ),
-            )
+                ).fixed_height(24),
+            ]
 
         # Format context as JSON
         try:
@@ -142,7 +142,7 @@ class ContextInspector(Component):
                 ).fixed_height(18)
             )
 
-        return Column(*rows)
+        return rows
 
     def _get_current_context(self) -> dict:
         """Get the context to display based on timeline position."""
@@ -236,7 +236,7 @@ class EventDataInspector(Component):
                     Spacer().fixed_width(12),
                     Text("No event data").text_color("#6b7280"),
                     Spacer(),
-                )
+                ).fixed_height(24)
             )
         else:
             # Format and display

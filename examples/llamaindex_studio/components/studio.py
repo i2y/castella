@@ -6,6 +6,7 @@ execution controls, and detail panels.
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import Any
 
@@ -111,6 +112,9 @@ class WorkflowStudio(Component):
         self._selected_step_id: State[str | None] = State(None)
         self._selected_event_type: State[str | None] = State(None)
 
+        # Current mock workflow type
+        self._current_workflow_type: State[str] = State("simple")
+
         # Right panel tab state
         self._right_panel_tabs = TabsState([
             TabItem(id="step", label="Step", content=Spacer()),
@@ -125,6 +129,7 @@ class WorkflowStudio(Component):
         self._error_message.attach(self)
         self._selected_step_id.attach(self)
         self._selected_event_type.attach(self)
+        self._current_workflow_type.attach(self)
         self._right_panel_tabs.attach(self)
 
         # Executor
@@ -134,6 +139,11 @@ class WorkflowStudio(Component):
 
         # Canvas transform state (persists across view rebuilds)
         self._canvas_transform = CanvasTransform()
+
+        # Double-click detection state (persists across view rebuilds)
+        self._last_click_time: float = 0.0
+        self._last_click_node_id: str | None = None
+        self._double_click_threshold_ms: float = 400.0
 
         # Canvas reference (for zoom controls)
         self._canvas: WorkflowCanvas | None = None
@@ -197,8 +207,12 @@ class WorkflowStudio(Component):
         workflow: WorkflowModel | None,
         execution: WorkflowExecutionState,
     ) -> Column:
-        """Build the left panel with events and steps lists."""
+        """Build the left panel with workflow selector, events and steps lists."""
         return Column(
+            # Workflow selector
+            self._build_workflow_selector(),
+            # Divider
+            Box().fixed_height(1).bg_color("#2a2b3d"),
             # Event types list
             EventPanel(
                 workflow=workflow,
@@ -216,6 +230,29 @@ class WorkflowStudio(Component):
             ).height_policy(SizePolicy.EXPANDING),
         ).fixed_width(LEFT_PANEL_WIDTH).height_policy(SizePolicy.EXPANDING).bg_color("#1a1b26")
 
+    def _build_workflow_selector(self) -> Column:
+        """Build the workflow type selector."""
+        current = self._current_workflow_type()
+
+        def make_btn(wf_type: str, label: str) -> Button:
+            is_selected = current == wf_type
+            kind = Kind.INFO if is_selected else Kind.NORMAL
+            return (
+                Button(label)
+                .kind(kind)
+                .fixed_height(24)
+                .on_click(lambda _, t=wf_type: self._on_workflow_type_select(t))
+            )
+
+        return Column(
+            Text("Workflow").fixed_height(20).text_color("#9ca3af"),
+            Row(
+                make_btn("simple", "Simple"),
+                make_btn("branching", "Branch"),
+                make_btn("collect", "Collect"),
+            ).fixed_height(28),
+        ).fixed_height(56).bg_color("#1e1f2b")
+
     def _build_canvas(
         self,
         workflow: WorkflowModel | None,
@@ -230,6 +267,10 @@ class WorkflowStudio(Component):
         )
         self._canvas.on_node_click(self._on_canvas_node_click)
         self._canvas.on_zoom_change(self._on_canvas_zoom_change)
+
+        # Preserve highlighted event type across rebuilds
+        if self._selected_event_type():
+            self._canvas.set_highlighted_event_type(self._selected_event_type())
 
         # Canvas expands to fill available space
         self._canvas.width_policy(SizePolicy.EXPANDING)
@@ -257,24 +298,7 @@ class WorkflowStudio(Component):
                     break
 
         # Build tab content based on selection
-        tab_id = self._right_panel_tabs.selected_id
-
-        if tab_id == "step":
-            content = StepPanel(
-                step=selected_step,
-                execution=selected_execution,
-            )
-        elif tab_id == "context":
-            content = ContextInspector(
-                execution_state=execution,
-            )
-        elif tab_id == "queue":
-            content = EventQueuePanel(
-                workflow=workflow,
-                queue=execution.event_queue,
-            )
-        else:
-            content = Spacer()
+        tab_id = self._right_panel_tabs.selected_id()
 
         return Column(
             # Tab bar
@@ -284,13 +308,39 @@ class WorkflowStudio(Component):
                 self._build_tab_button("queue", "Queue"),
                 Spacer(),
             ).fixed_height(32).bg_color("#1e1f2b"),
-            # Content (expands to fill remaining space)
-            content.height_policy(SizePolicy.EXPANDING),
+            # Content - build inline based on tab
+            self._build_tab_content(tab_id, workflow, execution, selected_step, selected_execution),
         ).fixed_width(RIGHT_PANEL_WIDTH).height_policy(SizePolicy.EXPANDING).bg_color("#1a1b26")
+
+    def _build_tab_content(
+        self,
+        tab_id: str,
+        workflow: WorkflowModel | None,
+        execution: WorkflowExecutionState,
+        selected_step,
+        selected_execution,
+    ):
+        """Build content for the selected tab."""
+        if tab_id == "step":
+            return StepPanel(
+                step=selected_step,
+                execution=selected_execution,
+            ).height_policy(SizePolicy.EXPANDING)
+        elif tab_id == "context":
+            return ContextInspector(
+                execution_state=execution,
+            ).height_policy(SizePolicy.EXPANDING)
+        elif tab_id == "queue":
+            return EventQueuePanel(
+                workflow=workflow,
+                queue=execution.event_queue,
+            ).height_policy(SizePolicy.EXPANDING)
+        else:
+            return Spacer()
 
     def _build_tab_button(self, tab_id: str, label: str) -> Button:
         """Build a tab button."""
-        is_selected = self._right_panel_tabs.selected_id == tab_id
+        is_selected = self._right_panel_tabs.selected_id() == tab_id
         kind = Kind.INFO if is_selected else Kind.NORMAL
 
         return (
@@ -390,14 +440,35 @@ class WorkflowStudio(Component):
     def _on_canvas_node_click(self, node_id: str) -> None:
         """Handle node click on canvas.
 
+        Implements double-click detection at the studio level to persist
+        across view rebuilds (canvas is recreated each time).
+
         Args:
             node_id: Clicked node ID.
         """
-        if node_id in ("__start__", "__end__"):
-            return
+        current_time = time.time() * 1000  # Convert to milliseconds
+        time_diff = current_time - self._last_click_time
 
-        self._selected_step_id.set(node_id)
-        self._right_panel_tabs.select("step")
+        # Check for double-click (same node within threshold)
+        is_double_click = (
+            self._last_click_node_id == node_id
+            and time_diff < self._double_click_threshold_ms
+        )
+
+        if is_double_click:
+            # Double-click detected - toggle breakpoint
+            self._executor.toggle_breakpoint(node_id)
+            # Reset to prevent triple-click
+            self._last_click_time = 0.0
+            self._last_click_node_id = None
+        else:
+            # Single click - select the step
+            if node_id not in ("__start__", "__end__"):
+                self._selected_step_id.set(node_id)
+                self._right_panel_tabs.select("step")
+            # Record for potential double-click
+            self._last_click_time = current_time
+            self._last_click_node_id = node_id
 
     def _on_canvas_zoom_change(self, zoom_percent: int) -> None:
         """Handle zoom change from canvas.
@@ -426,8 +497,15 @@ class WorkflowStudio(Component):
         Args:
             event_type: Selected event type name.
         """
-        self._selected_event_type.set(event_type)
-        # TODO: Highlight edges with this event type
+        # Toggle selection - clicking same event again clears it
+        if self._selected_event_type() == event_type:
+            self._selected_event_type.set(None)
+            if self._canvas:
+                self._canvas.set_highlighted_event_type(None)
+        else:
+            self._selected_event_type.set(event_type)
+            if self._canvas:
+                self._canvas.set_highlighted_event_type(event_type)
 
     def _on_tab_select(self, tab_id: str) -> None:
         """Handle right panel tab selection.
@@ -454,6 +532,22 @@ class WorkflowStudio(Component):
             file_path: Path to the selected file.
         """
         self._load_workflow_file(file_path)
+
+    def _on_workflow_type_select(self, workflow_type: str) -> None:
+        """Handle workflow type selection from selector.
+
+        Args:
+            workflow_type: Selected workflow type ("simple", "branching", "collect").
+        """
+        if workflow_type == self._current_workflow_type():
+            return  # Already selected
+
+        self._current_workflow_type.set(workflow_type)
+        self._load_mock_workflow(workflow_type)
+
+        # Clear selection states
+        self._selected_step_id.set(None)
+        self._selected_event_type.set(None)
 
     # ========== Workflow Loading ==========
 

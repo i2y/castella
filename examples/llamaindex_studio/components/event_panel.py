@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Callable
 
-from castella import Component, Column, Row, Text, Spacer, Button, SizePolicy
+from castella import Component, Column, Row, Text, Spacer, Button, SizePolicy, Kind
 
 from ..models.workflow import WorkflowModel
 from ..models.events import EventTypeModel, EventCategory, EVENT_COLORS
@@ -91,9 +91,13 @@ class EventPanel(Component):
         # Build clickable button styled as text
         display_text = f"{symbol}  {event_name}"
 
+        # Use INFO kind for selected, NORMAL for unselected
+        kind = Kind.INFO if is_selected else Kind.NORMAL
+
         if self._on_event_select:
             btn = (
                 Button(display_text)
+                .kind(kind)
                 .on_click(lambda _, name=event_name: self._on_event_select(name))
                 .fixed_height(EVENT_ROW_HEIGHT)
                 .width_policy(SizePolicy.EXPANDING)
@@ -101,6 +105,7 @@ class EventPanel(Component):
         else:
             btn = (
                 Button(display_text)
+                .kind(kind)
                 .fixed_height(EVENT_ROW_HEIGHT)
                 .width_policy(SizePolicy.EXPANDING)
             )

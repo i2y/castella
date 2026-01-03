@@ -106,6 +106,7 @@ class BaseWorkflowExecutor(ABC):
         self._stop_requested = False
         self._pause_requested = False
         self._step_mode = False
+        self._step_event.clear()  # Clear any previous event state
 
         self._thread = threading.Thread(
             target=self._run_wrapper,

@@ -159,6 +159,15 @@ def create_branching_mock_workflow() -> WorkflowModel:
             output_events=["SuccessEvent", "ErrorEvent"],
             output_mode=OutputMode.UNION,  # Branching!
             docstring="Analyze and branch based on result.",
+            source_code="""@step
+async def analyze(self, ev: StartEvent) -> SuccessEvent | ErrorEvent:
+    \"\"\"Analyze and branch based on result.\"\"\"
+    result = await self.do_analysis(ev.data)
+    if result.is_valid:
+        return SuccessEvent(result=result.data)
+    else:
+        return ErrorEvent(message=result.error)
+""",
         ),
         StepModel(
             id="success",
@@ -168,6 +177,11 @@ def create_branching_mock_workflow() -> WorkflowModel:
             output_events=["StopEvent"],
             output_mode=OutputMode.SINGLE,
             docstring="Handle successful analysis.",
+            source_code="""@step
+async def handle_success(self, ev: SuccessEvent) -> StopEvent:
+    \"\"\"Handle successful analysis.\"\"\"
+    return StopEvent(result={"status": "success", "data": ev.result})
+""",
         ),
         StepModel(
             id="error",
@@ -177,6 +191,11 @@ def create_branching_mock_workflow() -> WorkflowModel:
             output_events=["StopEvent"],
             output_mode=OutputMode.SINGLE,
             docstring="Handle error case.",
+            source_code="""@step
+async def handle_error(self, ev: ErrorEvent) -> StopEvent:
+    \"\"\"Handle error case.\"\"\"
+    return StopEvent(result={"status": "error", "message": ev.message})
+""",
         ),
     ]
 
@@ -239,6 +258,12 @@ def create_collect_mock_workflow() -> WorkflowModel:
             output_events=["DataAEvent"],
             output_mode=OutputMode.SINGLE,
             docstring="Fetch data source A.",
+            source_code="""@step
+async def fetch_a(self, ev: StartEvent) -> DataAEvent:
+    \"\"\"Fetch data source A.\"\"\"
+    data = await self.fetch_from_source_a()
+    return DataAEvent(data_a=data)
+""",
         ),
         StepModel(
             id="fetch_b",
@@ -248,6 +273,12 @@ def create_collect_mock_workflow() -> WorkflowModel:
             output_events=["DataBEvent"],
             output_mode=OutputMode.SINGLE,
             docstring="Fetch data source B.",
+            source_code="""@step
+async def fetch_b(self, ev: StartEvent) -> DataBEvent:
+    \"\"\"Fetch data source B.\"\"\"
+    data = await self.fetch_from_source_b()
+    return DataBEvent(data_b=data)
+""",
         ),
         StepModel(
             id="merge",
@@ -257,6 +288,14 @@ def create_collect_mock_workflow() -> WorkflowModel:
             output_events=["StopEvent"],
             output_mode=OutputMode.SINGLE,
             docstring="Merge data from both sources.",
+            source_code="""@step
+async def merge(
+    self, ev_a: DataAEvent, ev_b: DataBEvent
+) -> StopEvent:
+    \"\"\"Merge data from both sources.\"\"\"
+    merged = self.combine_data(ev_a.data_a, ev_b.data_b)
+    return StopEvent(result={"merged": merged})
+""",
         ),
     ]
 

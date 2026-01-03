@@ -54,6 +54,9 @@ OUTPUT_SLOT_COLOR = "#22c55e"  # Green for output slots
 COLLECT_GATE_COLOR = "#f59e0b"  # Amber for Collect (AND) gate
 UNION_INDICATOR_COLOR = "#a855f7"  # Purple for Union (OR) indicator
 
+# Selection highlight color
+HIGHLIGHTED_EDGE_COLOR = "#fbbf24"  # Yellow/amber for highlighted edges
+
 
 class WorkflowCanvas(BaseStudioCanvas):
     """Canvas for LlamaIndex Workflow visualization.
@@ -97,6 +100,7 @@ class WorkflowCanvas(BaseStudioCanvas):
         )
 
         self._workflow = workflow
+        self._highlighted_event_type: str | None = None
 
     def set_workflow(self, workflow: WorkflowModel | None) -> Self:
         """Update the displayed workflow.
@@ -122,6 +126,22 @@ class WorkflowCanvas(BaseStudioCanvas):
             Self for method chaining.
         """
         self._execution_state = state
+        self.mark_paint_dirty()
+        self.update()
+        return self
+
+    def set_highlighted_event_type(self, event_type: str | None) -> Self:
+        """Set the event type to highlight on the canvas.
+
+        Edges using this event type will be visually highlighted.
+
+        Args:
+            event_type: Event type name to highlight, or None to clear.
+
+        Returns:
+            Self for method chaining.
+        """
+        self._highlighted_event_type = event_type
         self.mark_paint_dirty()
         self.update()
         return self
@@ -563,9 +583,17 @@ class WorkflowCanvas(BaseStudioCanvas):
         # Check if edge was executed
         is_executed = self._is_edge_executed(edge.source_id, edge.target_id)
 
-        # Get edge color
+        # Check if edge is highlighted (selected event type)
+        is_highlighted = (
+            self._highlighted_event_type is not None
+            and event_type == self._highlighted_event_type
+        )
+
+        # Get edge color (priority: executed > highlighted > normal)
         if is_executed:
             edge_color = EXECUTED_EDGE_COLOR
+        elif is_highlighted:
+            edge_color = HIGHLIGHTED_EDGE_COLOR
         else:
             edge_color = self._get_event_color(event_type)
 
@@ -595,13 +623,17 @@ class WorkflowCanvas(BaseStudioCanvas):
             )
 
         # Draw bezier curve with styling based on pattern
-        stroke_width = self._theme.edge_width
-        if is_union:
-            stroke_width *= 0.8  # Thinner for union edges
+        stroke_width_multiplier = 1.0
+        if is_highlighted:
+            stroke_width_multiplier = 2.0  # Thicker for highlighted edges
+        elif is_union:
+            stroke_width_multiplier = 0.8  # Thinner for union edges
         elif is_collect:
-            stroke_width *= 1.2  # Thicker for collect edges
+            stroke_width_multiplier = 1.2  # Thicker for collect edges
 
-        self._draw_bezier_edge(p, start, end, edge_color, scale, is_horizontal)
+        self._draw_bezier_edge_styled(
+            p, start, end, edge_color, scale, is_horizontal, stroke_width_multiplier
+        )
 
         # Draw arrowhead
         self._draw_arrow_head(p, end, start, edge_color, scale)
@@ -609,6 +641,55 @@ class WorkflowCanvas(BaseStudioCanvas):
         # Draw event type label
         if event_type:
             self._draw_event_label(p, start, end, event_type, edge_color, scale)
+
+    def _draw_bezier_edge_styled(
+        self,
+        p: Painter,
+        start: Point,
+        end: Point,
+        color: str,
+        scale: float,
+        is_horizontal: bool,
+        width_multiplier: float = 1.0,
+    ) -> None:
+        """Draw bezier curve with custom width.
+
+        Args:
+            p: Painter for drawing.
+            start: Start point.
+            end: End point.
+            color: Edge color.
+            scale: Current zoom scale.
+            is_horizontal: Whether layout is horizontal.
+            width_multiplier: Multiplier for stroke width.
+        """
+        p.style(Style(fill=FillStyle(color=color)))
+
+        # Control points
+        if is_horizontal:
+            dx = end.x - start.x
+            cp1 = Point(x=start.x + dx * 0.4, y=start.y)
+            cp2 = Point(x=end.x - dx * 0.4, y=end.y)
+        else:
+            dy = end.y - start.y
+            cp1 = Point(x=start.x, y=start.y + dy * 0.4)
+            cp2 = Point(x=end.x, y=end.y - dy * 0.4)
+
+        # Draw curve as series of circles
+        steps = 30
+        radius = max(1, self._theme.edge_width * scale * width_multiplier)
+        for i in range(steps + 1):
+            t = i / steps
+            t2 = t * t
+            t3 = t2 * t
+            mt = 1 - t
+            mt2 = mt * mt
+            mt3 = mt2 * mt
+
+            x = mt3 * start.x + 3 * mt2 * t * cp1.x + 3 * mt * t2 * cp2.x + t3 * end.x
+            y = mt3 * start.y + 3 * mt2 * t * cp1.y + 3 * mt * t2 * cp2.y + t3 * end.y
+
+            p.fill_circle(Circle(center=Point(x=x, y=y), radius=radius))
 
     def _draw_event_label(
         self,
@@ -677,20 +758,24 @@ class WorkflowCanvas(BaseStudioCanvas):
         return EVENT_COLORS[EventCategory.USER]
 
     def _is_step_active(self, step_id: str) -> bool:
-        """Check if a step is currently executing.
+        """Check if a step is currently executing or paused at breakpoint.
 
         Args:
             step_id: The step ID to check.
 
         Returns:
-            True if the step is currently executing.
+            True if the step is currently executing or paused.
         """
         if not isinstance(self._execution_state, WorkflowExecutionState):
             return self._is_node_active(
                 NodeModel(id=step_id, label="")
             )
 
-        return step_id in self._execution_state.active_step_ids
+        # Check if step is in active set OR is the current node (e.g., paused at breakpoint)
+        return (
+            step_id in self._execution_state.active_step_ids
+            or self._execution_state.current_node_id == step_id
+        )
 
     def _is_edge_executed(self, source_id: str, target_id: str) -> bool:
         """Check if an edge has been traversed during execution.

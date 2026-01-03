@@ -5,8 +5,9 @@ Displays step details including signature, docstring, and source code.
 
 from __future__ import annotations
 
-from castella import Component, Column, Row, Text, Spacer, Button, SizePolicy
+from castella import Component, Column, Row, Text, Spacer, Button, SizePolicy, Kind
 from castella.markdown import Markdown
+from castella.multiline_text import MultilineText
 
 from ..models.steps import StepModel, InputMode, OutputMode
 from ..models.execution import StepExecution
@@ -53,9 +54,8 @@ class StepPanel(Component):
                     Spacer().fixed_width(12),
                     Text("Select a step to view details").text_color("#6b7280"),
                     Spacer(),
-                ),
-                Spacer(),
-            )
+                ).fixed_height(24),
+            ).fixed_height(40)
 
         step = self._step
 
@@ -110,6 +110,10 @@ class StepPanel(Component):
 
     def _build_docstring_section(self, docstring: str) -> Column:
         """Build the docstring section."""
+        # Calculate height based on number of lines (approximate)
+        lines = docstring.strip().count('\n') + 1
+        text_height = max(20, lines * 16)
+
         return Column(
             Row(
                 Spacer().fixed_width(8),
@@ -120,14 +124,14 @@ class StepPanel(Component):
                 Spacer().fixed_width(12),
                 Text(docstring.strip()).text_color("#e5e7eb"),
                 Spacer().fixed_width(8),
-            ),
-        )
+            ).fixed_height(text_height),
+        ).fixed_height(SECTION_HEADER_HEIGHT + text_height)
 
     def _build_execution_section(self, execution: StepExecution) -> Column:
         """Build the execution info section."""
         duration = f"{execution.duration_ms:.2f}ms"
 
-        return Column(
+        rows = [
             Row(
                 Spacer().fixed_width(8),
                 Text("Last Execution").text_color("#9ca3af"),
@@ -138,22 +142,39 @@ class StepPanel(Component):
                 Text(f"Duration: {duration}").text_color("#22c55e"),
                 Spacer(),
             ).fixed_height(20),
-            Row(
-                Spacer().fixed_width(12),
-                Text(f"Input: {execution.input_event_type}").text_color("#3b82f6"),
-                Spacer(),
-            ).fixed_height(20) if execution.input_event_type else Spacer().fixed_height(0),
-            Row(
-                Spacer().fixed_width(12),
-                Text(f"Output: {execution.output_event_type or 'None'}").text_color("#22c55e"),
-                Spacer(),
-            ).fixed_height(20) if execution.output_event_type else Spacer().fixed_height(0),
-        )
+        ]
+
+        if execution.input_event_type:
+            rows.append(
+                Row(
+                    Spacer().fixed_width(12),
+                    Text(f"Input: {execution.input_event_type}").text_color("#3b82f6"),
+                    Spacer(),
+                ).fixed_height(20)
+            )
+
+        if execution.output_event_type:
+            rows.append(
+                Row(
+                    Spacer().fixed_width(12),
+                    Text(f"Output: {execution.output_event_type}").text_color("#22c55e"),
+                    Spacer(),
+                ).fixed_height(20)
+            )
+
+        total_height = SECTION_HEADER_HEIGHT + 20  # Header + duration
+        if execution.input_event_type:
+            total_height += 20
+        if execution.output_event_type:
+            total_height += 20
+
+        return Column(*rows).fixed_height(total_height)
 
     def _build_source_section(self, source_code: str) -> Column:
         """Build the source code section."""
-        # Wrap in markdown code block for syntax highlighting
-        md_content = f"```python\n{source_code}\n```"
+        # Calculate height based on lines
+        lines = source_code.strip().count('\n') + 1
+        code_height = max(60, lines * 14 + 16)  # 14px per line + padding
 
         return Column(
             Row(
@@ -163,10 +184,14 @@ class StepPanel(Component):
             ).fixed_height(SECTION_HEADER_HEIGHT),
             Row(
                 Spacer().fixed_width(8),
-                Markdown(md_content, base_font_size=11),
+                MultilineText(
+                    source_code.strip(),
+                    font_size=11,
+                    wrap=False,
+                ).text_color("#a5d6ff").bg_color("#161b22").fixed_height(code_height),
                 Spacer().fixed_width(8),
-            ),
-        )
+            ).fixed_height(code_height),
+        ).fixed_height(SECTION_HEADER_HEIGHT + code_height)
 
 
 class StepListPanel(Component):
@@ -237,9 +262,13 @@ class StepListPanel(Component):
         # Build button styled as text
         display_text = f"{symbol}  {step.label}"
 
+        # Use INFO kind for selected, NORMAL for unselected
+        kind = Kind.INFO if is_selected else Kind.NORMAL
+
         if self._on_step_select:
             btn = (
                 Button(display_text)
+                .kind(kind)
                 .on_click(lambda _, sid=step.id: self._on_step_select(sid))
                 .fixed_height(SECTION_HEADER_HEIGHT)
                 .width_policy(SizePolicy.EXPANDING)
@@ -247,6 +276,7 @@ class StepListPanel(Component):
         else:
             btn = (
                 Button(display_text)
+                .kind(kind)
                 .fixed_height(SECTION_HEADER_HEIGHT)
                 .width_policy(SizePolicy.EXPANDING)
             )
