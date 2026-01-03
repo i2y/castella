@@ -23,6 +23,8 @@ from castella import (
     Kind,
 )
 from castella.tabs import Tabs, TabsState, TabItem
+from castella.modal import Modal, ModalState
+from castella.multiline_text import MultilineText
 
 from castella.studio.components.toolbar import Toolbar
 from castella.studio.components.status_bar import StatusBar
@@ -112,8 +114,8 @@ class WorkflowStudio(Component):
         self._selected_step_id: State[str | None] = State(None)
         self._selected_event_type: State[str | None] = State(None)
 
-        # Current mock workflow type
-        self._current_workflow_type: State[str] = State("simple")
+        # Current workflow type ("mock", "simple", "complex")
+        self._current_workflow_type: State[str] = State("mock")
 
         # Right panel tab state
         self._right_panel_tabs = TabsState([
@@ -149,6 +151,17 @@ class WorkflowStudio(Component):
         self._canvas: WorkflowCanvas | None = None
         self._timeline: EventTimeline | None = None
 
+        # Modal states for viewing full content (window-level)
+        self._docstring_modal_state = ModalState()
+        self._source_modal_state = ModalState()
+        self._docstring_modal_state.attach(self)
+        self._source_modal_state.attach(self)
+
+        # Current modal content
+        self._modal_title: str = ""
+        self._modal_content: str = ""
+        self._modal_type: str = ""  # "docstring" or "source"
+
         # Load initial file if provided, otherwise load mock workflow
         if initial_file:
             self._load_workflow_file(initial_file)
@@ -161,7 +174,7 @@ class WorkflowStudio(Component):
         workflow = self._workflow_model()
         execution = self._execution_state()
 
-        return Column(
+        main_content = Column(
             # Toolbar (fixed height)
             self._build_toolbar(execution),
             # Main content area (fills remaining space)
@@ -178,6 +191,15 @@ class WorkflowStudio(Component):
             # Status bar (fixed height)
             self._build_status_bar(execution),
         )
+
+        # Build window-level modals
+        modals = []
+        if self._modal_type == "docstring":
+            modals.append(self._build_docstring_modal())
+        elif self._modal_type == "source":
+            modals.append(self._build_source_modal())
+
+        return Box(main_content, *modals)
 
     def _build_toolbar(self, execution: WorkflowExecutionState) -> Toolbar:
         """Build the toolbar component."""
@@ -247,9 +269,9 @@ class WorkflowStudio(Component):
         return Column(
             Text("Workflow").fixed_height(20).text_color("#9ca3af"),
             Row(
+                make_btn("mock", "Mock"),
                 make_btn("simple", "Simple"),
-                make_btn("branching", "Branch"),
-                make_btn("collect", "Collect"),
+                make_btn("complex", "Complex"),
             ).fixed_height(28),
         ).fixed_height(56).bg_color("#1e1f2b")
 
@@ -325,6 +347,8 @@ class WorkflowStudio(Component):
             return StepPanel(
                 step=selected_step,
                 execution=selected_execution,
+                on_view_docstring=self._on_view_docstring,
+                on_view_source=self._on_view_source,
             ).height_policy(SizePolicy.EXPANDING)
         elif tab_id == "context":
             return ContextInspector(
@@ -537,17 +561,148 @@ class WorkflowStudio(Component):
         """Handle workflow type selection from selector.
 
         Args:
-            workflow_type: Selected workflow type ("simple", "branching", "collect").
+            workflow_type: Selected workflow type ("mock", "simple", "complex").
         """
         if workflow_type == self._current_workflow_type():
             return  # Already selected
 
         self._current_workflow_type.set(workflow_type)
-        self._load_mock_workflow(workflow_type)
+
+        if workflow_type == "mock":
+            # Load mock workflow (no llama-index required)
+            self._load_mock_workflow("simple")
+        elif workflow_type == "simple":
+            # Load simple real LlamaIndex Workflow
+            self._load_real_workflow("simple_workflow.py")
+        elif workflow_type == "complex":
+            # Load complex real LlamaIndex Workflow
+            self._load_real_workflow("complex_workflow.py")
+        else:
+            self._load_mock_workflow("simple")
 
         # Clear selection states
         self._selected_step_id.set(None)
         self._selected_event_type.set(None)
+
+    # ========== Modal Handlers ==========
+
+    def _on_view_docstring(self, step_label: str, content: str) -> None:
+        """Handle view full docstring request.
+
+        Args:
+            step_label: Step label for modal title.
+            content: Full docstring content.
+        """
+        self._modal_title = f"{step_label} - Description"
+        self._modal_content = content
+        self._modal_type = "docstring"
+        self._docstring_modal_state.open()
+
+    def _on_view_source(self, step_label: str, content: str) -> None:
+        """Handle view full source code request.
+
+        Args:
+            step_label: Step label for modal title.
+            content: Full source code content.
+        """
+        self._modal_title = f"{step_label} - Source Code"
+        self._modal_content = content
+        self._modal_type = "source"
+        self._source_modal_state.open()
+
+    def _on_modal_close(self) -> None:
+        """Handle modal close."""
+        self._modal_type = ""
+        self._modal_title = ""
+        self._modal_content = ""
+
+    def _build_docstring_modal(self) -> Modal:
+        """Build modal for viewing full docstring."""
+        content = self._modal_content
+        lines = content.split('\n')
+        line_count = len(lines)
+        # Calculate content height (16px per line + padding)
+        content_height = max(60, line_count * 16 + 24)
+
+        modal_content = Column(
+            Spacer().fixed_height(8),
+            Row(
+                Spacer().fixed_width(8),
+                MultilineText(
+                    content,
+                    font_size=13,
+                    wrap=True,
+                ).text_color("#e5e7eb").fixed_height(content_height),
+                Spacer().fixed_width(8),
+            ).fixed_height(content_height),
+            Spacer().fixed_height(8),
+            scrollable=True,
+        )
+
+        return Modal(
+            content=modal_content,
+            state=self._docstring_modal_state,
+            title=self._modal_title,
+            width=600,
+            height=400,
+        ).on_close(self._on_modal_close)
+
+    def _build_source_modal(self) -> Modal:
+        """Build modal for viewing full source code."""
+        content = self._modal_content
+        lines = content.split('\n')
+        line_count = len(lines)
+        # Calculate content height (14px per line + padding)
+        content_height = max(100, line_count * 14 + 24)
+        # Add padding for scrollbar (approx 20px)
+        padded_content_height = content_height + 20
+        # Calculate content width based on longest line (approx 7px per char at font_size=12)
+        max_line_len = max(len(line) for line in lines) if lines else 0
+        content_width = max(300, max_line_len * 7 + 16)
+
+        modal_content = Column(
+            Spacer().fixed_height(8),
+            Row(
+                Spacer().fixed_width(8),
+                Column(
+                    Row(
+                        MultilineText(
+                            content,
+                            font_size=12,
+                            wrap=False,
+                        ).text_color("#a5d6ff").bg_color("#161b22").fixed_size(content_width, padded_content_height),
+                        scrollable=True,
+                    ).fixed_height(padded_content_height),
+                    scrollable=True,
+                ),
+                Spacer().fixed_width(8),
+            ),
+            Spacer().fixed_height(8),
+        )
+
+        return Modal(
+            content=modal_content,
+            state=self._source_modal_state,
+            title=self._modal_title,
+            width=800,
+            height=600,
+        ).on_close(self._on_modal_close)
+
+    def _load_real_workflow(self, filename: str = "simple_workflow.py") -> None:
+        """Load a real LlamaIndex Workflow from samples.
+
+        Args:
+            filename: Workflow file name in samples directory.
+        """
+        # Get the samples directory relative to this file
+        samples_dir = Path(__file__).parent.parent / "samples"
+        workflow_file = samples_dir / filename
+
+        if workflow_file.exists():
+            self._load_workflow_file(str(workflow_file))
+        else:
+            self._error_message.set(f"Workflow file not found: {workflow_file}")
+            self._load_mock_workflow("simple")
 
     # ========== Workflow Loading ==========
 

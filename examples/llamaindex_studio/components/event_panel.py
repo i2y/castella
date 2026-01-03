@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import Callable
 
 from castella import Component, Column, Row, Text, Spacer, Button, SizePolicy, Kind
+from castella.models.style import TextAlign
 
 from ..models.workflow import WorkflowModel
 from ..models.events import EventTypeModel, EventCategory, EVENT_COLORS
@@ -96,7 +97,7 @@ class EventPanel(Component):
 
         if self._on_event_select:
             btn = (
-                Button(display_text)
+                Button(display_text, align=TextAlign.LEFT)
                 .kind(kind)
                 .on_click(lambda _, name=event_name: self._on_event_select(name))
                 .fixed_height(EVENT_ROW_HEIGHT)
@@ -104,7 +105,7 @@ class EventPanel(Component):
             )
         else:
             btn = (
-                Button(display_text)
+                Button(display_text, align=TextAlign.LEFT)
                 .kind(kind)
                 .fixed_height(EVENT_ROW_HEIGHT)
                 .width_policy(SizePolicy.EXPANDING)

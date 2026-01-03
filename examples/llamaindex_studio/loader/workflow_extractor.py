@@ -7,8 +7,24 @@ type hint introspection.
 from __future__ import annotations
 
 import inspect
+import textwrap
+import types
 from types import ModuleType
 from typing import Any, Union, get_type_hints, get_args, get_origin
+
+
+def _is_union_type(type_hint: Any) -> bool:
+    """Check if a type hint is a Union type (typing.Union or types.UnionType).
+
+    Python 3.10+ uses types.UnionType for `A | B` syntax.
+    """
+    origin = get_origin(type_hint)
+    if origin is Union:
+        return True
+    # Python 3.10+ pipe syntax creates types.UnionType
+    if isinstance(type_hint, types.UnionType):
+        return True
+    return False
 
 from ..models.events import EventTypeModel, EventCategory
 from ..models.steps import StepModel, InputMode, OutputMode
@@ -182,8 +198,8 @@ def _is_event_type(type_hint: Any) -> bool:
     except ImportError:
         return False
 
-    # Handle Union types
-    if get_origin(type_hint) is Union:
+    # Handle Union types (typing.Union and types.UnionType from Python 3.10+)
+    if _is_union_type(type_hint):
         return any(_is_event_type(arg) for arg in get_args(type_hint))
 
     # Check if it's an Event subclass
@@ -251,8 +267,8 @@ def _extract_event_names(type_hint: Any) -> list[str]:
     """Extract event type names from a type hint."""
     names = []
 
-    # Handle Union types
-    if get_origin(type_hint) is Union:
+    # Handle Union types (typing.Union and types.UnionType from Python 3.10+)
+    if _is_union_type(type_hint):
         for arg in get_args(type_hint):
             if arg is type(None):
                 continue
@@ -434,8 +450,10 @@ def _format_step_label(name: str) -> str:
 
 
 def _get_source_code(method: Any) -> str | None:
-    """Get the source code of a method."""
+    """Get the source code of a method with normalized indentation."""
     try:
-        return inspect.getsource(method)
+        source = inspect.getsource(method)
+        # Remove common leading whitespace from all lines
+        return textwrap.dedent(source)
     except (TypeError, OSError):
         return None

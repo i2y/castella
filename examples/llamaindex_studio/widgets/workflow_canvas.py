@@ -419,11 +419,13 @@ class WorkflowCanvas(BaseStudioCanvas):
 
             # Draw connecting line to node (horizontal line using thin rect)
             line_width = max(1, 1.5 * scale)
-            p.style(Style(fill=FillStyle(color=event_color)))
-            p.fill_rect(Rect(
-                origin=Point(x=slot_x + slot_radius, y=slot_y - line_width / 2),
-                size=Size(width=pos.x - (slot_x + slot_radius), height=line_width),
-            ))
+            line_rect_width = max(0, pos.x - (slot_x + slot_radius))
+            if line_rect_width > 0:
+                p.style(Style(fill=FillStyle(color=event_color)))
+                p.fill_rect(Rect(
+                    origin=Point(x=slot_x + slot_radius, y=slot_y - line_width / 2),
+                    size=Size(width=line_rect_width, height=line_width),
+                ))
 
     def _draw_output_slots(
         self,
@@ -473,11 +475,13 @@ class WorkflowCanvas(BaseStudioCanvas):
 
             # Draw connecting line from node (horizontal line using thin rect)
             line_width = max(1, 1.5 * scale)
-            p.style(Style(fill=FillStyle(color=event_color)))
-            p.fill_rect(Rect(
-                origin=Point(x=pos.x + size.width, y=slot_y - line_width / 2),
-                size=Size(width=(slot_x - slot_radius) - (pos.x + size.width), height=line_width),
-            ))
+            line_rect_width = max(0, (slot_x - slot_radius) - (pos.x + size.width))
+            if line_rect_width > 0:
+                p.style(Style(fill=FillStyle(color=event_color)))
+                p.fill_rect(Rect(
+                    origin=Point(x=pos.x + size.width, y=slot_y - line_width / 2),
+                    size=Size(width=line_rect_width, height=line_width),
+                ))
 
     def _draw_collect_gate(
         self, p: Painter, pos: Point, size: Size, scale: float

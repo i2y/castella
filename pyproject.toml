@@ -64,6 +64,9 @@ langgraph_studio = [
     "langgraph>=0.2.0",
     "langchain-core>=0.3.0",
 ]
+llamaindex_studio = [
+    "llama-index-core>=0.12.0",
+]
 [project.urls]
 homepage = "https://github.com/i2y/castella"
 repository = "https://github.com/i2y/castella"

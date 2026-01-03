@@ -141,14 +141,14 @@ class WorkflowExecutor(BaseWorkflowExecutor):
         """Run the workflow with event and step tracing.
 
         LlamaIndex Workflow has a complex event-driven execution model.
-        We use instrumentation to track events and steps.
+        We simulate step-by-step visualization based on the workflow model,
+        then execute the actual workflow and capture its result.
 
         Args:
             initial_input: Initial input data.
         """
         try:
-            from llama_index.core.workflow import Workflow, Event, StartEvent, StopEvent
-            from llama_index.core.workflow.handler import WorkflowHandler
+            from llama_index.core.workflow import Workflow
         except ImportError:
             self._set_error("llama-index-workflows is not installed")
             self._notify_update()
@@ -161,182 +161,187 @@ class WorkflowExecutor(BaseWorkflowExecutor):
             self._set_error("Invalid workflow instance")
             return
 
-        # Create StartEvent
-        start_event = StartEvent(**initial_input)
+        if not isinstance(state, WorkflowExecutionState):
+            return
 
-        # Record start event in queue
-        if isinstance(state, WorkflowExecutionState):
-            state.event_queue.append(EventQueueItem(
-                event_type="StartEvent",
-                data=initial_input,
-                source_step_id=None,
-                queued_at_ms=time.time() * 1000,
-            ))
+        # Build execution order from model
+        if self._workflow_model is None:
+            self._set_error("No workflow model available")
+            return
+
+        model = self._workflow_model
+        execution_order = self._build_execution_order(model)
+
+        # Record start event
+        start_time = time.time() * 1000
+        state.event_queue.append(EventQueueItem(
+            event_type="StartEvent",
+            data=initial_input,
+            source_step_id=None,
+            queued_at_ms=start_time,
+        ))
+        self._notify_update()
+
+        # Simulate step execution for visualization
+        last_step_id = "__start__"
+
+        # ===== START node =====
+        start_begin = time.time() * 1000
+        state.active_step_ids.add("__start__")
+        self._set_current_node("__start__")
+        self._notify_update()
+        await asyncio.sleep(0.1)
+
+        start_end = time.time() * 1000
+        state.active_step_ids.discard("__start__")
+
+        # Record START step execution
+        start_exec = StepExecution(
+            node_id="__start__",
+            state_before={},
+            state_after={},
+            started_at_ms=start_begin,
+            duration_ms=start_end - start_begin,
+            error=None,
+            metadata={},
+            input_event_type="",
+            input_event_data={},
+            output_event_type=model.start_event_type,
+            output_event_data={},
+        )
+        self._record_step(start_exec)
+
+        for step_id in execution_order:
+            if self._check_should_stop():
+                return
+
+            # Check breakpoint
+            if not self._check_breakpoint(step_id):
+                return
+
+            # Wait for step in step mode
+            if not self._wait_for_step():
+                return
+
+            # Wait for pause
+            if not self._wait_for_pause():
+                return
+
+            step = model.get_step(step_id)
+            if not step:
+                continue
+
+            step_start = time.time() * 1000
+
+            # Record edge from previous step
+            self._record_edge(last_step_id, step_id)
+
+            # Set as active
+            self._set_current_node(step_id)
+            state.active_step_ids.add(step_id)
+            state.current_time_ms = step_start
             self._notify_update()
 
-        # Get handler for streaming events
-        handler: WorkflowHandler = workflow.run(**initial_input)
+            # Wait a bit to visualize step execution
+            await asyncio.sleep(0.3)
 
-        # Track step executions
-        try:
-            # Use stream_events if available for detailed tracking
-            if hasattr(handler, "stream_events"):
-                await self._trace_stream_events(handler, state)
-            else:
-                # Fallback: just await the result
-                result = await handler
+            step_end = time.time() * 1000
 
-                # Record final result
-                if isinstance(state, WorkflowExecutionState):
-                    state.current_time_ms = time.time() * 1000
+            # Create step execution record
+            input_event = step.input_events[0] if step.input_events else ""
+            output_event = step.output_events[0] if step.output_events else ""
 
-                    # If result is StopEvent, extract its data
-                    if isinstance(result, StopEvent):
-                        self._record_stop_event(result, state)
+            step_exec = StepExecution(
+                node_id=step_id,
+                state_before={},
+                state_after={},
+                started_at_ms=step_start,
+                duration_ms=step_end - step_start,
+                error=None,
+                metadata={},
+                input_event_type=input_event,
+                input_event_data={},
+                output_event_type=output_event,
+                output_event_data={},
+            )
 
-        except Exception as e:
-            self._set_error(f"Execution error: {e}")
+            self._record_step(step_exec)
 
-    async def _trace_stream_events(
-        self, handler: Any, state: WorkflowExecutionState
-    ) -> None:
-        """Trace events from the workflow handler stream.
-
-        Args:
-            handler: WorkflowHandler instance.
-            state: Execution state to update.
-        """
-        from llama_index.core.workflow import StopEvent
-
-        current_step_start: dict[str, float] = {}
-        last_step_id: str | None = None
-        last_event_type: str | None = None
-
-        async for event in handler.stream_events():
-            if self._check_should_stop():
-                break
-
-            event_type = type(event).__name__
-            event_time = time.time() * 1000
-
-            # Update current time
-            if isinstance(state, WorkflowExecutionState):
-                state.current_time_ms = event_time
-
-            # Determine which step produced this event
-            source_step = getattr(event, "_source_step", None)
-            if source_step is None:
-                # Try to infer from workflow model
-                source_step = self._infer_source_step(event_type)
-
-            # Record event in queue
-            event_data = {}
-            if hasattr(event, "model_dump"):
-                try:
-                    event_data = event.model_dump()
-                except Exception:
-                    event_data = {"type": event_type}
-            elif hasattr(event, "__dict__"):
-                event_data = {k: v for k, v in event.__dict__.items() if not k.startswith("_")}
-
-            if isinstance(state, WorkflowExecutionState):
+            # Record output event in queue
+            if output_event:
                 state.event_queue.append(EventQueueItem(
-                    event_type=event_type,
-                    data=event_data,
-                    source_step_id=source_step,
-                    queued_at_ms=event_time,
+                    event_type=output_event,
+                    data={},
+                    source_step_id=step_id,
+                    queued_at_ms=step_end,
                 ))
 
-            # If previous step ended (new event from different source)
-            if last_step_id and last_step_id != source_step:
-                end_time = event_time
-                start_time = current_step_start.get(last_step_id, end_time)
-
-                # Create step execution record
-                step_exec = StepExecution(
-                    node_id=last_step_id,
-                    state_before={},
-                    state_after={},
-                    started_at_ms=start_time,
-                    duration_ms=end_time - start_time,
-                    error=None,
-                    metadata={},
-                    input_event_type=last_event_type or "",
-                    input_event_data={},
-                    output_event_type=event_type,
-                    output_event_data=event_data,
-                )
-
-                self._record_step(step_exec)
-
-                # Record edge
-                if last_step_id and source_step:
-                    self._record_edge(last_step_id, source_step)
-
-                # Update active steps
-                if isinstance(state, WorkflowExecutionState):
-                    state.active_step_ids.discard(last_step_id)
-
-            # Track which step will handle this event
-            target_step = self._find_step_for_event(event_type)
-            if target_step:
-                current_step_start[target_step] = event_time
-
-                # Check breakpoint
-                if not self._check_breakpoint(target_step):
-                    return
-
-                # Wait for step in step mode
-                if not self._wait_for_step():
-                    return
-
-                # Wait for pause
-                if not self._wait_for_pause():
-                    return
-
-                # Set as active
-                if isinstance(state, WorkflowExecutionState):
-                    state.active_step_ids.add(target_step)
-
-                self._set_current_node(target_step)
-
-            last_step_id = target_step
-            last_event_type = event_type
-
+            state.active_step_ids.discard(step_id)
+            state.current_time_ms = step_end
+            last_step_id = step_id
             self._notify_update()
 
-            # Handle StopEvent
-            if isinstance(event, StopEvent):
-                self._record_stop_event(event, state)
-                break
+        # Execute actual workflow and capture result
+        try:
+            result = await workflow.run(**initial_input)
 
-    def _record_stop_event(
-        self, event: Any, state: WorkflowExecutionState
-    ) -> None:
-        """Record stop event details.
+            # Record final result
+            end_time = time.time() * 1000
 
-        Args:
-            event: The StopEvent instance.
-            state: Execution state to update.
-        """
-        # Extract result from StopEvent
-        result_data = {}
-        if hasattr(event, "result"):
-            result = event.result
-            if hasattr(result, "model_dump"):
-                try:
-                    result_data = result.model_dump()
-                except Exception:
-                    result_data = {"result": str(result)}
+            # Record edge to END
+            self._record_edge(last_step_id, "__end__")
+
+            # ===== END node =====
+            end_begin = time.time() * 1000
+            state.active_step_ids.add("__end__")
+            self._set_current_node("__end__")
+            self._notify_update()
+            await asyncio.sleep(0.1)
+
+            end_end_time = time.time() * 1000
+            state.active_step_ids.discard("__end__")
+
+            # Record END step execution
+            end_exec = StepExecution(
+                node_id="__end__",
+                state_before={},
+                state_after={},
+                started_at_ms=end_begin,
+                duration_ms=end_end_time - end_begin,
+                error=None,
+                metadata={},
+                input_event_type=model.stop_event_type,
+                input_event_data={},
+                output_event_type="",
+                output_event_data={},
+            )
+            self._record_step(end_exec)
+
+            # Record StopEvent with actual result
+            result_data = {}
+            if isinstance(result, dict):
+                result_data = result
+            elif hasattr(result, "result"):
+                r = result.result
+                if isinstance(r, dict):
+                    result_data = r
+                else:
+                    result_data = {"result": str(r)}
             else:
                 result_data = {"result": str(result)}
 
-        state.event_queue.append(EventQueueItem(
-            event_type="StopEvent",
-            data=result_data,
-            source_step_id=None,
-            queued_at_ms=time.time() * 1000,
-        ))
+            state.event_queue.append(EventQueueItem(
+                event_type="StopEvent",
+                data=result_data,
+                source_step_id=None,
+                queued_at_ms=end_time,
+            ))
+
+            state.current_time_ms = end_time
+            self._notify_update()
+
+        except Exception as e:
+            self._set_error(f"Workflow execution error: {e}")
 
     def _infer_source_step(self, event_type: str) -> str | None:
         """Infer which step produced an event based on workflow model.

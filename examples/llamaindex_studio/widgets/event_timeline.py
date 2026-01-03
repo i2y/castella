@@ -94,6 +94,10 @@ class EventTimeline(Widget):
         self._on_execution_select_cb: Callable[[StepExecution | None], None] | None = None
         self._on_event_select_cb: Callable[[str, float], None] | None = None
 
+        # Recalculate height based on workflow
+        if self._workflow is not None:
+            self._recalculate_height()
+
     # ========== Configuration ==========
 
     def set_workflow(self, workflow: WorkflowModel | None) -> Self:
