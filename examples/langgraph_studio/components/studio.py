@@ -18,10 +18,12 @@ from ..loader.graph_extractor import (
 )
 from ..executor.runner import GraphExecutor
 
-from .toolbar import Toolbar
+# Use shared components from castella.studio
+from castella.studio.components.toolbar import Toolbar
+from castella.studio.components.status_bar import StatusBar
+
 from .file_panel import FilePanel
 from .right_panel import RightPanel
-from .status_bar import StatusBar
 from .initial_state_editor import InitialStateEditor
 
 
@@ -141,7 +143,7 @@ class Studio(Component):
         self._state_editor = state_editor
 
         return Column(
-            # Toolbar
+            # Toolbar (shared component with fixed_height=44)
             Toolbar(
                 can_run=can_run,
                 can_stop=can_stop,
@@ -157,7 +159,7 @@ class Studio(Component):
                 on_zoom_in=self._on_zoom_in,
                 on_zoom_out=self._on_zoom_out,
                 on_fit=self._on_fit,
-            ).fixed_height(48),
+            ),
             # Main content area
             Row(
                 # Left panel: File browser
@@ -177,8 +179,8 @@ class Studio(Component):
             ),
             # Initial state editor (collapsible)
             state_editor,
-            # Bottom: Status bar
-            StatusBar(execution=execution).fixed_height(32),
+            # Bottom: Status bar (shared component with fixed_height=28)
+            StatusBar(execution),
         )
 
     # ========== File Handling ==========
