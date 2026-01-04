@@ -69,7 +69,7 @@ class GraphTheme:
     node_shadow_color: str = "#00000022"
 
     # Edge styling
-    edge_width: float = 1.5
+    edge_width: float = 1.0
     arrow_length: float = 12.0
     arrow_width: float = 6.0
 

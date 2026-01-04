@@ -99,6 +99,9 @@ class GraphCanvas(Widget):
         self._last_click_node_id: str | None = None
         self._double_click_threshold_ms: float = 400.0  # Max time between clicks
 
+        # Pending center node (applied when size becomes valid)
+        self._pending_center_node_id: str | None = None
+
     # ========== Fluent Configuration ==========
 
     def on_node_click(self, callback: Callable[[str], None]) -> Self:
@@ -247,6 +250,32 @@ class GraphCanvas(Widget):
             return
 
         size = self.get_size()
+
+        # If size is not yet valid, defer centering to redraw
+        if size.width <= 0 or size.height <= 0:
+            self._pending_center_node_id = node_id
+            return
+
+        self._apply_center_on_node(node_id)
+
+    def _apply_center_on_node(self, node_id: str, trigger_update: bool = True) -> None:
+        """Actually apply centering on the node.
+
+        Called either directly from center_on_node or deferred from redraw.
+
+        Args:
+            node_id: ID of the node to center on.
+            trigger_update: Whether to trigger a repaint. Set to False when
+                called from within redraw to avoid recursion.
+        """
+        if self._graph is None:
+            return
+
+        node = self._graph.get_node(node_id)
+        if node is None:
+            return
+
+        size = self.get_size()
         center_x = size.width / 2
         center_y = size.height / 2
 
@@ -257,8 +286,9 @@ class GraphCanvas(Widget):
         self._transform.offset.x = center_x - node_center_x
         self._transform.offset.y = center_y - node_center_y
 
-        self.mark_paint_dirty()
-        self.update()
+        if trigger_update:
+            self.mark_paint_dirty()
+            self.update()
 
     @property
     def zoom_percent(self) -> int:
@@ -320,6 +350,13 @@ class GraphCanvas(Widget):
         size = self.get_size()
         if size.width <= 0 or size.height <= 0:
             return
+
+        # Apply pending center if size is now valid
+        if self._pending_center_node_id is not None:
+            pending_id = self._pending_center_node_id
+            self._pending_center_node_id = None
+            # Don't trigger update since we're already in redraw
+            self._apply_center_on_node(pending_id, trigger_update=False)
 
         # Draw background
         self._draw_background(p, size)
@@ -557,9 +594,20 @@ class GraphCanvas(Widget):
             cp1 = Point(x=start.x, y=start.y + dy * 0.4)
             cp2 = Point(x=end.x, y=end.y - dy * 0.4)
 
-        # Draw curve as series of circles
-        steps = 30
-        radius = max(1, self._theme.edge_width * scale)
+        # Calculate approximate curve length for step count
+        # Use chord length + control point detour as rough estimate
+        chord_len = math.sqrt((end.x - start.x) ** 2 + (end.y - start.y) ** 2)
+        ctrl_detour = (
+            math.sqrt((cp1.x - start.x) ** 2 + (cp1.y - start.y) ** 2)
+            + math.sqrt((cp2.x - cp1.x) ** 2 + (cp2.y - cp1.y) ** 2)
+            + math.sqrt((end.x - cp2.x) ** 2 + (end.y - cp2.y) ** 2)
+        )
+        approx_length = (chord_len + ctrl_detour) / 2
+
+        # Calculate steps to ensure circles overlap (step < radius)
+        radius = max(1.0, self._theme.edge_width * scale)
+        steps = max(20, int(approx_length / (radius * 0.8)))
+
         for i in range(steps + 1):
             t = i / steps
             t2 = t * t
