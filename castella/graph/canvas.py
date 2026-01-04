@@ -808,6 +808,15 @@ class GraphCanvas(Widget):
         self.mark_paint_dirty()
         self.update()
 
+    def dispatch_to_scrollable(
+        self, p: Point, is_direction_x: bool
+    ) -> tuple[Widget | None, Point | None]:
+        """Override to receive wheel events for zoom functionality."""
+        if self.contain(p):
+            local_p = Point(x=p.x - self._pos.x, y=p.y - self._pos.y)
+            return self, local_p
+        return None, None
+
     # ========== Utilities ==========
 
     def _fit_graph_to_view(self) -> None:

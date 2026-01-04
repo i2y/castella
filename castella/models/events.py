@@ -29,6 +29,7 @@ class KeyCode(Enum):
     ESCAPE = auto()
     HOME = auto()
     END = auto()
+    SPACE = auto()
     # Letter keys for shortcuts
     A = auto()
     C = auto()

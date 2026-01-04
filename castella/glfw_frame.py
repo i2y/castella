@@ -254,6 +254,8 @@ def _convert_to_key_code(glfw_key_code: int) -> KeyCode:
             return KeyCode.HOME
         case glfw.KEY_END:
             return KeyCode.END
+        case glfw.KEY_SPACE:
+            return KeyCode.SPACE
         case glfw.KEY_A:
             return KeyCode.A
         case glfw.KEY_C:
