@@ -270,6 +270,14 @@ class GraphCanvas(Widget):
         """Get ID of selected node."""
         return self._selected_node_id
 
+    @selected_node_id.setter
+    def selected_node_id(self, node_id: str | None) -> None:
+        """Set the selected node ID."""
+        if self._selected_node_id != node_id:
+            self._selected_node_id = node_id
+            self.mark_paint_dirty()
+            self.update()
+
     @property
     def hovered_node_id(self) -> str | None:
         """Get ID of hovered node."""

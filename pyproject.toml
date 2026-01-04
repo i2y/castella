@@ -70,6 +70,10 @@ llamaindex_studio = [
 pydantic_graph_studio = [
     "pydantic-graph>=0.1.0",
 ]
+edda_workflow_manager = [
+    "edda-framework[llamaindex]>=0.15.0",
+    "llama-index-core>=0.12.0",
+]
 [project.urls]
 homepage = "https://github.com/i2y/castella"
 repository = "https://github.com/i2y/castella"
