@@ -250,10 +250,30 @@ class RightPanel(Component):
             content_widgets.append(self._section_header("Metadata"))
             try:
                 meta_str = json.dumps(node.metadata, indent=2, default=str)
-                for line in meta_str.split("\n")[:20]:
-                    content_widgets.append(self._text_row(line))
             except Exception:
-                content_widgets.append(self._text_row(str(node.metadata)[:100]))
+                meta_str = str(node.metadata)
+            # Use MultilineText for proper JSON display with scrolling
+            lines = meta_str.split("\n")
+            line_count = len(lines)
+            content_height = line_count * 14 + 8
+            # Calculate content width based on longest line
+            max_line_len = max(len(line) for line in lines) if lines else 0
+            content_width = max(200, max_line_len * 7 + 16)
+            # Display height is capped, content scrolls
+            display_height = min(120, content_height)
+            meta_view = MultilineText(meta_str, font_size=11, wrap=False).fixed_size(
+                content_width, content_height
+            )
+            content_widgets.append(
+                Row(
+                    Spacer().fixed_width(SECTION_SPACING),
+                    Column(
+                        Row(meta_view, scrollable=True).fixed_height(content_height),
+                        scrollable=True,
+                    ).fixed_height(display_height),
+                    Spacer().fixed_width(SECTION_SPACING),
+                ).fixed_height(display_height)
+            )
 
         return Column(*content_widgets, scrollable=True)
 
