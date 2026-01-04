@@ -211,9 +211,9 @@ class RightPanel(Component):
         ]
 
         for edge in incoming:
-            label = f"  <- {edge.source_node_id}"
-            if edge.condition_label:
-                label += f" [{edge.condition_label}]"
+            label = f"  <- {edge.source_id}"
+            if edge.label:
+                label += f" [{edge.label}]"
             content_widgets.append(self._text_row(label))
 
         # Outgoing edges section
@@ -221,9 +221,9 @@ class RightPanel(Component):
         content_widgets.append(self._section_header(f"Outgoing ({len(outgoing)})"))
 
         for edge in outgoing:
-            label = f"  -> {edge.target_node_id}"
-            if edge.condition_label:
-                label += f" [{edge.condition_label}]"
+            label = f"  -> {edge.target_id}"
+            if edge.label:
+                label += f" [{edge.label}]"
             content_widgets.append(self._text_row(label))
 
         # Source code section
