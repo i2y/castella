@@ -49,6 +49,8 @@ nav:
   - AI Agent:
       - Agent UI: agent.md
       - MCP: mcp.md
+      - Agent Skills: skills.md
+      - Workflow Studio Samples: studio.md
   - Advanced:
       - Z-Index and Layering: z-index.md
       - Hot Restarting: hot-restarting.md

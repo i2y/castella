@@ -35,6 +35,50 @@ The primary final goal of Castella is to provide features for Python programmers
 - **A2UI Protocol support** - Render agent-generated UIs with 17 standard components, tested with Google's sample agents.
 - **MCP (Model Context Protocol) support** - AI agents can introspect and control UIs programmatically via MCP.
 - **AgentChat** - Build chat interfaces with AI agents in just 3 lines of code.
+- **Agent Skills** - AI coding agents can learn Castella via 5 built-in skills.
+- **Workflow Studio Samples** - Demo applications showcasing visual development environments for AI workflow frameworks.
+
+## Workflow Studio Samples
+
+Castella includes sample applications demonstrating visual development environments for popular AI workflow frameworks. These are located in `examples/` and serve as references for building your own workflow visualization tools.
+
+| Sample | Framework | Features |
+|--------|-----------|----------|
+| `langgraph_studio/` | [LangGraph](https://github.com/langchain-ai/langgraph) | Graph visualization, step execution, state inspection |
+| `llamaindex_studio/` | [LlamaIndex Workflows](https://docs.llamaindex.ai/en/stable/module_guides/workflow/) | Workflow visualization, breakpoints, execution history |
+| `pydantic_graph_studio/` | [pydantic-graph](https://ai.pydantic.dev/pydantic-graph/) | Graph structure visualization, step-by-step execution |
+| `edda_workflow_manager/` | [Edda](https://github.com/i2y/edda) + [LlamaIndex Workflows](https://docs.llamaindex.ai/en/stable/module_guides/workflow/) | Workflow management, execution history, live monitoring |
+
+```bash
+# Run LangGraph Studio sample
+uv run python -m examples.langgraph_studio.main
+
+# Run LlamaIndex Workflow Studio sample
+uv run python examples/llamaindex_studio/main.py
+
+# Run pydantic-graph Studio sample
+uv run python -m examples.pydantic_graph_studio.main
+
+# Run Edda Workflow Manager sample
+uv run python examples/edda_workflow_manager/main.py --db sqlite+aiosqlite:///path/to/edda.db
+```
+
+## Agent Skills
+
+Castella includes [Agent Skills](https://agentskills.io/) to help AI coding agents effectively use the framework. Located in `skills/`:
+
+| Skill | Description |
+|-------|-------------|
+| `castella-core` | Core UI development - widgets, components, state, layouts, themes |
+| `castella-a2ui` | A2UI JSON rendering - parse messages, data binding, progressive rendering |
+| `castella-a2a` | A2A protocol - connect to agents, agent cards, streaming responses |
+| `castella-mcp` | MCP integration - servers, resources, tools, semantic IDs |
+| `castella-agent-ui` | Agent UI components - AgentChat, MultiAgentChat, AgentHub |
+
+Each skill follows the [agentskills.io specification](https://agentskills.io/specification) with:
+- `SKILL.md` - Main skill document with quick start and patterns
+- `references/` - Detailed API documentation
+- `scripts/` - Executable examples
 
 ## Dependencies
 - For desktop platforms, Castella is standing on existing excellent python bindings for window management library (GLFW or SDL2) and 2D graphics library (Skia).
