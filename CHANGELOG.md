@@ -2,6 +2,15 @@
 
 All notable changes to Castella will be documented in this file.
 
+## [0.7.0] - 2025-01-05
+
+### Added
+- **HeatmapChart** - Native heatmap chart with colorbar, tooltips, axis labels, and cell value annotations
+- **Heatmap Table** - DataTable cell background coloring via `ColumnConfig.cell_bg_color`
+- **Colormap System** - Scientific colormaps (Viridis, Plasma, Inferno, Magma) for both chart and table
+- **HeatmapConfig** - Helper class for easy heatmap table setup
+- **Auto-contrast Text** - WCAG luminance-based automatic text color selection
+
 ## [0.6.0] - 2025-01-05
 
 ### Added
