@@ -3,6 +3,61 @@
 from __future__ import annotations
 
 
+def luminance(r: int, g: int, b: int) -> float:
+    """Calculate relative luminance using WCAG formula.
+
+    Uses the sRGB color space formula from WCAG 2.1 guidelines
+    for calculating relative luminance.
+
+    Args:
+        r: Red component (0-255).
+        g: Green component (0-255).
+        b: Blue component (0-255).
+
+    Returns:
+        Relative luminance value (0.0 to 1.0).
+
+    Example:
+        >>> luminance(255, 255, 255)  # White
+        1.0
+        >>> luminance(0, 0, 0)  # Black
+        0.0
+    """
+
+    def srgb_channel(c: int) -> float:
+        c_norm = c / 255.0
+        if c_norm <= 0.04045:
+            return c_norm / 12.92
+        return ((c_norm + 0.055) / 1.055) ** 2.4
+
+    return (
+        0.2126 * srgb_channel(r) + 0.7152 * srgb_channel(g) + 0.0722 * srgb_channel(b)
+    )
+
+
+def contrast_text_color(bg_color: str) -> str:
+    """Return optimal text color (black or white) for contrast against background.
+
+    Uses WCAG relative luminance to determine whether white or black
+    text provides better contrast against the given background color.
+
+    Args:
+        bg_color: Background color as hex string (e.g., "#FF00FF").
+
+    Returns:
+        "#ffffff" for dark backgrounds, "#000000" for light backgrounds.
+
+    Example:
+        >>> contrast_text_color("#000000")  # Dark background
+        '#ffffff'
+        >>> contrast_text_color("#ffffff")  # Light background
+        '#000000'
+    """
+    r, g, b = hex_to_rgb(bg_color)
+    lum = luminance(r, g, b)
+    return "#ffffff" if lum < 0.5 else "#000000"
+
+
 def hex_to_rgb(color_code: str) -> tuple[int, int, int]:
     """Convert hex color code to RGB tuple.
 

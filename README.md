@@ -23,7 +23,8 @@ The primary final goal of Castella is to provide features for Python programmers
 - Custom themes via `Theme.derive()` for partial overrides or full `ColorPalette` customization.
 - Rich markdown rendering with syntax highlighting and LaTeX math support.
 - Multi-line text editor with scrolling, cursor positioning, text selection, and clipboard support (copy/cut/paste).
-- Native interactive charts (Bar, Line, Pie, Scatter, Area, Stacked Bar, Gauge) with tooltips, hover, click events, and smooth curves.
+- Native interactive charts (Bar, Line, Pie, Scatter, Area, Stacked Bar, Gauge, Heatmap) with tooltips, hover, click events, and smooth curves.
+- **Heatmap support** - Both chart (`HeatmapChart`) and table (`HeatmapConfig`) variants with Viridis, Plasma, Inferno, Magma colormaps.
 - ASCII charts for terminal environments (Bar, Pie, Line, Gauge).
 - **Animation system** - Smooth property animations with `ValueTween`, `AnimatedState`, and easing functions.
 - **ProgressBar widget** - Animated progress indicator with customizable colors.

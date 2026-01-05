@@ -57,6 +57,8 @@ from castella.table import (
     SortEvent as SortEvent,
     SelectionChangeEvent as SelectionChangeEvent,
     FilterChangeEvent as FilterChangeEvent,
+    HeatmapConfig as HeatmapConfig,
+    ValueRange as ValueRange,
 )
 
 try:

@@ -32,6 +32,7 @@ from castella.chart.models.chart_data import (
     NumericChartData,
     GaugeChartData,
 )
+from castella.chart.models.heatmap_data import HeatmapChartData
 
 __all__ = [
     # Data points
@@ -60,4 +61,5 @@ __all__ = [
     "CategoricalChartData",
     "NumericChartData",
     "GaugeChartData",
+    "HeatmapChartData",
 ]

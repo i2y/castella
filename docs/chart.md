@@ -4,8 +4,9 @@ Castella provides native interactive chart widgets with GPU rendering via Skia (
 
 ## Features
 
-- **7 Chart Types**: Bar, Line, Pie, Scatter, Area, Stacked Bar, Gauge
+- **8 Chart Types**: Bar, Line, Pie, Scatter, Area, Stacked Bar, Gauge, Heatmap
 - **Full Interactivity**: Tooltips, hover effects, click events
+- **Scientific Colormaps**: Viridis, Plasma, Inferno, Magma (colorblind-friendly)
 - **Pydantic v2 Models**: Type-safe, validated data models
 - **Theme Integration**: Automatically uses current Castella theme
 - **Observable Pattern**: Charts auto-update when data changes
@@ -96,6 +97,35 @@ data = GaugeChartData(
         (0.8, "#ef4444"),   # Red for 80-100%
     ],
 )
+```
+
+### HeatmapChartData
+
+For heatmap charts with 2D matrix data:
+
+```python
+from castella.chart import HeatmapChartData
+
+# Create from 2D array
+data = HeatmapChartData.from_2d_array(
+    values=[
+        [1.0, 0.8, 0.3],
+        [0.8, 1.0, 0.5],
+        [0.3, 0.5, 1.0],
+    ],
+    row_labels=["A", "B", "C"],
+    column_labels=["X", "Y", "Z"],
+    title="Correlation Matrix",
+)
+
+# Set value range for color normalization
+data.set_range(min_value=-1.0, max_value=1.0)
+
+# Update single cell
+data.set_cell(row=0, col=1, value=0.9)
+
+# Update entire matrix
+data.set_values([[1.0, 0.9], [0.9, 1.0]])
 ```
 
 ## Chart Types
@@ -264,6 +294,95 @@ chart = GaugeChart(
     arc_width=25,
 )
 ```
+
+### HeatmapChart
+
+Heatmap for 2D matrix data visualization:
+
+```python
+from castella.chart import HeatmapChart, HeatmapChartData, ColormapType
+
+# Create correlation matrix data
+data = HeatmapChartData.from_2d_array(
+    values=[
+        [1.00, 0.85, 0.42, -0.15],
+        [0.85, 1.00, 0.55, 0.08],
+        [0.42, 0.55, 1.00, 0.67],
+        [-0.15, 0.08, 0.67, 1.00],
+    ],
+    row_labels=["Price", "Volume", "Volatility", "Beta"],
+    column_labels=["Price", "Volume", "Volatility", "Beta"],
+    title="Correlation Matrix",
+)
+
+# Set fixed value range for color normalization
+data.set_range(-1.0, 1.0)
+
+chart = HeatmapChart(
+    data,
+    colormap=ColormapType.VIRIDIS,  # VIRIDIS, PLASMA, INFERNO, MAGMA
+    show_values=True,       # Show value annotations in cells
+    show_colorbar=True,     # Show color bar legend
+    cell_gap=2.0,           # Gap between cells in pixels
+)
+```
+
+#### Colormaps
+
+Castella provides scientific colormaps that are perceptually uniform and colorblind-friendly:
+
+```python
+from castella.chart import viridis, plasma, inferno, magma, get_colormap
+
+# Get colormap by type
+cmap = get_colormap(ColormapType.VIRIDIS)
+
+# Get color for a normalized value (0.0 to 1.0)
+color = cmap(0.5)  # Returns "#26828e"
+
+# Get N evenly spaced colors
+colors = cmap.get_colors(5)  # ["#440154", "#3e4a89", "#26828e", "#35b779", "#fde725"]
+
+# Reversed colormap
+reversed_cmap = cmap.reversed()
+```
+
+#### Heatmap with DataTable
+
+You can also apply heatmap coloring to DataTable cells using `HeatmapConfig`:
+
+```python
+from castella import DataTable, DataTableState, ColumnConfig, HeatmapConfig
+from castella.chart import ColormapType
+
+# Create table data
+state = DataTableState(
+    columns=[
+        ColumnConfig(name="Region", width=120),
+        ColumnConfig(name="Q1", width=80),
+        ColumnConfig(name="Q2", width=80),
+        ColumnConfig(name="Q3", width=80),
+        ColumnConfig(name="Q4", width=80),
+    ],
+    rows=[
+        ["North America", 145, 162, 178, 195],
+        ["Europe", 122, 138, 155, 168],
+        ["Asia Pacific", 198, 215, 242, 267],
+    ],
+)
+
+# Apply heatmap coloring to numeric columns
+heatmap = HeatmapConfig(colormap=ColormapType.VIRIDIS)
+for i in range(1, 5):
+    state.columns[i].cell_bg_color = heatmap.create_color_fn(col_idx=i, state=state)
+
+table = DataTable(state)
+```
+
+Features:
+- **Auto-contrast text**: Text color automatically adjusts for readability
+- **Per-column ranges**: Each column can have its own value range
+- **Custom colormaps**: Pass any `Colormap` instance
 
 ## Interactivity
 

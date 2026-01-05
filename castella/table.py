@@ -64,6 +64,8 @@ class ColumnConfig:
         visible: Whether the column is visible.
         renderer: Optional custom renderer function (value, row, col) -> str.
         tooltip: Optional tooltip text (from Pydantic Field.description).
+        cell_bg_color: Optional callback (value, row, col) -> str for cell background.
+        auto_contrast_text: Auto-adjust text color for contrast with cell_bg_color.
     """
 
     name: str
@@ -75,6 +77,8 @@ class ColumnConfig:
     visible: bool = True
     renderer: Callable[[Any, int, int], str] | None = None
     tooltip: str | None = None
+    cell_bg_color: Callable[[Any, int, int], str | None] | None = None
+    auto_contrast_text: bool = True
 
 
 def _infer_width_from_annotation(annotation: type | None) -> float:
@@ -113,6 +117,162 @@ def _infer_width_from_annotation(annotation: type | None) -> float:
         return 120.0
     else:
         return 100.0
+
+
+# =============================================================================
+# Heatmap Helper
+# =============================================================================
+
+
+@dataclass
+class ValueRange:
+    """Range for value normalization in heatmaps.
+
+    Attributes:
+        min_val: Minimum value.
+        max_val: Maximum value.
+    """
+
+    min_val: float
+    max_val: float
+
+    @classmethod
+    def from_values(cls, values: Sequence[float]) -> "ValueRange":
+        """Create range from a sequence of values.
+
+        Args:
+            values: Sequence of numeric values.
+
+        Returns:
+            ValueRange with min/max computed from values.
+        """
+        if not values:
+            return cls(0.0, 1.0)
+        return cls(min(values), max(values))
+
+    def normalize(self, value: float) -> float:
+        """Normalize a value to 0.0-1.0 range.
+
+        Args:
+            value: Raw value to normalize.
+
+        Returns:
+            Normalized value between 0.0 and 1.0.
+        """
+        if self.max_val == self.min_val:
+            return 0.5
+        return (value - self.min_val) / (self.max_val - self.min_val)
+
+
+class HeatmapConfig:
+    """Configuration for heatmap cell coloring in DataTable.
+
+    Provides easy integration of colormap-based cell backgrounds
+    for numeric columns in a DataTable.
+
+    Example:
+        >>> from castella import DataTable, DataTableState, ColumnConfig, HeatmapConfig
+        >>> from castella.chart import ColormapType
+        >>>
+        >>> state = DataTableState(
+        ...     columns=[
+        ...         ColumnConfig(name="City"),
+        ...         ColumnConfig(name="Q1"),
+        ...         ColumnConfig(name="Q2"),
+        ...     ],
+        ...     rows=[["NYC", 85, 72], ["LA", 78, 65]],
+        ... )
+        >>>
+        >>> # Apply heatmap to numeric columns
+        >>> heatmap = HeatmapConfig(colormap=ColormapType.VIRIDIS)
+        >>> state.columns[1].cell_bg_color = heatmap.create_color_fn(col_idx=1, state=state)
+        >>> state.columns[2].cell_bg_color = heatmap.create_color_fn(col_idx=2, state=state)
+    """
+
+    def __init__(
+        self,
+        colormap: Any = None,
+        value_range: ValueRange | None = None,
+        reverse: bool = False,
+    ):
+        """Initialize heatmap configuration.
+
+        Args:
+            colormap: Colormap to use (ColormapType, string, or Colormap instance).
+                     Defaults to "viridis".
+            value_range: Fixed value range for normalization.
+                        If None, auto-detects from data.
+            reverse: Whether to reverse the colormap.
+        """
+        from castella.chart.colormap import get_colormap, ColormapType
+
+        if colormap is None:
+            colormap = ColormapType.VIRIDIS
+
+        if isinstance(colormap, (str, ColormapType)):
+            self._colormap = get_colormap(colormap)
+        else:
+            self._colormap = colormap
+
+        if reverse:
+            self._colormap = self._colormap.reversed()
+
+        self._value_range = value_range
+        self._cached_ranges: dict[int, ValueRange] = {}
+
+    def create_color_fn(
+        self,
+        col_idx: int,
+        state: "DataTableState",
+    ) -> Callable[[Any, int, int], str | None]:
+        """Create a cell_bg_color callback for a column.
+
+        Args:
+            col_idx: Column index in the DataTable.
+            state: DataTableState to extract values from.
+
+        Returns:
+            Callback function suitable for ColumnConfig.cell_bg_color.
+        """
+        # Pre-compute value range for this column
+        if self._value_range:
+            value_range = self._value_range
+        else:
+            values = []
+            for row in state.rows:
+                if col_idx < len(row):
+                    val = row[col_idx]
+                    if isinstance(val, (int, float)):
+                        values.append(val)
+            value_range = ValueRange.from_values(values)
+
+        self._cached_ranges[col_idx] = value_range
+
+        def color_fn(value: Any, row: int, col: int) -> str | None:
+            if not isinstance(value, (int, float)):
+                return None
+            t = value_range.normalize(value)
+            return self._colormap(t)
+
+        return color_fn
+
+    def get_color(self, value: float, col_idx: int | None = None) -> str:
+        """Get color for a value.
+
+        Args:
+            value: Numeric value.
+            col_idx: Optional column index for cached range lookup.
+
+        Returns:
+            Hex color string.
+        """
+        if self._value_range:
+            t = self._value_range.normalize(value)
+        elif col_idx is not None and col_idx in self._cached_ranges:
+            t = self._cached_ranges[col_idx].normalize(value)
+        else:
+            t = 0.5  # Default to middle if no range available
+        return self._colormap(t)
 
 
 # =============================================================================
@@ -1276,7 +1436,6 @@ class DataTable(Widget):
                 )
 
             # Cell text
-            p.style(Style(fill=FillStyle(color=fg), font=Font(size=font_size)))
             x = -state.scroll_x
             for col_idx, col in enumerate(state.columns):
                 if not col.visible:
@@ -1284,6 +1443,29 @@ class DataTable(Widget):
 
                 if x + col.width > 0 and x < width:
                     value = state.get_view_value(view_row, col_idx)
+
+                    # Check for cell-level background color
+                    cell_bg = None
+                    cell_fg = fg
+                    if col.cell_bg_color:
+                        cell_bg = col.cell_bg_color(value, data_row, col_idx)
+                        if cell_bg and col.auto_contrast_text:
+                            from castella.utils.color import contrast_text_color
+
+                            cell_fg = contrast_text_color(cell_bg)
+
+                    # Draw cell background if specified
+                    if cell_bg:
+                        p.style(Style(fill=FillStyle(color=cell_bg)))
+                        p.fill_rect(
+                            Rect(
+                                origin=Point(x=max(0, x), y=y),
+                                size=Size(
+                                    width=min(col.width, width - max(0, x)),
+                                    height=self._row_height,
+                                ),
+                            )
+                        )
 
                     # Use custom renderer if provided
                     if col.renderer:
@@ -1293,6 +1475,9 @@ class DataTable(Widget):
 
                     # Truncate if too long
                     max_text_width = col.width - 16
+                    p.style(
+                        Style(fill=FillStyle(color=cell_fg), font=Font(size=font_size))
+                    )
                     while p.measure_text(text) > max_text_width and len(text) > 1:
                         text = text[:-2] + "…"
 

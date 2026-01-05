@@ -34,6 +34,22 @@ from castella.chart.models import (
     CategoricalChartData,
     NumericChartData,
     GaugeChartData,
+    # Heatmap data
+    HeatmapChartData,
+)
+
+from castella.chart.colormap import (
+    Colormap,
+    ColormapType,
+    GradientColormap,
+    ColorStop,
+    ReversedColormap,
+    get_colormap,
+    register_colormap,
+    viridis,
+    plasma,
+    inferno,
+    magma,
 )
 
 from castella.chart.events import (
@@ -68,6 +84,7 @@ from castella.chart.gauge_chart import (
     GaugeThreshold,
     DonutChart,
 )
+from castella.chart.heatmap_chart import HeatmapChart
 
 # ASCII charts for terminal
 from castella.chart.ascii import (
@@ -106,6 +123,19 @@ __all__ = [
     "CategoricalChartData",
     "NumericChartData",
     "GaugeChartData",
+    "HeatmapChartData",
+    # Colormap
+    "Colormap",
+    "ColormapType",
+    "GradientColormap",
+    "ColorStop",
+    "ReversedColormap",
+    "get_colormap",
+    "register_colormap",
+    "viridis",
+    "plasma",
+    "inferno",
+    "magma",
     # Events
     "ChartHoverEvent",
     "ChartClickEvent",
@@ -143,6 +173,7 @@ __all__ = [
     "GaugeStyle",
     "GaugeThreshold",
     "DonutChart",
+    "HeatmapChart",
     # ASCII charts (terminal)
     "ASCIIBarChart",
     "ASCIIBarData",
