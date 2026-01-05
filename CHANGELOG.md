@@ -2,6 +2,11 @@
 
 All notable changes to Castella will be documented in this file.
 
+## [0.6.0] - 2025-01-05
+
+### Added
+- **Mouse Drag Text Selection** - Input widget now supports text selection via mouse drag
+
 ## [0.5.0] - 2025-01-04
 
 ### Added
