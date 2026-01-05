@@ -17,7 +17,7 @@ from castella.core import (
 from castella.models.font import Font
 
 from castella.chart.base import BaseChart, ChartLayout
-from castella.chart.hit_testing import HitTestable, CircleElement
+from castella.chart.hit_testing import HitTestable, CircleElement, LegendItemElement
 from castella.chart.scales import LinearScale
 from castella.chart.models import NumericChartData, NumericSeries
 
@@ -392,16 +392,20 @@ class ScatterChart(BaseChart):
     ) -> None:
         """Render the chart legend."""
         if not state.series:
+            self._legend_elements = []
             return
 
+        self._legend_elements = []
         legend_area = layout.legend_area
         x = legend_area.x
         y = legend_area.y + 12
         box_size = 12
         spacing = 100
+        item_height = 20
 
         for i, series in enumerate(state.series):
-            color = series.style.color
+            is_visible = state.is_series_visible(i)
+            color = series.style.color if is_visible else self._theme.text_secondary
 
             # Color indicator (point)
             p.style(Style(fill=FillStyle(color=color)))
@@ -411,13 +415,24 @@ class ScatterChart(BaseChart):
 
             # Series name
             text_color = (
-                self._theme.text_color
-                if state.is_series_visible(i)
-                else self._theme.text_secondary
+                self._theme.text_color if is_visible else self._theme.text_secondary
             )
             p.style(Style(fill=FillStyle(color=text_color), font=Font(size=11)))
             p.fill_text(
                 series.name, Point(x=x + box_size + 6, y=y + box_size - 2), None
+            )
+
+            # Build hit-testable legend element
+            self._legend_elements.append(
+                LegendItemElement(
+                    rect=Rect(
+                        origin=Point(x=x, y=y - 4),
+                        size=Size(width=spacing - 4, height=item_height),
+                    ),
+                    series_index=i,
+                    data_index=-1,
+                    series_name=series.name,
+                )
             )
 
             x += spacing

@@ -21,16 +21,21 @@ from castella.core import (
 )
 from castella.models.font import Font
 
-from castella.chart.hit_testing import HitTestable, hit_test
+from castella.chart.hit_testing import HitTestable, LegendItemElement, hit_test
 from castella.chart.transform import ChartTransform
 from castella.chart.theme import get_chart_theme
-from castella.chart.events import ChartHoverEvent, ChartClickEvent
+from castella.chart.events import (
+    ChartHoverEvent,
+    ChartClickEvent,
+    SeriesVisibilityEvent,
+)
 from castella.chart.models.chart_data import ChartDataBase
 
 
 # Callback type aliases
 HoverCallback = Callable[[ChartHoverEvent], None]
 ClickCallback = Callable[[ChartClickEvent], None]
+LegendClickCallback = Callable[[SeriesVisibilityEvent], None]
 
 
 @dataclass
@@ -141,9 +146,13 @@ class BaseChart(Widget):
         self._is_panning = False
         self._last_pan_pos: Point | None = None
 
+        # Legend hit testing
+        self._legend_elements: list[LegendItemElement] = []
+
         # Callbacks
         self._on_hover: HoverCallback | None = None
         self._on_click: ClickCallback | None = None
+        self._on_legend_click: LegendClickCallback | None = None
 
     # ========== Fluent Configuration ==========
 
@@ -169,6 +178,18 @@ class BaseChart(Widget):
             Self for chaining.
         """
         self._on_click = callback
+        return self
+
+    def on_legend_click(self, callback: LegendClickCallback) -> Self:
+        """Register a callback for legend click events.
+
+        Args:
+            callback: Function to call when clicking on legend items.
+
+        Returns:
+            Self for chaining.
+        """
+        self._on_legend_click = callback
         return self
 
     def with_title(self, title: str) -> Self:
@@ -369,7 +390,17 @@ class BaseChart(Widget):
     # ========== Click Handling ==========
 
     def _handle_click(self, ev: MouseEvent) -> None:
-        """Handle click on chart element."""
+        """Handle click on chart element or legend."""
+        state = self._get_state()
+
+        # Check legend click first (legend is visually on top)
+        if state.legend.interactive:
+            for legend_elem in self._legend_elements:
+                if legend_elem.contains(ev.pos):
+                    self._handle_legend_click(legend_elem)
+                    return
+
+        # Then check data element click
         element = hit_test(self._elements, ev.pos)
 
         if element and self._on_click:
@@ -380,6 +411,37 @@ class BaseChart(Widget):
                     value=element.value,
                     label=element.label,
                     position=ev.pos,
+                )
+            )
+
+    def _handle_legend_click(self, legend_elem: LegendItemElement) -> None:
+        """Handle click on a legend item.
+
+        Args:
+            legend_elem: The clicked legend item element.
+        """
+        state = self._get_state()
+
+        if legend_elem.data_index >= 0:
+            # PieChart: toggle data point visibility
+            state.toggle_data_visibility(
+                legend_elem.series_index, legend_elem.data_index
+            )
+            visible = state.is_data_visible(
+                legend_elem.series_index, legend_elem.data_index
+            )
+        else:
+            # Other charts: toggle series visibility
+            state.toggle_series_visibility(legend_elem.series_index)
+            visible = state.is_series_visible(legend_elem.series_index)
+
+        # Fire callback if registered
+        if self._on_legend_click:
+            self._on_legend_click(
+                SeriesVisibilityEvent(
+                    series_index=legend_elem.series_index,
+                    series_name=legend_elem.series_name,
+                    visible=visible,
                 )
             )
 

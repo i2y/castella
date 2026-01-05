@@ -17,7 +17,7 @@ from castella.core import (
 from castella.models.font import Font
 
 from castella.chart.base import BaseChart, ChartLayout
-from castella.chart.hit_testing import HitTestable, ArcElement
+from castella.chart.hit_testing import HitTestable, ArcElement, LegendItemElement
 from castella.chart.scales import PolarScale
 from castella.chart.models import CategoricalChartData
 
@@ -114,15 +114,18 @@ class PieChart(BaseChart):
             outer_radius=radius,
         )
 
-        # Calculate total
-        total = sum(p.value for p in series.data)
+        # Calculate total of visible slices only
+        total = sum(
+            p.value for i, p in enumerate(series.data) if state.is_data_visible(0, i)
+        )
         if total <= 0:
             return []
 
-        # Build arc elements
+        # Build arc elements for visible slices
         current_angle = polar.start_angle
         for data_idx, point in enumerate(series.data):
-            if not state.is_series_visible(0):  # Series visibility
+            # Skip hidden slices
+            if not state.is_data_visible(0, data_idx):
                 continue
 
             slice_angle = (point.value / total) * polar.angle_span
@@ -299,16 +302,22 @@ class PieChart(BaseChart):
     ) -> None:
         """Render the chart legend."""
         if not series.data:
+            self._legend_elements = []
             return
 
+        self._legend_elements = []
         legend_area = layout.legend_area
         x = legend_area.x
         y = legend_area.y + 12
         box_size = 12
         spacing = 80
+        item_height = 20
 
         for i, point in enumerate(series.data):
-            color = self.get_series_color(i)
+            is_visible = state.is_data_visible(0, i)
+            color = (
+                self.get_series_color(i) if is_visible else self._theme.text_secondary
+            )
 
             # Color box
             p.style(Style(fill=FillStyle(color=color)))
@@ -320,11 +329,25 @@ class PieChart(BaseChart):
             )
 
             # Category name
-            p.style(
-                Style(fill=FillStyle(color=self._theme.text_color), font=Font(size=11))
+            text_color = (
+                self._theme.text_color if is_visible else self._theme.text_secondary
             )
+            p.style(Style(fill=FillStyle(color=text_color), font=Font(size=11)))
             label = point.label or point.category
             p.fill_text(label, Point(x=x + box_size + 6, y=y + box_size - 2), None)
+
+            # Build hit-testable legend element (with data_index for PieChart)
+            self._legend_elements.append(
+                LegendItemElement(
+                    rect=Rect(
+                        origin=Point(x=x, y=y - 4),
+                        size=Size(width=spacing - 4, height=item_height),
+                    ),
+                    series_index=0,
+                    data_index=i,  # PieChart uses data_index for slices
+                    series_name=label,
+                )
+            )
 
             x += spacing
 

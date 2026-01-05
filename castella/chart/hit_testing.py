@@ -218,6 +218,37 @@ class LineSegmentElement:
         )
 
 
+@dataclass(slots=True)
+class LegendItemElement:
+    """A legend item for hit testing.
+
+    Attributes:
+        rect: The bounding rectangle of the legend item.
+        series_index: Index of the series this legend item represents.
+        data_index: Index of the data point (for PieChart, -1 for others).
+        series_name: Name of the series or data point.
+    """
+
+    rect: Rect
+    series_index: int
+    data_index: int
+    series_name: str
+
+    def contains(self, point: Point) -> bool:
+        """Check if the point is within this legend item."""
+        return self.rect.contain(point)
+
+    @property
+    def value(self) -> float:
+        """Dummy value for protocol compliance."""
+        return 0.0
+
+    @property
+    def label(self) -> str:
+        """Return series name as label."""
+        return self.series_name
+
+
 def hit_test(
     elements: list[HitTestable],
     point: Point,

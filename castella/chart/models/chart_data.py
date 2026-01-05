@@ -36,6 +36,7 @@ class ChartDataBase(BaseModel):
     # Observable pattern - private attributes
     _observers: list[Any] = PrivateAttr(default_factory=list)
     _series_visibility: dict[int, bool] = PrivateAttr(default_factory=dict)
+    _data_visibility: dict[tuple[int, int], bool] = PrivateAttr(default_factory=dict)
     _selected_points: set[tuple[int, int]] = PrivateAttr(default_factory=set)
     _batch_updating: bool = PrivateAttr(default=False)
 
@@ -134,6 +135,50 @@ class ChartDataBase(BaseModel):
         """
         current = self.is_series_visible(series_index)
         return self.set_series_visibility(series_index, not current)
+
+    # Data point visibility management (for PieChart slices)
+
+    def is_data_visible(self, series_index: int, data_index: int) -> bool:
+        """Check if a data point is visible.
+
+        Args:
+            series_index: Index of the series.
+            data_index: Index of the data point.
+
+        Returns:
+            True if visible (default), False if hidden.
+        """
+        return self._data_visibility.get((series_index, data_index), True)
+
+    def set_data_visibility(
+        self, series_index: int, data_index: int, visible: bool
+    ) -> Self:
+        """Set visibility of a data point.
+
+        Args:
+            series_index: Index of the series.
+            data_index: Index of the data point.
+            visible: Whether the data point should be visible.
+
+        Returns:
+            Self for chaining.
+        """
+        self._data_visibility[(series_index, data_index)] = visible
+        self.notify()
+        return self
+
+    def toggle_data_visibility(self, series_index: int, data_index: int) -> Self:
+        """Toggle visibility of a data point.
+
+        Args:
+            series_index: Index of the series.
+            data_index: Index of the data point.
+
+        Returns:
+            Self for chaining.
+        """
+        current = self.is_data_visible(series_index, data_index)
+        return self.set_data_visibility(series_index, data_index, not current)
 
     # Point selection management
 
