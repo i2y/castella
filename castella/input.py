@@ -2,6 +2,7 @@ from typing import Callable, Self, cast
 
 from castella.core import (
     CaretDrawable,
+    FillStyle,
     Font,
     InputCharEvent,
     InputKeyEvent,
@@ -14,8 +15,10 @@ from castella.core import (
     Point,
     Rect,
     Size,
+    Style,
     TextAlign,
     determine_font,
+    get_theme,
 )
 from castella.models.events import IMEPreeditEvent
 from castella.text import Text
@@ -31,6 +34,10 @@ class InputState(ObservableBase):
         # IME preedit state
         self._preedit_text: str = ""
         self._preedit_cursor: int = 0
+        # Selection state
+        self._selection_start: int | None = None
+        self._selection_end: int | None = None
+        self._is_selecting: bool = False
 
     def set(self, value: str) -> None:
         self._text = value
@@ -152,8 +159,89 @@ class InputState(ObservableBase):
             self._text[: self._caret] + self._preedit_text + self._text[self._caret :]
         )
 
+    # ========== Selection Methods ==========
+
+    def has_selection(self) -> bool:
+        """Check if there is an active selection."""
+        return (
+            self._selection_start is not None
+            and self._selection_end is not None
+            and self._selection_start != self._selection_end
+        )
+
+    def start_selection(self, pos: int) -> None:
+        """Start a new selection at the given position."""
+        pos = max(0, min(pos, len(self._text)))
+        self._selection_start = pos
+        self._selection_end = pos
+        self._is_selecting = True
+
+    def update_selection(self, pos: int) -> None:
+        """Update the selection endpoint."""
+        if self._is_selecting:
+            pos = max(0, min(pos, len(self._text)))
+            self._selection_end = pos
+
+    def end_selection(self) -> None:
+        """Finish selection (mouse up)."""
+        self._is_selecting = False
+
+    def clear_selection(self) -> None:
+        """Clear any active selection."""
+        self._selection_start = None
+        self._selection_end = None
+        self._is_selecting = False
+
+    def get_selection_range(self) -> tuple[int, int] | None:
+        """Get normalized selection range (start <= end)."""
+        if not self.has_selection():
+            return None
+        start = self._selection_start
+        end = self._selection_end
+        assert start is not None and end is not None
+        # Normalize: ensure start <= end
+        if start > end:
+            start, end = end, start
+        return (start, end)
+
+    def get_selected_text(self) -> str:
+        """Get the currently selected text."""
+        range_result = self.get_selection_range()
+        if range_result is None:
+            return ""
+        start, end = range_result
+        return self._text[start:end]
+
+    def delete_selection(self) -> str:
+        """Delete selected text and return it. Returns empty string if no selection."""
+        text = self.get_selected_text()
+        if not text:
+            return ""
+
+        range_result = self.get_selection_range()
+        assert range_result is not None
+        start, end = range_result
+
+        self._text = self._text[:start] + self._text[end:]
+        self._caret = start
+        self.clear_selection()
+        self.notify()
+        return text
+
+    def select_all(self) -> None:
+        """Select all text."""
+        if not self._text:
+            return
+        self._selection_start = 0
+        self._selection_end = len(self._text)
+        self._is_selecting = False
+        self.notify()
+
 
 class Input(Text):
+    # Selection highlight style
+    _selection_style = Style(fill=FillStyle(color=get_theme().colors.bg_selected))
+
     def __init__(
         self,
         text: str | InputState,
@@ -169,6 +257,8 @@ class Input(Text):
         # For click-to-position calculation
         self._last_font_size: float = 14.0
         self._last_text_x: float = 0.0
+        # Cache for accurate character position calculation
+        self._char_positions_cache: list[float] | None = None
         # Password mode: mask input with bullets
         self._password = password
 
@@ -243,12 +333,6 @@ class Input(Text):
                 y=height / 2 + cap_height / 2,
             )
 
-        p.fill_text(
-            text=display_text,
-            pos=pos,
-            max_width=width,
-        )
-
         # Draw preedit underline if composing
         if preedit_text and state.is_in_editing():
             # Calculate preedit text position
@@ -272,6 +356,28 @@ class Input(Text):
         # Store for click-to-position calculation
         self._last_font_size = font_size
         self._last_text_x = pos.x
+
+        # Build character position cache for accurate click detection
+        self._char_positions_cache = [0.0]
+        for i in range(len(display_text)):
+            self._char_positions_cache.append(p.measure_text(display_text[: i + 1]))
+
+        # Draw selection highlight (before text, so text is drawn on top)
+        if state.has_selection():
+            self._draw_selection_highlight(p, pos, display_text, font_size, cap_height)
+
+        # Re-apply text style after potential selection style change
+        p.style(
+            self._text_style.model_copy(
+                update={"font": Font(family=font_family, size=font_size)}
+            ),
+        )
+
+        p.fill_text(
+            text=display_text,
+            pos=pos,
+            max_width=width,
+        )
 
         if state.is_in_editing():
             # Caret position: after confirmed text + preedit cursor position
@@ -329,6 +435,44 @@ class Input(Text):
             int(self.get_size().height),
         )
 
+    def _draw_selection_highlight(
+        self,
+        p: Painter,
+        text_pos: Point,
+        display_text: str,
+        font_size: float,
+        cap_height: float,
+    ) -> None:
+        """Draw selection highlight rectangle."""
+        state: InputState = cast(InputState, self._state)
+        range_result = state.get_selection_range()
+        if range_result is None:
+            return
+
+        start, end = range_result
+
+        # Clamp to display text length
+        start = min(start, len(display_text))
+        end = min(end, len(display_text))
+
+        if start >= end:
+            return
+
+        # Calculate pixel positions
+        x_start = text_pos.x + p.measure_text(display_text[:start])
+        x_end = text_pos.x + p.measure_text(display_text[:end])
+
+        # Selection rectangle position (centered vertically)
+        y = text_pos.y - cap_height - (font_size - cap_height) / 2
+
+        # Draw selection rectangle
+        p.style(Input._selection_style)
+        selection_rect = Rect(
+            origin=Point(x=x_start, y=y),
+            size=Size(width=x_end - x_start, height=font_size),
+        )
+        p.fill_rect(selection_rect)
+
     def focused(self) -> None:
         state = cast(InputState, self._state)
         state.start_editing()
@@ -342,6 +486,9 @@ class Input(Text):
         # Clear any preedit when text is committed
         if state.has_preedit():
             state.clear_preedit()
+        # Delete selection if any before inserting
+        if state.has_selection():
+            state.delete_selection()
         state.insert(ev.char)
         self._callback(state.raw_value())
 
@@ -370,6 +517,36 @@ class Input(Text):
                     return
             return
 
+        # Handle Cmd+C / Ctrl+C (Copy)
+        if ev.is_cmd_or_ctrl and ev.key is KeyCode.C:
+            self._handle_copy()
+            return
+
+        # Handle Cmd+X / Ctrl+X (Cut)
+        if ev.is_cmd_or_ctrl and ev.key is KeyCode.X:
+            self._handle_cut()
+            return
+
+        # Handle Cmd+V / Ctrl+V (Paste)
+        if ev.is_cmd_or_ctrl and ev.key is KeyCode.V:
+            self._handle_paste()
+            return
+
+        # Handle Cmd+A / Ctrl+A (Select All)
+        if ev.is_cmd_or_ctrl and ev.key is KeyCode.A:
+            state.select_all()
+            return
+
+        # Clear selection on navigation keys
+        if ev.key in (KeyCode.LEFT, KeyCode.RIGHT):
+            state.clear_selection()
+
+        # Delete selection on content-modifying keys
+        if ev.key in (KeyCode.BACKSPACE, KeyCode.DELETE) and state.has_selection():
+            state.delete_selection()
+            self._callback(state.raw_value())
+            return
+
         if ev.key is KeyCode.BACKSPACE:
             state.delete_prev()
             self._callback(state.raw_value())
@@ -381,26 +558,105 @@ class Input(Text):
         elif ev.key is KeyCode.RIGHT:
             state.move_to_next()
 
+    def _handle_copy(self) -> None:
+        """Copy selected text to clipboard."""
+        from castella.core import App
+
+        state = cast(InputState, self._state)
+        text = state.get_selected_text()
+        if text:
+            App.get().set_clipboard_text(text)
+
+    def _handle_cut(self) -> None:
+        """Cut selected text to clipboard."""
+        from castella.core import App
+
+        state = cast(InputState, self._state)
+        text = state.delete_selection()
+        if text:
+            App.get().set_clipboard_text(text)
+            self._callback(state.raw_value())
+
+    def _handle_paste(self) -> None:
+        """Paste text from clipboard."""
+        from castella.core import App
+
+        state = cast(InputState, self._state)
+        text = App.get().get_clipboard_text()
+        if text:
+            # Delete selection if any
+            if state.has_selection():
+                state.delete_selection()
+            # Insert pasted text (single line only - take first line)
+            first_line = text.split("\n")[0]
+            state.insert(first_line)
+            self._callback(state.raw_value())
+
     def on_change(self, callback: Callable[[str], None]) -> Self:
         self._callback = callback
         return self
 
-    def mouse_down(self, ev: MouseEvent) -> None:
+    def _pos_from_click(self, click_x: float) -> int:
+        """Convert click x position to character position."""
         state: InputState = cast(InputState, self._state)
         text = str(state)
 
-        # Calculate click position relative to text start
-        click_x = ev.pos.x - self._last_text_x
+        # Calculate position relative to text start
+        rel_x = click_x - self._last_text_x
 
-        if click_x <= 0:
-            state.set_caret_by_click(0)
-            return
+        if rel_x <= 0:
+            return 0
 
-        # Approximate character width
+        # Use cached character positions if available
+        if self._char_positions_cache:
+            for i, pos in enumerate(self._char_positions_cache):
+                if pos > rel_x:
+                    # Check if click is closer to this char or previous
+                    if i > 0 and (rel_x - self._char_positions_cache[i - 1]) < (
+                        pos - rel_x
+                    ):
+                        return i - 1
+                    return i
+            return len(text)
+
+        # Fallback: approximate character width
         char_width = self._last_font_size * 0.5
+        char_pos = int(rel_x / char_width)
+        return max(0, min(char_pos, len(text)))
 
-        # Calculate character position
-        char_pos = int(click_x / char_width)
-        char_pos = max(0, min(char_pos, len(text)))
+    def mouse_down(self, ev: MouseEvent) -> None:
+        state: InputState = cast(InputState, self._state)
 
+        # Start editing if not already
+        if not state.is_in_editing():
+            state._editing = True
+
+        # Mark that cursor will be set by click
+        state._caret_set_by_click = True
+
+        # Get position from click
+        char_pos = self._pos_from_click(ev.pos.x)
+
+        # Clear previous selection and start new one
+        state.clear_selection()
+        state.start_selection(char_pos)
+
+        # Update caret position
         state.set_caret_by_click(char_pos)
+        state.notify()
+
+    def mouse_drag(self, ev: MouseEvent) -> None:
+        """Handle mouse drag for text selection."""
+        state: InputState = cast(InputState, self._state)
+
+        if state._is_selecting:
+            char_pos = self._pos_from_click(ev.pos.x)
+            state.update_selection(char_pos)
+            # Move caret to selection end
+            state._caret = char_pos
+            state.notify()
+
+    def mouse_up(self, _: MouseEvent) -> None:
+        """Handle mouse up to finish text selection."""
+        state: InputState = cast(InputState, self._state)
+        state.end_selection()
