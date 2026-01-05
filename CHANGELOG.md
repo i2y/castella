@@ -2,6 +2,11 @@
 
 All notable changes to Castella will be documented in this file.
 
+## [0.8.0] - 2025-01-06
+
+### Added
+- **Interactive Legend** - Click legend items to toggle series/slice visibility
+
 ## [0.7.0] - 2025-01-05
 
 ### Added
