@@ -2,6 +2,11 @@
 
 All notable changes to Castella will be documented in this file.
 
+## [0.9.0] - 2025-01-07
+
+### Added
+- **I18n Module** - Internationalization support with runtime locale switching, YAML translation loading, and reactive LocaleString
+
 ## [0.8.0] - 2025-01-06
 
 ### Added
