@@ -41,6 +41,7 @@ nav:
       - Sizing: sizing.md
       - State Management: state.md
       - Animation: animation.md
+      - Internationalization: i18n.md
       - Custom Widgets: custom-widgets.md
       - Styling: style.md
   - Widgets:
