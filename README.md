@@ -38,6 +38,7 @@ The primary final goal of Castella is to provide features for Python programmers
 - **AgentChat** - Build chat interfaces with AI agents in just 3 lines of code.
 - **Agent Skills** - AI coding agents can learn Castella via 5 built-in skills.
 - **Workflow Studio Samples** - Demo applications showcasing visual development environments for AI workflow frameworks.
+- **Internationalization (i18n)** - Runtime locale switching with YAML translations, reactive `LocaleString`, and pluralization support.
 
 ## Workflow Studio Samples
 
@@ -281,6 +282,54 @@ App(Frame("Employee Table", 600, 400), table).run()
 ```
 
 You can see some other examples in [examples](examples) directory.
+
+## I18n Example
+
+Add multi-language support to your app:
+
+```python
+from castella import App, Button, Column, Component, Text
+from castella.frame import Frame
+from castella.i18n import I18nManager, load_yaml_catalog
+
+# Load translations
+manager = I18nManager()
+manager.load_catalog("en", load_yaml_catalog("locales/en.yaml"))
+manager.load_catalog("ja", load_yaml_catalog("locales/ja.yaml"))
+manager.set_locale("en")
+
+
+class MyApp(Component):
+    def view(self):
+        return Column(
+            Text(manager.t("greeting")),
+            Button(manager.t("button.save")).on_click(self._save),
+            Button("日本語").on_click(lambda _: manager.set_locale("ja")),
+            Button("English").on_click(lambda _: manager.set_locale("en")),
+        )
+
+    def _save(self, _):
+        print("Saved!")
+
+
+App(Frame("I18n Demo", 400, 300), MyApp()).run()
+```
+
+```yaml
+# locales/en.yaml
+locale: en
+greeting: "Hello, World!"
+button:
+  save: "Save"
+```
+
+```yaml
+# locales/ja.yaml
+locale: ja
+greeting: "こんにちは！"
+button:
+  save: "保存"
+```
 
 ## Supported Platforms
 Currently, Castella theoretically should support not-too-old versions of the following platforms.
