@@ -428,18 +428,34 @@ class LineChart(BaseChart):
         p.style(label_style)
 
         # X axis labels
-        for tick in x_scale.ticks(5):
+        x_tick_count = state.x_axis.tick_count if state.x_axis else 5
+        x_ticks = list(x_scale.ticks(x_tick_count))
+        x_tick_labels = state.x_axis.tick_labels if state.x_axis else None
+
+        for i, tick in enumerate(x_ticks):
             x = x_scale(tick)
             y = plot.y + plot.height + 16
-            label = f"{tick:.0f}"
+            # Use custom tick_labels if provided, otherwise format the value
+            if x_tick_labels and i < len(x_tick_labels):
+                label = x_tick_labels[i]
+            else:
+                label = f"{tick:.0f}"
             text_width = p.measure_text(label)
             p.fill_text(label, Point(x=x - text_width / 2, y=y), None)
 
         # Y axis labels
-        for tick in y_scale.ticks(5):
+        y_tick_count = state.y_axis.tick_count if state.y_axis else 5
+        y_ticks = list(y_scale.ticks(y_tick_count))
+        y_tick_labels = state.y_axis.tick_labels if state.y_axis else None
+
+        for i, tick in enumerate(y_ticks):
             x = plot.x - 8
             y = y_scale(tick)
-            label = f"{tick:.0f}"
+            # Use custom tick_labels if provided, otherwise format the value
+            if y_tick_labels and i < len(y_tick_labels):
+                label = y_tick_labels[i]
+            else:
+                label = f"{tick:.0f}"
             text_width = p.measure_text(label)
             p.fill_text(label, Point(x=x - text_width, y=y + 4), None)
 
