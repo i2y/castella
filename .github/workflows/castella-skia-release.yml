@@ -62,7 +62,11 @@ jobs:
           manylinux: auto
           working-directory: bindings/python
           before-script-linux: |
-            yum install -y freetype-devel fontconfig-devel
+            if command -v apt-get &> /dev/null; then
+              apt-get update && apt-get install -y libfreetype6-dev libfontconfig1-dev
+            elif command -v yum &> /dev/null; then
+              yum install -y freetype-devel fontconfig-devel
+            fi
 
       - name: Upload wheels
         uses: actions/upload-artifact@v6
