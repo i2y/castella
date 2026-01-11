@@ -1,0 +1,33 @@
+[project]
+name = "castella_ios_test"
+version = "0.1.0"
+description = "Castella iOS Test App"
+authors = [{ name = "Test", email = "test@example.com" }]
+license.file = "LICENSE"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.briefcase]
+project_name = "Castella iOS Test"
+bundle = "com.example.castellatest"
+version = "0.1.0"
+url = "https://example.com"
+author = "Test"
+author_email = "test@example.com"
+
+[tool.briefcase.app.castella_ios_test]
+formal_name = "Castella iOS Test"
+description = "Test app for Castella iOS support"
+sources = ["src/castella_ios_test"]
+requires = [
+    "rubicon-objc>=0.4.9",
+    "std-nslog",
+    # Note: pydantic, castella, castella-skia must be manually copied to app_packages
+]
+
+[tool.briefcase.app.castella_ios_test.iOS]
+supported_versions = "15.0"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

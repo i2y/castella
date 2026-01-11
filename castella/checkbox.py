@@ -5,6 +5,9 @@ from castella.core import (
     Circle,
     Font,
     FontSizePolicy,
+    InputKeyEvent,
+    KeyAction,
+    KeyCode,
     Kind,
     MouseEvent,
     Painter,
@@ -13,8 +16,11 @@ from castella.core import (
     Size,
     SizePolicy,
     State,
+    StrokeStyle,
+    Style,
     Widget,
     determine_font,
+    get_theme,
 )
 
 
@@ -33,6 +39,7 @@ class CheckBox(Widget):
         self._on_change: Callable[[bool], Any] = lambda _: ...
         self._kind = Kind.NORMAL
         self._appearance_state = AppearanceState.NORMAL
+        self._focused = False
         super().__init__(
             state=checked if isinstance(checked, State) else State(checked),
             size=Size(width=0, height=0),
@@ -73,14 +80,55 @@ class CheckBox(Widget):
         self._on_change = callback
         return self
 
+    def focused(self) -> None:
+        """Called when this widget receives focus."""
+        self._focused = True
+        self.update()
+
+    def unfocused(self) -> None:
+        """Called when this widget loses focus."""
+        self._focused = False
+        self.update()
+
+    def can_focus(self) -> bool:
+        """Return True if this widget can receive focus."""
+        return True
+
+    def focus_order(self) -> int:
+        """Return the tab order (lower = earlier in tab sequence)."""
+        return self._tab_index
+
+    def input_key(self, ev: InputKeyEvent) -> None:
+        """Handle keyboard input when focused."""
+        if ev.action == KeyAction.RELEASE:
+            return
+        # Toggle on Enter or Space
+        if ev.key in (KeyCode.ENTER, KeyCode.SPACE):
+            state: State[bool] = cast(State[bool], self._state)
+            new_value = not state.value()
+            state.set(new_value)
+            self._on_change(new_value)
+
     def redraw(self, p: Painter, _: bool) -> None:
         state: State[bool] = cast(State[bool], self._state)
+
+        # Determine style based on focus state
+        if self._focused:
+            focus_color = get_theme().colors.border_focus
+            draw_style = Style(
+                fill=self._style.fill,
+                stroke=StrokeStyle(color=focus_color),
+                border_radius=self._style.border_radius,
+                shadow=self._style.shadow,
+            )
+        else:
+            draw_style = self._style
 
         size = self.get_size()
         if self._is_circle:
             center = Point(x=size.width / 2, y=size.height / 2)
             circle = Circle(center=center, radius=size.width / 2)
-            p.style(self._style)
+            p.style(draw_style)
             p.fill_circle(circle)
             p.stroke_circle(circle)
             if state.value():
@@ -92,7 +140,7 @@ class CheckBox(Widget):
                 p.fill_circle(inner_circle)
         else:
             rect = Rect(origin=Point(x=0, y=0), size=size)
-            p.style(self._style)
+            p.style(draw_style)
             p.fill_rect(rect)
             p.stroke_rect(rect)
             if state.value():

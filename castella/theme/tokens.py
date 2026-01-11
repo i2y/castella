@@ -45,6 +45,7 @@ class ColorPalette(BaseModel):
     border_danger: str
     border_success: str
     border_warning: str
+    border_focus: str
 
 
 class Typography(BaseModel):

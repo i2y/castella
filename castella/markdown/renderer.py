@@ -2,9 +2,16 @@
 
 import re
 from dataclasses import dataclass
-from typing import Callable
+from typing import Any, Callable
 
-import numpy as np
+# numpy is optional - used only for math rendering
+try:
+    import numpy as np
+
+    NUMPY_AVAILABLE = True
+except ImportError:
+    np = None  # type: ignore
+    NUMPY_AVAILABLE = False
 
 from castella.core import (
     FillStyle,
@@ -16,7 +23,7 @@ from castella.core import (
     StrokeStyle,
 )
 from castella.models.font import Font, FontSlant, FontWeight
-from castella.markdown.code_highlighter import CodeHighlighter
+from castella.markdown.code_text_renderer import CodeTextRenderer
 from castella.markdown.math_renderer import MathRenderer
 from castella.markdown.models import (
     AdmonitionNode,
@@ -83,6 +90,14 @@ class TextSegment:
 
 
 @dataclass
+class MathSegment:
+    """A segment containing inline math."""
+
+    latex: str
+    inline: bool = True
+
+
+@dataclass
 class RenderContext:
     """Context for rendering."""
 
@@ -107,12 +122,12 @@ class MarkdownRenderer:
     def __init__(
         self,
         theme: MarkdownTheme,
-        code_highlighter: CodeHighlighter | None = None,
+        code_renderer: CodeTextRenderer | None = None,
         math_renderer: MathRenderer | None = None,
         on_link_click: Callable[[str], None] | None = None,
     ):
         self._theme = theme
-        self._code_highlighter = code_highlighter or CodeHighlighter(
+        self._code_renderer = code_renderer or CodeTextRenderer(
             style=theme.code_pygments_style
         )
         self._math_renderer = math_renderer or MathRenderer(
@@ -302,16 +317,21 @@ class MarkdownRenderer:
         line_height = self._theme.base_font_size * 1.5
 
         for segment in segments:
-            if isinstance(segment, np.ndarray):
+            # Handle MathSegment (inline math)
+            if isinstance(segment, MathSegment):
                 if x > self._cursor_x + self._list_depth * self._theme.list_indent:
                     self._cursor_y += line_height
                     x = self._cursor_x + self._list_depth * self._theme.list_indent
 
-                img_height = segment.shape[0]
-                img_width = segment.shape[1]
-
-                if hasattr(p, "draw_np_array_as_an_image_rect"):
-                    arr = np.ascontiguousarray(segment)
+                # Check if painter supports numpy arrays
+                if hasattr(p, "draw_np_array_as_an_image_rect") and NUMPY_AVAILABLE:
+                    # Use numpy array rendering
+                    math_array = self._math_renderer.render(
+                        segment.latex, inline=segment.inline
+                    )
+                    img_height = math_array.shape[0]
+                    img_width = math_array.shape[1]
+                    arr = np.ascontiguousarray(math_array)
                     p.draw_np_array_as_an_image_rect(
                         arr,
                         Rect(
@@ -319,7 +339,37 @@ class MarkdownRenderer:
                             size=Size(width=img_width, height=img_height),
                         ),
                     )
-                self._cursor_y += img_height
+                    self._cursor_y += img_height
+                elif hasattr(p, "draw_image"):
+                    # Use file-based rendering
+                    file_path, img_width, img_height = (
+                        self._math_renderer.render_to_file(
+                            segment.latex, inline=segment.inline
+                        )
+                    )
+                    if file_path:
+                        p.draw_image(
+                            file_path,
+                            Rect(
+                                origin=Point(x=x, y=self._cursor_y),
+                                size=Size(width=img_width, height=img_height),
+                            ),
+                        )
+                    self._cursor_y += img_height
+                else:
+                    # Fallback: render as plain text
+                    text_style = Style(
+                        fill=FillStyle(color=self._theme.code_color),
+                        font=Font(
+                            family=self._theme.code_font,
+                            size=self._theme.base_font_size,
+                        ),
+                    )
+                    p.style(text_style)
+                    p.fill_text(
+                        f"${segment.latex}$", Point(x=x, y=self._cursor_y), None
+                    )
+                    self._cursor_y += self._theme.base_font_size
                 continue
 
             if not isinstance(segment, TextSegment):
@@ -394,38 +444,72 @@ class MarkdownRenderer:
         self._cursor_y += line_height + self._theme.paragraph_spacing
 
     def _render_code_block(self, p: Painter, node: CodeBlockNode, width: float) -> None:
-        """Render a fenced code block."""
-        bg_style = Style(fill=FillStyle(color=self._theme.code_bg_color))
-        p.style(bg_style)
-
-        code_array = self._code_highlighter.highlight(
+        """Render a fenced code block as styled text."""
+        # Get styled code lines
+        code_lines = self._code_renderer.highlight(
             node.content,
             language=node.language,
-            width=int(width),
         )
 
-        img_height = code_array.shape[0]
-        img_width = min(code_array.shape[1], max(1, int(width)))
+        # Calculate dimensions
+        code_font_size = self._theme.base_font_size
+        line_height = code_font_size + 4
+        padding = 8
+        line_num_width = 40  # Width reserved for line numbers
+
+        # Calculate block height
+        block_height = len(code_lines) * line_height + padding * 2
         rect_width = max(1.0, width)
 
+        # Draw background
+        bg_style = Style(fill=FillStyle(color=self._code_renderer.background_color))
+        p.style(bg_style)
         p.fill_rect(
             Rect(
                 origin=Point(x=self._cursor_x, y=self._cursor_y),
-                size=Size(width=rect_width, height=img_height + 16),
+                size=Size(width=rect_width, height=block_height),
             )
         )
 
-        if hasattr(p, "draw_np_array_as_an_image_rect"):
-            arr = np.ascontiguousarray(code_array)
-            p.draw_np_array_as_an_image_rect(
-                arr,
-                Rect(
-                    origin=Point(x=self._cursor_x + 8, y=self._cursor_y + 8),
-                    size=Size(width=img_width, height=img_height),
+        # Draw each line
+        # Add code_font_size to y because fill_text uses baseline positioning
+        y = self._cursor_y + padding + code_font_size
+        for line in code_lines:
+            x = self._cursor_x + padding
+
+            # Draw line number
+            line_num_style = Style(
+                fill=FillStyle(color=self._code_renderer.line_number_color),
+                font=Font(
+                    family=self._theme.code_font,
+                    size=code_font_size,
                 ),
             )
+            p.style(line_num_style)
+            line_num_text = f"{line.line_number:3}"
+            p.fill_text(line_num_text, Point(x=x, y=y), None)
+            x += line_num_width
 
-        self._cursor_y += img_height + 16 + self._theme.block_spacing
+            # Draw tokens
+            for token in line.tokens:
+                token_style = Style(
+                    fill=FillStyle(color=token.color),
+                    font=Font(
+                        family=self._theme.code_font,
+                        size=code_font_size,
+                        weight=FontWeight.BOLD if token.bold else FontWeight.NORMAL,
+                        slant=FontSlant.ITALIC if token.italic else FontSlant.UPRIGHT,
+                    ),
+                )
+                p.style(token_style)
+                p.fill_text(token.text, Point(x=x, y=y), None)
+                # Measure text to advance x
+                text_width = p.measure_text(token.text)
+                x += text_width
+
+            y += line_height
+
+        self._cursor_y += block_height + self._theme.block_spacing
 
     def _render_blockquote(
         self, p: Painter, node: BlockquoteNode, width: float
@@ -605,14 +689,14 @@ class MarkdownRenderer:
 
     def _render_math_block(self, p: Painter, node: MathBlockNode, width: float) -> None:
         """Render a block math expression."""
-        math_array = self._math_renderer.render(node.content, inline=False)
+        # Check if painter supports numpy arrays
+        if hasattr(p, "draw_np_array_as_an_image_rect") and NUMPY_AVAILABLE:
+            # Use numpy array rendering
+            math_array = self._math_renderer.render(node.content, inline=False)
+            img_height = math_array.shape[0]
+            img_width = math_array.shape[1]
+            x = self._cursor_x + (width - img_width) / 2
 
-        img_height = math_array.shape[0]
-        img_width = math_array.shape[1]
-
-        x = self._cursor_x + (width - img_width) / 2
-
-        if hasattr(p, "draw_np_array_as_an_image_rect"):
             arr = np.ascontiguousarray(math_array)
             p.draw_np_array_as_an_image_rect(
                 arr,
@@ -621,8 +705,35 @@ class MarkdownRenderer:
                     size=Size(width=img_width, height=img_height),
                 ),
             )
-
-        self._cursor_y += img_height + self._theme.block_spacing
+            self._cursor_y += img_height + self._theme.block_spacing
+        elif hasattr(p, "draw_image"):
+            # Use file-based rendering
+            file_path, img_width, img_height = self._math_renderer.render_to_file(
+                node.content, inline=False
+            )
+            if file_path:
+                x = self._cursor_x + (width - img_width) / 2
+                p.draw_image(
+                    file_path,
+                    Rect(
+                        origin=Point(x=x, y=self._cursor_y),
+                        size=Size(width=img_width, height=img_height),
+                    ),
+                )
+            self._cursor_y += img_height + self._theme.block_spacing
+        else:
+            # Fallback: render as plain text
+            text_style = Style(
+                fill=FillStyle(color=self._theme.code_color),
+                font=Font(
+                    family=self._theme.code_font, size=self._theme.base_font_size
+                ),
+            )
+            p.style(text_style)
+            p.fill_text(
+                f"$${node.content}$$", Point(x=self._cursor_x, y=self._cursor_y), width
+            )
+            self._cursor_y += self._theme.base_font_size + self._theme.block_spacing
 
     def _render_image(self, p: Painter, node: ImageNode, width: float) -> None:
         """Render an image placeholder."""
@@ -656,9 +767,9 @@ class MarkdownRenderer:
         self,
         nodes: list[MarkdownNode],
         ctx: RenderContext,
-    ) -> list[TextSegment | np.ndarray]:
-        """Collect text segments from nodes."""
-        segments: list[TextSegment | np.ndarray] = []
+    ) -> list[TextSegment | Any]:
+        """Collect text segments from nodes (may include numpy arrays for math)."""
+        segments: list[TextSegment | Any] = []
 
         for node in nodes:
             if isinstance(node, TextNode):
@@ -720,8 +831,8 @@ class MarkdownRenderer:
                 )
                 segments.extend(self._collect_segments(node.children, new_ctx))
             elif isinstance(node, MathInlineNode):
-                math_array = self._math_renderer.render(node.content, inline=True)
-                segments.append(math_array)
+                # Store latex for later rendering (allows choosing render method based on painter)
+                segments.append(MathSegment(latex=node.content, inline=True))
             elif isinstance(node, (SoftBreakNode, HardBreakNode)):
                 segments.append(TextSegment(text=" "))
 

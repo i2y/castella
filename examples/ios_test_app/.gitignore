@@ -1,0 +1,13 @@
+# Build artifacts
+build/
+logs/
+*.log
+
+# Virtual environment
+.venv/
+
+# Briefcase iOS build output
+iOS/
+
+# Lock files (regenerated)
+uv.lock

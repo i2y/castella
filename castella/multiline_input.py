@@ -97,6 +97,7 @@ class MultilineInputState(ObservableBase):
             self._row = len(self._lines) - 1
             self._col = len(self._lines[-1])
         self._cursor_set_by_click = False  # Reset flag
+        self.notify()
 
     def finish_editing(self) -> None:
         """Exit editing mode."""
@@ -490,7 +491,19 @@ class MultilineInput(Widget):
         font_size = self._font_size
         border_width = self._border_width
 
-        p.style(self._rect_style)
+        # Use focus ring color when editing
+        if state.is_in_editing():
+            focus_color = get_theme().colors.border_focus
+            focused_style = Style(
+                fill=self._rect_style.fill,
+                stroke=StrokeStyle(color=focus_color),
+                border_radius=self._rect_style.border_radius,
+                shadow=self._rect_style.shadow,
+            )
+            p.style(focused_style)
+        else:
+            p.style(self._rect_style)
+
         size = self.get_size()
         rect = Rect(origin=Point(x=0, y=0), size=size)
         p.fill_rect(rect)
@@ -662,14 +675,37 @@ class MultilineInput(Widget):
         return Size(width=w, height=h)
 
     def focused(self) -> None:
+        from castella.core import App
+
         state = cast(MultilineInputState, self._state)
         # Only start editing if not already (mouse_down may have started it)
         if not state.is_in_editing():
             state.start_editing()
 
+        # Show software keyboard on mobile platforms
+        # Pass current text so the hidden input field stays in sync
+        app = App.get()
+        if app is not None:
+            app._frame.show_keyboard(state.raw_value())
+
     def unfocused(self) -> None:
+        from castella.core import App
+
         state = cast(MultilineInputState, self._state)
         state.finish_editing()
+
+        # Hide software keyboard on mobile platforms
+        app = App.get()
+        if app is not None:
+            app._frame.hide_keyboard()
+
+    def can_focus(self) -> bool:
+        """Return True if this widget can receive focus."""
+        return True
+
+    def focus_order(self) -> int:
+        """Return the tab order (lower = earlier in tab sequence)."""
+        return self._tab_index
 
     def input_char(self, ev: InputCharEvent) -> None:
         state = cast(MultilineInputState, self._state)

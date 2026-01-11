@@ -1,0 +1,32 @@
+[project]
+name = "castella_all_widgets_demo"
+version = "0.1.0"
+description = "Castella iOS All Widgets Demo App"
+authors = [{ name = "Castella", email = "castella@example.com" }]
+license.file = "LICENSE"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.briefcase]
+project_name = "Castella All Widgets"
+bundle = "com.example.castellaallwidgets"
+version = "0.1.0"
+url = "https://example.com"
+author = "Castella"
+author_email = "castella@example.com"
+
+[tool.briefcase.app.castella_all_widgets_demo]
+formal_name = "Castella All Widgets"
+description = "All widgets demo app for Castella iOS"
+sources = ["src/castella_all_widgets_demo"]
+requires = [
+    "rubicon-objc>=0.4.9",
+    "std-nslog",
+]
+
+[tool.briefcase.app.castella_all_widgets_demo.iOS]
+supported_versions = "15.0"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

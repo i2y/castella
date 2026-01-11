@@ -6,8 +6,9 @@ import platform
 from typing import TYPE_CHECKING, Callable, Optional
 
 import glfw
-import skia
 from OpenGL import GL
+
+import castella_skia
 
 from castella.frame.base import BaseFrame
 from castella.models.geometry import Point, Size
@@ -82,7 +83,6 @@ class Frame(BaseFrame):
         glfw.set_char_callback(window, self._input_char)
         glfw.set_key_callback(window, self._input_key)
 
-        self.context = skia.GrDirectContext.MakeGL()
         self._update_surface_and_painter()
 
         # Initialize macOS IME support
@@ -93,26 +93,31 @@ class Frame(BaseFrame):
 
     def _update_surface_and_painter(self) -> None:
         """Create/recreate the Skia surface for the current window size."""
-        from castella import skia_painter as painter
+        from castella import rust_skia_painter as painter
 
         (fb_width, fb_height) = glfw.get_framebuffer_size(self.window)
-        backend_render_target = skia.GrBackendRenderTarget(
-            fb_width,
-            fb_height,
-            0,  # sampleCnt
-            0,  # stencilBits
-            skia.GrGLFramebufferInfo(0, GL.GL_RGBA8),
-        )
 
-        surface = skia.Surface.MakeFromBackendRenderTarget(
-            self.context,
-            backend_render_target,
-            skia.kBottomLeft_GrSurfaceOrigin,
-            skia.kRGBA_8888_ColorType,
-            skia.ColorSpace.MakeSRGB(),
-        )
-        self.surface = surface
-        self.painter = painter.Painter(self, self.surface)
+        if hasattr(self, "surface") and self.surface is not None:
+            # Resize existing surface (faster, no flicker)
+            self.surface.resize(
+                fb_width,
+                fb_height,
+                sample_count=0,
+                stencil_bits=8,
+                framebuffer_id=0,
+            )
+            # Update painter with resized surface
+            self.painter = painter.Painter(self, self.surface)
+        else:
+            # Create new surface
+            self.surface = castella_skia.Surface.from_gl_context(
+                fb_width,
+                fb_height,
+                sample_count=0,
+                stencil_bits=8,
+                framebuffer_id=0,
+            )
+            self.painter = painter.Painter(self, self.surface)
 
     def _signal_main_thread(self) -> None:
         """Signal main thread via GLFW empty event."""
@@ -212,7 +217,6 @@ class Frame(BaseFrame):
                 self._process_pending_updates()
         finally:
             glfw.terminate()
-            self.context.abandonContext()
 
     # ========== Clipboard ==========
 

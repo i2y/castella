@@ -300,6 +300,7 @@ class Widget(ABC):
         self._height_policy = height_policy
         self._flex = 1
         self._z_index: int = 1
+        self._tab_index: int = 0
         self._dirty = True
         self._semantic_id_hint: str | None = None
         self._enable_to_detach = True
@@ -695,6 +696,25 @@ class Widget(ABC):
             if parent_node is not None and hasattr(parent_node, "invalidate_z_order"):
                 parent_node.invalidate_z_order()
         return self
+
+    def tab_index(self, value: int) -> Self:
+        """Set the tab order for this widget (lower = earlier in Tab sequence).
+
+        Widgets with a lower tab_index receive focus before widgets with
+        a higher tab_index when the user presses Tab.
+
+        Args:
+            value: The tab order value (0 or greater).
+
+        Returns:
+            Self for method chaining.
+        """
+        self._tab_index = value
+        return self
+
+    def get_tab_index(self) -> int:
+        """Get the tab order value."""
+        return self._tab_index
 
     def get_semantic_id_hint(self) -> str | None:
         return self._semantic_id_hint
@@ -1330,13 +1350,16 @@ def determine_font(
         size_of_text = 1  # to compute the height of caret
 
     if style.font.size_policy == FontSizePolicy.EXPANDING:
-        return style.font.family, max(
+        # Clamp font size between 10 and 1000 (Font model constraint)
+        font_size = max(
             min(
                 int(height - 2 * style.padding),
                 int((width - 2 * style.padding) / (size_of_text * 0.65)),
+                1000,  # Font model max size
             ),
             10,
         )
+        return style.font.family, font_size
     else:
         return style.font.family, style.font.size
 
@@ -1414,11 +1437,10 @@ class App:
         # and clear _downed via widget.detach()
         downed = self._downed
         try:
-            if self._focused is not None:
-                self._focused.unfocused()
-
-            self._focused = downed
-            self._focused.focused()
+            # Use FocusManager to handle focus changes
+            focus_mgr = self._event_manager.focus
+            focus_mgr.set_focus(downed)
+            self._focused = downed  # Sync legacy _focused
 
             ev.target = downed
             # Re-dispatch to get correct local coordinates for the target widget
@@ -1476,6 +1498,14 @@ class App:
         self._focused.input_char(ev)
 
     def input_key(self, ev: InputKeyEvent) -> None:
+        # Let FocusManager handle Tab/Shift+Tab navigation first
+        focus_mgr = self._event_manager.focus
+        if focus_mgr.handle_key_event(ev):
+            # FocusManager handled Tab - sync legacy _focused
+            self._focused = focus_mgr.focus
+            return
+
+        # Route other key events to the focused widget
         if self._focused is None:
             return
         self._focused.input_key(ev)
@@ -1488,6 +1518,9 @@ class App:
             self._focused.ime_preedit(ev)
 
     def redraw(self, p: Painter, completely: bool) -> None:
+        # Collect focusable widgets for Tab navigation
+        self._event_manager.focus.collect_focusables(self._root_widget)
+
         # Clear entire canvas first to remove any remnants
         # Get current theme's canvas color for proper dark/light mode support
         bg_color = get_theme().app.bg_color

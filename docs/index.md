@@ -29,10 +29,11 @@ The primary final goal of Castella is to provide features for Python programmers
 - For terminals, Castella is standing on prompt_toolkit.
 
 ## Supported Platforms
-Currently, Castella theoretically should support not-too-old versions of the following platforms.
+Castella supports the following platforms:
 
 - Windows 10/11
 - Mac OS X
 - Linux
+- **iOS** (Simulator and Device) - via [castella-skia](castella-skia.md) Metal backend
 - Web browsers
 - Terminals

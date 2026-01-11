@@ -1,0 +1,39 @@
+[package]
+name = "castella-skia-core"
+version = "0.1.0"
+edition = "2021"
+description = "Core Skia rendering library for Castella UI framework"
+license = "MIT"
+repository = "https://github.com/i2y/castella"
+authors = ["Yasushi Itoh <i2y@icloud.com>"]
+keywords = ["gui", "ui", "skia", "graphics", "cross-platform"]
+categories = ["graphics", "gui", "rendering"]
+
+[lib]
+name = "castella_skia_core"
+crate-type = ["rlib"]
+
+# Desktop: OpenGL backend (default)
+[target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
+skia-safe = { version = "0.91", features = ["gl", "textlayout"] }
+
+# iOS: Metal backend
+[target.'cfg(target_os = "ios")'.dependencies]
+skia-safe = { version = "0.91", features = ["metal", "textlayout"] }
+metal = "0.29"
+objc = "0.2"
+core-graphics-types = "0.1"
+foreign-types = "0.5"
+
+# Android: Vulkan backend with OpenGL ES fallback
+[target.'cfg(target_os = "android")'.dependencies]
+skia-safe = { version = "0.91", features = ["vulkan", "gl"] }
+
+[dependencies]
+thiserror = "2.0"
+
+[dev-dependencies]
+# For testing
+
+[package.metadata.docs.rs]
+all-features = true

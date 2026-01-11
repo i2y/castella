@@ -246,6 +246,28 @@ class BaseFrame(ABC):
         """Async clipboard write. Override if supported."""
         raise NotImplementedError("Async clipboard not supported on this platform")
 
+    # ========== Software Keyboard (for mobile) ==========
+
+    def show_keyboard(self, initial_text: str = "") -> None:
+        """Show the software keyboard for text input.
+
+        Override on platforms with software keyboards (iOS, Android).
+        Default is no-op for desktop platforms.
+
+        Args:
+            initial_text: Initial text to populate the input field with.
+                         Used to sync the hidden input field with the widget's text.
+        """
+        pass
+
+    def hide_keyboard(self) -> None:
+        """Hide the software keyboard.
+
+        Override on platforms with software keyboards (iOS, Android).
+        Default is no-op for desktop platforms.
+        """
+        pass
+
     # ========== Utility Methods ==========
 
     def _ensure_main_thread(self) -> None:

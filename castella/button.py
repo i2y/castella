@@ -4,6 +4,9 @@ from castella.core import (
     AppearanceState,
     Font,
     FontSizePolicy,
+    InputKeyEvent,
+    KeyAction,
+    KeyCode,
     Kind,
     MouseEvent,
     ObservableBase,
@@ -25,6 +28,7 @@ class ButtonState(ObservableBase):
         super().__init__()
         self._text = text
         self._pushed = False
+        self._focused = False
 
     def pushed(self, flag: bool) -> None:
         self._pushed = flag
@@ -32,6 +36,13 @@ class ButtonState(ObservableBase):
 
     def is_pushed(self) -> bool:
         return self._pushed
+
+    def set_focused(self, flag: bool) -> None:
+        self._focused = flag
+        self.notify()
+
+    def is_focused(self) -> bool:
+        return self._focused
 
     def get_text(self) -> str:
         return self._text
@@ -103,6 +114,32 @@ class Button(Widget):
         )
         self.update()
 
+    def focused(self) -> None:
+        """Called when this widget receives focus."""
+        state: ButtonState = cast(ButtonState, self._state)
+        state.set_focused(True)
+
+    def unfocused(self) -> None:
+        """Called when this widget loses focus."""
+        state: ButtonState = cast(ButtonState, self._state)
+        state.set_focused(False)
+
+    def can_focus(self) -> bool:
+        """Return True if this widget can receive focus."""
+        return True
+
+    def focus_order(self) -> int:
+        """Return the tab order (lower = earlier in tab sequence)."""
+        return self._tab_index
+
+    def input_key(self, ev: InputKeyEvent) -> None:
+        """Handle keyboard input when focused."""
+        if ev.action == KeyAction.RELEASE:
+            return
+        # Trigger click on Enter or Space
+        if ev.key in (KeyCode.ENTER, KeyCode.SPACE):
+            self._on_click(MouseEvent(pos=Point(x=0, y=0)))
+
     def on_click(self, callback: Callable[[MouseEvent], Any]) -> Self:
         self._on_click = callback
         return self
@@ -118,11 +155,25 @@ class Button(Widget):
         return state.get_text()
 
     def redraw(self, p: Painter, _: bool) -> None:
+        from castella.core import StrokeStyle, Style, get_theme
+
         state: ButtonState = cast(ButtonState, self._state)
 
         rect = Rect(origin=Point(x=0, y=0), size=self.get_size())
         if state.is_pushed():
             p.style(self._pushed_style)
+            p.fill_rect(rect)
+            p.stroke_rect(rect)
+        elif state.is_focused():
+            # Use focus ring color
+            focus_color = get_theme().colors.border_focus
+            focused_style = Style(
+                fill=self._style.fill,
+                stroke=StrokeStyle(color=focus_color),
+                border_radius=self._style.border_radius,
+                shadow=self._style.shadow,
+            )
+            p.style(focused_style)
             p.fill_rect(rect)
             p.stroke_rect(rect)
         else:

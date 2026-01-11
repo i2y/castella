@@ -1,5 +1,10 @@
 """LaTeX math rendering using matplotlib."""
 
+import hashlib
+import os
+import tempfile
+from typing import Optional
+
 import numpy as np
 
 try:
@@ -7,6 +12,7 @@ try:
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from PIL import Image
 
     MATPLOTLIB_AVAILABLE = True
 except ImportError:
@@ -28,6 +34,8 @@ class MathRenderer:
         self._text_color = text_color
         self._bg_transparent = bg_transparent
         self._cache: dict[str, np.ndarray] = {}
+        self._file_cache: dict[str, str] = {}  # cache_key -> file_path
+        self._temp_dir: Optional[str] = None
 
     def render(self, latex: str, inline: bool = False) -> np.ndarray:
         """Render LaTeX expression to RGBA numpy array.
@@ -109,3 +117,53 @@ class MathRenderer:
     def clear_cache(self) -> None:
         """Clear the rendering cache."""
         self._cache.clear()
+        self._file_cache.clear()
+
+    def render_to_file(self, latex: str, inline: bool = False) -> tuple[str, int, int]:
+        """Render LaTeX expression to a PNG file.
+
+        Args:
+            latex: LaTeX math expression (without $ delimiters)
+            inline: If True, render smaller for inline display
+
+        Returns:
+            Tuple of (file_path, width, height)
+        """
+        if not MATPLOTLIB_AVAILABLE:
+            # Return empty placeholder
+            return "", 100, 30
+
+        cache_key = f"{latex}:{inline}:{self._font_size}:{self._text_color}"
+
+        # Check file cache first
+        if cache_key in self._file_cache:
+            path = self._file_cache[cache_key]
+            if os.path.exists(path):
+                # Get dimensions from cached array or re-read
+                if cache_key in self._cache:
+                    arr = self._cache[cache_key]
+                    return path, arr.shape[1], arr.shape[0]
+                else:
+                    # Read image to get dimensions
+                    img = Image.open(path)
+                    return path, img.width, img.height
+
+        # Render to numpy array first (uses existing cache)
+        array = self.render(latex, inline)
+
+        # Create temp directory if needed
+        if self._temp_dir is None:
+            self._temp_dir = tempfile.mkdtemp(prefix="castella_math_")
+
+        # Generate unique filename based on content
+        hash_str = hashlib.md5(cache_key.encode()).hexdigest()[:12]
+        file_path = os.path.join(self._temp_dir, f"math_{hash_str}.png")
+
+        # Save to PNG
+        img = Image.fromarray(array, mode="RGBA")
+        img.save(file_path, "PNG")
+
+        # Cache the file path
+        self._file_cache[cache_key] = file_path
+
+        return file_path, array.shape[1], array.shape[0]

@@ -35,6 +35,7 @@ DARK_PALETTE = ColorPalette(
     border_danger="#ff6347",  # Neon red
     border_success="#32cd32",  # Neon green
     border_warning="#ffd700",  # Neon yellow
+    border_focus="#00ffff",  # Neon cyan for focus ring
 )
 
 # Light palette (Castella Unicorn Light Theme)
@@ -65,6 +66,7 @@ LIGHT_PALETTE = ColorPalette(
     border_danger="#f06292",  # Pink border
     border_success="#a5d6a7",  # Light green border
     border_warning="#ffcc80",  # Light orange border
+    border_focus="#7e57c2",  # Purple for focus ring
 )
 
 
@@ -115,6 +117,7 @@ CUPERTINO_DARK_PALETTE = ColorPalette(
     border_danger="#ff453a",  # Danger border (System Red)
     border_success="#32d74b",  # Success border (System Green)
     border_warning="#ffd60a",  # Warning border (System Yellow)
+    border_focus="#0a84ff",  # Focus ring (System Blue)
 )
 
 # Cupertino Light palette (Apple-inspired design)
@@ -145,6 +148,7 @@ CUPERTINO_LIGHT_PALETTE = ColorPalette(
     border_danger="#ff3b30",  # Danger border (System Red)
     border_success="#34c759",  # Success border (System Green)
     border_warning="#ff9500",  # Warning border (System Orange)
+    border_focus="#007aff",  # Focus ring (System Blue)
 )
 
 # Cupertino spacing with rounded corners
@@ -214,6 +218,7 @@ MATERIAL_DARK_PALETTE = ColorPalette(
     border_danger="#cf6679",  # Error
     border_success="#4caf50",  # Success (Green)
     border_warning="#ff9800",  # Warning (Orange)
+    border_focus="#bb86fc",  # Focus ring (Primary Purple)
 )
 
 # Material Design 3 Light palette
@@ -244,6 +249,7 @@ MATERIAL_LIGHT_PALETTE = ColorPalette(
     border_danger="#b00020",  # Error
     border_success="#4caf50",  # Success (Green)
     border_warning="#ff9800",  # Warning (Orange)
+    border_focus="#6200ee",  # Focus ring (Primary Purple)
 )
 
 # Material spacing with rounded corners
@@ -313,6 +319,7 @@ TOKYO_NIGHT_DARK_PALETTE = ColorPalette(
     border_danger="#f7768e",  # Red
     border_success="#9ece6a",  # Green
     border_warning="#ff9e64",  # Orange
+    border_focus="#7aa2f7",  # Focus ring (Blue)
 )
 
 # Tokyo Night Light palette (Day variant)
@@ -343,6 +350,7 @@ TOKYO_NIGHT_LIGHT_PALETTE = ColorPalette(
     border_danger="#f52a65",  # Red
     border_success="#587539",  # Green
     border_warning="#b15c00",  # Orange
+    border_focus="#2e7de9",  # Focus ring (Blue)
 )
 
 # Tokyo Night typography

@@ -1,0 +1,32 @@
+[project]
+name = "castella_charts_demo"
+version = "0.1.0"
+description = "Castella iOS Charts Demo App"
+authors = [{ name = "Castella", email = "castella@example.com" }]
+license.file = "LICENSE"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.briefcase]
+project_name = "Castella Charts"
+bundle = "com.example.castellacharts"
+version = "0.1.0"
+url = "https://example.com"
+author = "Castella"
+author_email = "castella@example.com"
+
+[tool.briefcase.app.castella_charts_demo]
+formal_name = "Castella Charts"
+description = "Charts demo app for Castella iOS"
+sources = ["src/castella_charts_demo"]
+requires = [
+    "rubicon-objc>=0.4.9",
+    "std-nslog",
+]
+
+[tool.briefcase.app.castella_charts_demo.iOS]
+supported_versions = "15.0"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

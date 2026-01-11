@@ -79,16 +79,6 @@ sudo yum install -y libglfw3-dev
 **Windows:**
 Download from [GLFW download page](https://www.glfw.org/download.html).
 
-**Note:** Starting with skia-python v138.0, additional libraries are required on Linux:
-
-```bash
-# Debian/Ubuntu
-sudo apt install libegl1 fontconfig
-
-# Fedora/RHEL
-sudo dnf install mesa-libEGL fontconfig
-```
-
 ### Using SDL2 Backend
 
 #### Install from PyPI

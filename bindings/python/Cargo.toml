@@ -1,0 +1,16 @@
+[package]
+name = "castella-skia-python"
+version = "0.1.0"
+edition = "2021"
+description = "Python bindings for castella-skia-core (Skia rendering for Castella UI)"
+license = "MIT"
+repository = "https://github.com/i2y/castella"
+authors = ["Yasushi Itoh <i2y@icloud.com>"]
+
+[lib]
+name = "castella_skia"
+crate-type = ["cdylib"]
+
+[dependencies]
+castella-skia-core = { path = "../../castella-skia-core" }
+pyo3 = { version = "0.27", features = ["extension-module"] }

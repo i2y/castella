@@ -332,13 +332,61 @@ button:
 ```
 
 ## Supported Platforms
-Currently, Castella theoretically should support not-too-old versions of the following platforms.
+Currently, Castella supports the following platforms:
 
 - Windows 10/11
 - Mac OS X
 - Linux
+- **iOS** (Simulator and Device)
 - Web browsers
 - Terminals
+
+### iOS Support
+
+Castella runs on iOS with full widget support including charts, data tables, and keyboard/IME input. Uses the castella-skia Metal backend for GPU-accelerated rendering.
+
+```bash
+# Build and run iOS demo (auto-downloads dependencies)
+AUTO_DOWNLOAD_DEPS=1 ./tools/build_ios.sh examples/ios_all_widgets_demo
+```
+
+**Building iOS dependencies locally:**
+
+```bash
+# Build pydantic-core for iOS
+./tools/build_pydantic_core_ios.sh
+
+# Build castella-skia for iOS
+cd bindings/python && ./build_ios.sh
+
+# Then build iOS app
+./tools/build_ios.sh examples/ios_all_widgets_demo
+```
+
+See the [iOS Documentation](https://i2y.github.io/castella/ios/) for details.
+
+## castella-skia (Rust Backend)
+
+Castella uses a Rust-based Skia backend for GPU-accelerated rendering across all platforms:
+
+```
+castella/
+├── castella-skia-core/    # Pure Rust core library (crates.io)
+└── bindings/
+    ├── python/            # Python bindings (PyPI: castella-skia)
+    ├── ruby/              # Ruby bindings (planned)
+    └── node/              # Node.js bindings (planned)
+```
+
+The architecture separates the core rendering logic from language-specific bindings, enabling multi-language support.
+
+```bash
+# Build Python bindings
+cd bindings/python && maturin develop --release
+
+# Run Castella app
+uv run python examples/counter.py
+```
 
 ## License
 MIT License

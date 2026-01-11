@@ -7,8 +7,8 @@ from ctypes import byref, c_int
 from typing import TYPE_CHECKING, Final
 
 import sdl2 as sdl
-import skia
-import zengl
+
+import castella_skia
 
 from castella.frame.base import BaseFrame
 from castella.models.geometry import Point, Size
@@ -55,36 +55,69 @@ class Frame(BaseFrame):
     ):
         super().__init__(title, width, height)
 
-        sdl.SDL_Init(sdl.SDL_INIT_EVENTS)
+        self._gl_context = None
+
+        sdl.SDL_Init(sdl.SDL_INIT_EVENTS | sdl.SDL_INIT_VIDEO)
         self._rgba_masks = _rgba_masks()
+
+        # Set up OpenGL attributes for GPU mode
+        # Request OpenGL 3.2 Core Profile (required for Skia on macOS)
+        sdl.SDL_GL_SetAttribute(sdl.SDL_GL_CONTEXT_MAJOR_VERSION, 3)
+        sdl.SDL_GL_SetAttribute(sdl.SDL_GL_CONTEXT_MINOR_VERSION, 2)
+        sdl.SDL_GL_SetAttribute(
+            sdl.SDL_GL_CONTEXT_PROFILE_MASK, sdl.SDL_GL_CONTEXT_PROFILE_CORE
+        )
+        sdl.SDL_GL_SetAttribute(sdl.SDL_GL_STENCIL_SIZE, 8)
+        # Use single buffer mode like GLFW (DOUBLEBUFFER = 0)
+        sdl.SDL_GL_SetAttribute(sdl.SDL_GL_DOUBLEBUFFER, 0)
+
+        window_flags = (
+            sdl.SDL_WINDOW_SHOWN
+            | sdl.SDL_WINDOW_RESIZABLE
+            | sdl.SDL_WINDOW_ALLOW_HIGHDPI
+            | sdl.SDL_WINDOW_OPENGL
+        )
+
         window = sdl.SDL_CreateWindow(
             bytes(title, "utf8"),
             sdl.SDL_WINDOWPOS_CENTERED,
             sdl.SDL_WINDOWPOS_CENTERED,
             int(width),
             int(height),
-            sdl.SDL_WINDOW_SHOWN
-            | sdl.SDL_WINDOW_RESIZABLE
-            | sdl.SDL_WINDOW_ALLOW_HIGHDPI,
+            window_flags,
         )
 
         self._window = window
-        zengl.init(zengl.loader(headless=True))
+
+        # Create OpenGL context
+        self._gl_context = sdl.SDL_GL_CreateContext(window)
+        sdl.SDL_GL_MakeCurrent(window, self._gl_context)
+
         self._update_surface_and_painter()
 
     def _update_surface_and_painter(self) -> None:
         """Create/recreate the Skia surface for the current size."""
-        from castella import skia_painter as painter
+        from castella import rust_skia_painter as painter
 
-        info = skia.ImageInfo.MakeN32Premul(
-            int(self._size.width), int(self._size.height)
-        )
-        surface = skia.Surface.MakeRenderTarget(
-            skia.GrDirectContext.MakeGL(), skia.Budgeted.kNo, info
-        )
+        width = int(self._size.width)
+        height = int(self._size.height)
 
-        self._surface = surface
-        self._painter = painter.Painter(self, self._surface)
+        if hasattr(self, "_surface") and self._surface is not None:
+            # Resize existing surface (faster, avoids recreating context)
+            self._surface.resize(
+                width, height, sample_count=0, stencil_bits=8, framebuffer_id=0
+            )
+            self._painter = painter.Painter(self, self._surface)
+        else:
+            # Create new GPU surface
+            self._surface = castella_skia.Surface.from_gl_context(
+                width,
+                height,
+                sample_count=0,
+                stencil_bits=8,
+                framebuffer_id=0,
+            )
+            self._painter = painter.Painter(self, self._surface)
 
     def _signal_main_thread(self) -> None:
         """Signal main thread via SDL custom event."""
@@ -101,31 +134,23 @@ class Frame(BaseFrame):
         return self._size
 
     def flush(self) -> None:
-        skia_image = self._surface.makeImageSnapshot()
-        skia_bytes = skia_image.tobytes()
+        # GPU mode: flush Skia and OpenGL (single buffer, like GLFW)
+        self._surface.flush_and_submit()
+        from OpenGL import GL
 
-        size = self._size
-        width = int(size.width)
-        height = int(size.height)
-        sdl_surface = sdl.SDL_CreateRGBSurfaceFrom(
-            skia_bytes,
-            width,
-            height,
-            self.PIXEL_DEPTH,
-            self.PIXEL_PITCH_FACTOR * width,
-            *self._rgba_masks,
-        )
-
-        rect = sdl.SDL_Rect(0, 0, width, height)
-        window_surface = sdl.SDL_GetWindowSurface(self._window)
-        sdl.SDL_BlitSurface(sdl_surface, rect, window_surface, rect)
-        sdl.SDL_UpdateWindowSurface(self._window)
+        GL.glFlush()
 
     def clear(self) -> None:
-        self._surface.getCanvas().clear(0)
+        # Clear with OpenGL for GPU mode (same as GLFW)
+        from OpenGL import GL
+
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT)
 
     def run(self) -> None:
         self._ensure_main_thread()
+
+        # Trigger initial redraw (like GLFW's on_load)
+        on_load = True
 
         event = sdl.SDL_Event()
         while True:
@@ -133,6 +158,11 @@ class Frame(BaseFrame):
             if not ok:
                 sdl.SDL_Quit()
                 break
+
+            if on_load:
+                # Initial redraw on first event
+                self._on_resize(int(self._size.width), int(self._size.height))
+                on_load = False
 
             match event.type:
                 case sdl.SDL_QUIT:

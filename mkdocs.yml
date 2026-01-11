@@ -47,6 +47,9 @@ nav:
   - Widgets:
       - Built-in Widgets: widgets.md
       - Charts: chart.md
+  - Platforms:
+      - iOS: ios.md
+      - castella-skia Backend: castella-skia.md
   - AI Agent:
       - Agent UI: agent.md
       - MCP: mcp.md
@@ -56,6 +59,7 @@ nav:
       - Z-Index and Layering: z-index.md
       - Hot Restarting: hot-restarting.md
       - Hot Reloading: hot-reloading.md
+      - Environment Variables: environment.md
   - Deployment:
       - Packaging: packaging.md
   - License: license.md

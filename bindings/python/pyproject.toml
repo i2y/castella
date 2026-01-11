@@ -1,0 +1,38 @@
+[build-system]
+requires = ["maturin>=1.4,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "castella-skia"
+version = "0.1.0"
+description = "Unified Skia rendering backend for Castella UI framework"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Yasushi Itoh", email = "i2y@icloud.com" }]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Rust",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Software Development :: User Interfaces",
+]
+keywords = ["gui", "ui", "skia", "graphics", "cross-platform"]
+
+[project.urls]
+Homepage = "https://github.com/i2y/castella"
+Repository = "https://github.com/i2y/castella"
+Documentation = "https://i2y.github.io/castella"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+python-source = "python"
+module-name = "castella_skia.castella_skia"

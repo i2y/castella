@@ -1,0 +1,126 @@
+name: Build iOS Dependencies
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      pydantic_core_version:
+        description: 'pydantic-core version/branch to build'
+        required: false
+        default: 'main'
+
+permissions:
+  contents: write
+
+env:
+  PYTHON_VERSION: "3.14"
+
+jobs:
+  build-ios-deps:
+    runs-on: macos-14  # M1 runner for arm64
+
+    steps:
+      - name: Checkout castella
+        uses: actions/checkout@v6
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+        with:
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim
+
+      - name: Clone pydantic-core
+        run: |
+          git clone https://github.com/pydantic/pydantic-core.git /tmp/pydantic-core
+          cd /tmp/pydantic-core
+          # Add extension-module to existing pyo3 features list
+          sed -i '' 's/pyo3 = { version = "\([^"]*\)", features = \["/pyo3 = { version = "\1", features = ["extension-module", "/' Cargo.toml
+
+          # Create .cargo/config.toml with linker flags
+          mkdir -p .cargo
+          cat > .cargo/config.toml << 'EOF'
+          [target.aarch64-apple-ios]
+          rustflags = ["-C", "link-arg=-undefined", "-C", "link-arg=dynamic_lookup"]
+
+          [target.aarch64-apple-ios-sim]
+          rustflags = ["-C", "link-arg=-undefined", "-C", "link-arg=dynamic_lookup"]
+          EOF
+
+      - name: Build pydantic-core for iOS Simulator
+        run: |
+          cd /tmp/pydantic-core
+          PYO3_CROSS_PYTHON_VERSION=${{ env.PYTHON_VERSION }} \
+            cargo build --release --target aarch64-apple-ios-sim -j 2
+
+      - name: Build pydantic-core for iOS Device
+        run: |
+          cd /tmp/pydantic-core
+          PYO3_CROSS_PYTHON_VERSION=${{ env.PYTHON_VERSION }} \
+            cargo build --release --target aarch64-apple-ios -j 2
+
+      - name: Build castella-skia for iOS Simulator
+        run: |
+          cd bindings/python
+          PYO3_CROSS_PYTHON_VERSION=${{ env.PYTHON_VERSION }} \
+            cargo build --release --target aarch64-apple-ios-sim
+
+      - name: Build castella-skia for iOS Device
+        run: |
+          cd bindings/python
+          PYO3_CROSS_PYTHON_VERSION=${{ env.PYTHON_VERSION }} \
+            cargo build --release --target aarch64-apple-ios
+
+      - name: Package iOS Simulator dependencies
+        run: |
+          mkdir -p dist/ios-sim-arm64
+
+          # pydantic-core
+          mkdir -p dist/ios-sim-arm64/pydantic_core
+          cp /tmp/pydantic-core/target/aarch64-apple-ios-sim/release/lib_pydantic_core.dylib \
+             dist/ios-sim-arm64/pydantic_core/_pydantic_core.abi3.so
+          cp -r /tmp/pydantic-core/python/pydantic_core/*.py \
+             dist/ios-sim-arm64/pydantic_core/
+
+          # castella-skia (workspace target is at root)
+          cp target/aarch64-apple-ios-sim/release/libcastella_skia.dylib \
+             dist/ios-sim-arm64/castella_skia.abi3.so
+
+          # Create tarball
+          cd dist
+          tar czf ios-sim-arm64.tar.gz ios-sim-arm64/
+
+      - name: Package iOS Device dependencies
+        run: |
+          mkdir -p dist/ios-arm64
+
+          # pydantic-core
+          mkdir -p dist/ios-arm64/pydantic_core
+          cp /tmp/pydantic-core/target/aarch64-apple-ios/release/lib_pydantic_core.dylib \
+             dist/ios-arm64/pydantic_core/_pydantic_core.abi3.so
+          cp -r /tmp/pydantic-core/python/pydantic_core/*.py \
+             dist/ios-arm64/pydantic_core/
+
+          # castella-skia (workspace target is at root)
+          cp target/aarch64-apple-ios/release/libcastella_skia.dylib \
+             dist/ios-arm64/castella_skia.abi3.so
+
+          # Create tarball
+          cd dist
+          tar czf ios-arm64.tar.gz ios-arm64/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: ios-deps
+          path: |
+            dist/ios-sim-arm64.tar.gz
+            dist/ios-arm64.tar.gz
+
+      - name: Upload to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/ios-sim-arm64.tar.gz
+            dist/ios-arm64.tar.gz

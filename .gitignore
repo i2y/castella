@@ -169,3 +169,4 @@ cython_debug/
 
 # Test databases
 *.db
+pydantic-core-ios-build/

@@ -106,6 +106,75 @@ sudo apt install libgl1-mesa-glx libglfw3
 sudo dnf install mesa-libGL glfw
 ```
 
+## iOS Applications
+
+Castella iOS apps are packaged using [BeeWare Briefcase](https://briefcase.readthedocs.io/).
+
+### Prerequisites
+
+- macOS with Xcode
+- Rust toolchain with iOS targets
+- Briefcase: `pip install briefcase`
+
+### Quick Start
+
+Use the unified build script:
+
+```bash
+# Build and run on iOS Simulator
+./tools/build_ios.sh examples/ios_test_app
+
+# With auto-download of dependencies
+AUTO_DOWNLOAD_DEPS=1 ./tools/build_ios.sh examples/ios_test_app
+```
+
+### Manual Process
+
+```bash
+cd your_ios_app
+
+# Create iOS project
+uvx briefcase create iOS
+
+# Build
+uvx briefcase build iOS
+
+# Run on Simulator
+uvx briefcase run iOS
+```
+
+### Project Structure
+
+```
+your_ios_app/
+├── pyproject.toml          # Briefcase configuration
+├── src/
+│   └── your_app/
+│       ├── __init__.py     # Entry point
+│       ├── __main__.py     # Required for iOS
+│       └── app.py          # Your Castella app
+└── build_ios.sh            # Optional convenience script
+```
+
+### Dependencies
+
+iOS requires pre-built native libraries. Download them:
+
+```bash
+# Auto-download during build
+AUTO_DOWNLOAD_DEPS=1 ./tools/build_ios.sh your_app
+
+# Or download manually
+./tools/download_ios_deps.sh
+```
+
+### App Store Submission
+
+!!! warning "Not Yet Tested"
+    App Store submission has not been tested. Physical device deployment requires an Apple Developer account for code signing.
+
+For more details, see [iOS Documentation](ios.md).
+
 ## Web Deployment
 
 For PyScript/Pyodide web applications, see [Getting Started - Web Browsers](getting-started.md#for-web-browsers).

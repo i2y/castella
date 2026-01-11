@@ -15,6 +15,7 @@ from castella.core import (
     Point,
     Rect,
     Size,
+    StrokeStyle,
     Style,
     TextAlign,
     determine_font,
@@ -265,7 +266,19 @@ class Input(Text):
     def redraw(self, p: Painter, _: bool) -> None:
         state: InputState = cast(InputState, self._state)
 
-        p.style(self._rect_style)
+        # Use focus ring color when editing
+        if state.is_in_editing():
+            focus_color = get_theme().colors.border_focus
+            focused_style = Style(
+                fill=self._rect_style.fill,
+                stroke=StrokeStyle(color=focus_color),
+                border_radius=self._rect_style.border_radius,
+                shadow=self._rect_style.shadow,
+            )
+            p.style(focused_style)
+        else:
+            p.style(self._rect_style)
+
         size = self.get_size()
         rect = Rect(origin=Point(x=0, y=0), size=size)
         p.fill_rect(rect)
@@ -474,12 +487,35 @@ class Input(Text):
         p.fill_rect(selection_rect)
 
     def focused(self) -> None:
+        from castella.core import App
+
         state = cast(InputState, self._state)
         state.start_editing()
 
+        # Show software keyboard on mobile platforms
+        # Pass current text so the hidden input field stays in sync
+        app = App.get()
+        if app is not None:
+            app._frame.show_keyboard(state.raw_value())
+
     def unfocused(self) -> None:
+        from castella.core import App
+
         state = cast(InputState, self._state)
         state.finish_editing()
+
+        # Hide software keyboard on mobile platforms
+        app = App.get()
+        if app is not None:
+            app._frame.hide_keyboard()
+
+    def can_focus(self) -> bool:
+        """Return True if this widget can receive focus."""
+        return True
+
+    def focus_order(self) -> int:
+        """Return the tab order (lower = earlier in tab sequence)."""
+        return self._tab_index
 
     def input_char(self, ev: InputCharEvent) -> None:
         state = cast(InputState, self._state)

@@ -740,7 +740,7 @@ def hello():
             Text("Loading image from URL...", font_size=11)
             .text_color(theme.colors.fg)
             .fixed_height(20),
-            NetImage("https://picsum.photos/400/300"),
+            NetImage("https://placehold.co/400x300/1a1b26/9ece6a.png?text=Castella"),
             Text("NetImage supports various image formats from URLs.", font_size=12)
             .text_color(theme.colors.fg)
             .fixed_height(25),

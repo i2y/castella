@@ -18,7 +18,7 @@ from castella.core import (
     State,
     Widget,
 )
-from castella.markdown.code_highlighter import CodeHighlighter
+from castella.markdown.code_text_renderer import CodeTextRenderer
 from castella.markdown.math_renderer import MathRenderer
 from castella.markdown.models import DocumentNode
 from castella.markdown.parser import MarkdownParser
@@ -171,10 +171,9 @@ class Markdown(Widget):
             is_dark=self._theme.is_dark,
         )
 
-        code_highlighter = None
+        code_renderer = None
         if self._enable_syntax_highlight:
-            code_highlighter = CodeHighlighter(
-                font_size=self._base_font_size - 2,
+            code_renderer = CodeTextRenderer(
                 style=self._code_theme,
             )
 
@@ -187,7 +186,7 @@ class Markdown(Widget):
 
         self._renderer = MarkdownRenderer(
             theme=self._theme,
-            code_highlighter=code_highlighter,
+            code_renderer=code_renderer,
             math_renderer=math_renderer,
             on_link_click=self._link_callback,
         )
@@ -317,6 +316,6 @@ __all__ = [
     "MarkdownTheme",
     "MarkdownParser",
     "MarkdownRenderer",
-    "CodeHighlighter",
+    "CodeTextRenderer",
     "MathRenderer",
 ]
