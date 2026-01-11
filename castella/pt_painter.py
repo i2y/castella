@@ -91,7 +91,7 @@ class Canvas:
             self._rows[y][j] = (new_style, char)
 
     def draw_caret(self, x: int, y: int, height: int = 1):
-        if 0 < x <= self._width:
+        if 0 <= x < self._width:
             for i in range(0, height + 1):
                 if y + i <= self._height:
                     self._rows[y + i][x] = ("reverse", self._rows[y + i][x][1])

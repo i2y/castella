@@ -191,7 +191,7 @@ For PyScript/Pyodide web applications, see [Getting Started - Web Browsers](gett
 my-web-app/
 ├── index.html
 ├── main.py
-└── castella-0.2.3-py3-none-any.whl
+└── castella-0.11.1-py3-none-any.whl
 ```
 
 ### Hosting Options

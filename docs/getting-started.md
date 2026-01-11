@@ -190,7 +190,7 @@ Create `counter.html`:
 Create `pyscript.toml`:
 
 ```toml
-packages = [ "./castella-0.4.0-py3-none-any.whl" ]
+packages = [ "./castella-0.11.1-py3-none-any.whl" ]
 ```
 
 Create `counter.py`:

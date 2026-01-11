@@ -87,12 +87,21 @@ class Frame:
             ),
         )
 
+    def on_ime_preedit(
+        self, handler: Callable[[core.IMEPreeditEvent], None]
+    ) -> None:
+        # Web doesn't support IME preedit events (yet)
+        pass
+
     def on_redraw(self, handler: Callable[[core.Painter, bool], None]) -> None:
         self._add_redraw = lambda: window.addEventListener(
             "resize", create_proxy(lambda ev: self._on_redraw(handler))
         )
 
     def _on_redraw(self, handler: Callable[[core.Painter, bool], None]) -> None:
+        # Update canvas dimensions BEFORE creating new surface
+        self._canvas.width = window.innerWidth
+        self._canvas.height = window.innerHeight
         self._size = core.Size(width=window.innerWidth, height=window.innerHeight)
         self._update_surface_and_painter()
         handler(self._painter, True)
