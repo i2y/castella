@@ -177,8 +177,8 @@ Create `counter.html`:
 <head>
     <meta charset="UTF-8" />
     <title>Counter</title>
-    <link rel="stylesheet" href="https://pyscript.net/releases/2024.4.1/core.css">
-    <script type="module" src="https://pyscript.net/releases/2024.4.1/core.js"></script>
+    <link rel="stylesheet" href="https://pyscript.net/releases/2025.11.2/core.css">
+    <script type="module" src="https://pyscript.net/releases/2025.11.2/core.js"></script>
     <script type="text/javascript" src="https://unpkg.com/canvaskit-wasm@0.33.0/bin/canvaskit.js"></script>
 </head>
 <body>
