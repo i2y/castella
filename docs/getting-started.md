@@ -161,13 +161,7 @@ mkdir counter
 cd counter
 ```
 
-#### 2. Clone Castella repository
-
-```bash
-git clone https://github.com/i2y/castella.git
-```
-
-#### 3. Create your app files
+#### 2. Create your app files
 
 Create `counter.html`:
 
@@ -178,8 +172,23 @@ Create `counter.html`:
     <meta charset="UTF-8" />
     <title>Counter</title>
     <link rel="stylesheet" href="https://pyscript.net/releases/2025.11.2/core.css">
-    <script type="module" src="https://pyscript.net/releases/2025.11.2/core.js"></script>
-    <script type="text/javascript" src="https://unpkg.com/canvaskit-wasm@0.33.0/bin/canvaskit.js"></script>
+    <script type="text/javascript" src="https://unpkg.com/canvaskit-wasm@0.39.1/bin/canvaskit.js"></script>
+    <script type="text/javascript">
+        const loadFont = fetch('https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxP.ttf')
+            .then((response) => response.arrayBuffer());
+
+        const ckLoaded = CanvasKitInit();
+        Promise.all([ckLoaded, loadFont]).then(([CanvasKit, robotoData]) => {
+            window.CK = CanvasKit;
+            window.fontMgr = CanvasKit.FontMgr.FromData([robotoData]);
+            window.typeface = CanvasKit.Typeface.MakeFreeTypeFaceFromData(robotoData);
+            // Load PyScript after CanvasKit is ready
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.src = 'https://pyscript.net/releases/2025.11.2/core.js';
+            document.head.appendChild(script);
+        });
+    </script>
 </head>
 <body>
 <script type="py" src="counter.py" config="pyscript.toml"></script>
@@ -190,7 +199,7 @@ Create `counter.html`:
 Create `pyscript.toml`:
 
 ```toml
-packages = [ "./castella-0.11.1-py3-none-any.whl" ]
+packages = [ "pydantic", "castella" ]
 ```
 
 Create `counter.py`:
@@ -225,7 +234,7 @@ if __name__ == "__main__":
     App(Frame("Counter", 800, 600), Counter()).run()
 ```
 
-#### 4. Serve your app
+#### 3. Serve your app
 
 ```bash
 # With uv
