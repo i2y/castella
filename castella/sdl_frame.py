@@ -13,6 +13,7 @@ import castella_skia
 from castella.frame.base import BaseFrame
 from castella.models.geometry import Point, Size
 from castella.models.events import (
+    IMEPreeditEvent,
     InputCharEvent,
     InputKeyEvent,
     KeyAction,
@@ -92,6 +93,12 @@ class Frame(BaseFrame):
         # Create OpenGL context
         self._gl_context = sdl.SDL_GL_CreateContext(window)
         sdl.SDL_GL_MakeCurrent(window, self._gl_context)
+
+        # Enable IME text input
+        sdl.SDL_StartTextInput()
+
+        # IME cursor rect for candidate window positioning
+        self._ime_rect = sdl.SDL_Rect(0, 0, 1, 20)
 
         self._update_surface_and_painter()
 
@@ -206,7 +213,18 @@ class Frame(BaseFrame):
                             mods=_get_key_mods(),
                         )
                     )
+                case sdl.SDL_TEXTEDITING:
+                    # IME preedit (composition) text
+                    preedit_text = event.edit.text.decode("utf-8")
+                    cursor_pos = event.edit.start + event.edit.length
+                    self._callback_on_ime_preedit(
+                        IMEPreeditEvent(text=preedit_text, cursor_pos=cursor_pos)
+                    )
                 case sdl.SDL_TEXTINPUT:
+                    # Clear preedit when text is committed
+                    self._callback_on_ime_preedit(
+                        IMEPreeditEvent(text="", cursor_pos=0)
+                    )
                     self._callback_on_input_char(
                         InputCharEvent(char=event.text.text.decode("utf-8"))
                     )
@@ -216,6 +234,16 @@ class Frame(BaseFrame):
         self._size = Size(width=w, height=h)
         self._update_surface_and_painter()
         self._callback_on_redraw(self._painter, True)
+
+    # ========== IME Support ==========
+
+    def set_ime_cursor_rect(self, x: int, y: int, w: int, h: int) -> None:
+        """Set the IME cursor rectangle for candidate window positioning."""
+        self._ime_rect.x = x
+        self._ime_rect.y = y
+        self._ime_rect.w = w
+        self._ime_rect.h = h
+        sdl.SDL_SetTextInputRect(byref(self._ime_rect))
 
     # ========== Clipboard ==========
 

@@ -96,14 +96,24 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Create a new project
 uv init my-app && cd my-app
 
-# Add Castella with GLFW backend
-uv add "castella[glfw]"
+# Add Castella (choose your platform)
+uv add "castella[sdl]"   # Windows/Linux (recommended, no extra install needed)
+uv add "castella[glfw]"  # macOS (with IME support for Japanese/Chinese input)
 
 # Run your app
 uv run python your_app.py
 ```
 
-For detailed installation instructions (SDL2, TUI, web), see the [Getting Started Guide](https://i2y.github.io/castella/getting-started/).
+### Platform Recommendations
+
+| Platform | Recommended Option | Notes |
+|----------|-------------------|-------|
+| **Windows** | `castella[sdl]` | SDL2 binaries included via `pysdl2-dll`, no extra install |
+| **Linux** | `castella[sdl]` | SDL2 binaries included via `pysdl2-dll`, no extra install |
+| **macOS** | `castella[glfw]` | Full IME support for Japanese/Chinese input |
+| **macOS** (ASCII only) | `castella[sdl]` | Simpler setup, no IME support |
+
+For detailed installation instructions (TUI, web), see the [Getting Started Guide](https://i2y.github.io/castella/getting-started/).
 
 ## An example of code using Castella
 

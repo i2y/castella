@@ -10,6 +10,15 @@ def _is_terminal_mode() -> bool:
     return os.environ.get("CASTELLA_IS_TERMINAL_MODE", "false") == "true"
 
 
+def _get_preferred_frame() -> str:
+    """Get preferred frame from environment variable.
+
+    Returns:
+        "glfw", "sdl", "tui", or "auto" (default)
+    """
+    return os.environ.get("CASTELLA_FRAME", "auto").lower()
+
+
 def _is_ios() -> bool:
     """Detect if running on iOS via Rubicon-ObjC."""
     try:
@@ -58,22 +67,41 @@ elif _is_android():
     )
 else:
     # Desktop (GLFW/SDL + OpenGL)
-    try:
+    _preferred = _get_preferred_frame()
+
+    if _preferred == "sdl":
+        # Explicitly requested SDL2
+        from castella import sdl_frame
+
+        Frame = sdl_frame.Frame
+    elif _preferred == "glfw":
+        # Explicitly requested GLFW
         from castella import glfw_frame
 
         Frame = glfw_frame.Frame
-    except Exception:
-        try:
-            from castella import sdl_frame
+    elif _preferred == "tui":
+        # Explicitly requested TUI
+        from castella import pt_frame
 
-            Frame = sdl_frame.Frame
+        Frame = pt_frame.PTFrame
+    else:
+        # Auto-detect: try GLFW first, then SDL2, then TUI
+        try:
+            from castella import glfw_frame
+
+            Frame = glfw_frame.Frame
         except Exception:
             try:
-                from castella import pt_frame
+                from castella import sdl_frame
 
-                Frame = pt_frame.PTFrame
+                Frame = sdl_frame.Frame
             except Exception:
-                raise ImportError("Could not import any frame implementation")
+                try:
+                    from castella import pt_frame
+
+                    Frame = pt_frame.PTFrame
+                except Exception:
+                    raise ImportError("Could not import any frame implementation")
 
 
 __all__ = ["BaseFrame", "Frame"]

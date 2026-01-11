@@ -87,9 +87,7 @@ class Frame:
             ),
         )
 
-    def on_ime_preedit(
-        self, handler: Callable[[core.IMEPreeditEvent], None]
-    ) -> None:
+    def on_ime_preedit(self, handler: Callable[[core.IMEPreeditEvent], None]) -> None:
         # Web doesn't support IME preedit events (yet)
         pass
 

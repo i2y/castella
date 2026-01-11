@@ -18,7 +18,14 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 
 ## For Desktop
 
-Castella for Desktop depends on either GLFW or SDL2. We recommend GLFW as it currently offers better performance.
+Castella for Desktop depends on either GLFW or SDL2. The recommended choice depends on your platform:
+
+| Platform | Recommended | Notes |
+|----------|-------------|-------|
+| **Windows** | `castella[sdl]` | SDL2 binaries included via `pysdl2-dll`, no extra install needed |
+| **Linux** | `castella[sdl]` | SDL2 binaries included via `pysdl2-dll`, no extra install needed |
+| **macOS** | `castella[glfw]` | Full IME support for Japanese/Chinese input |
+| **macOS** (ASCII only) | `castella[sdl]` | Simpler setup, no IME support |
 
 ### Quick Start with uv
 
@@ -27,8 +34,9 @@ Castella for Desktop depends on either GLFW or SDL2. We recommend GLFW as it cur
 uv init my-castella-app
 cd my-castella-app
 
-# Add Castella with GLFW backend (recommended)
-uv add "castella[glfw]"
+# Add Castella (choose based on your platform)
+uv add "castella[sdl]"   # Windows/Linux (recommended)
+uv add "castella[glfw]"  # macOS (with IME support)
 
 # Run your app
 uv run python your_app.py
@@ -79,13 +87,22 @@ sudo yum install -y libglfw3-dev
 **Windows:**
 Download from [GLFW download page](https://www.glfw.org/download.html).
 
-### Using SDL2 Backend
+### Using SDL2 Backend (Recommended for Windows/Linux)
+
+The SDL2 backend includes all necessary binaries via the `pysdl2-dll` package. **No additional installation is required** on Windows, Linux, or macOS.
 
 #### Install from PyPI
 
 ```bash
 uv add "castella[sdl]"
 ```
+
+This automatically installs:
+
+- `pysdl2-dll` - Pre-built SDL2 binaries for Windows, Linux (x86_64, ARM64), and macOS
+- `castella-skia` - Pre-built Skia rendering engine for all platforms
+- `PySDL2` - Python bindings for SDL2
+- `PyOpenGL` - OpenGL bindings
 
 #### Install from GitHub (latest source)
 
@@ -102,11 +119,17 @@ uv sync --extra sdl
 uv run python examples/counter.py
 ```
 
-#### Additional SDL2 Installation (if needed)
+#### Using Custom SDL2 (Advanced)
 
-You can download precompiled SDL2 from [SDL2 download page](https://www.libsdl.org/download-2.0.php).
+By default, the bundled SDL2 from `pysdl2-dll` is used automatically. If you need to use a custom SDL2 installation:
 
-After downloading, set the `PYSDL2_DLL_PATH` environment variable to the folder containing the SDL2 library.
+```bash
+# Use system SDL2 instead of bundled
+export PYSDL2_DLL_PATH=system
+
+# Or specify a custom path
+export PYSDL2_DLL_PATH=/path/to/sdl2/lib
+```
 
 For more details, see [PySDL2 integration guide](https://pysdl2.readthedocs.io/en/rel_0_9_7/integration.html).
 
