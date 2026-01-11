@@ -32,6 +32,8 @@ jobs:
           sccache: "true"
           manylinux: auto
           working-directory: bindings/python
+          before-script-linux: |
+            yum install -y freetype-devel fontconfig-devel
 
       - name: Upload wheels
         uses: actions/upload-artifact@v6
