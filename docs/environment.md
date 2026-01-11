@@ -4,9 +4,29 @@ Castella can be configured using environment variables for platform selection, a
 
 ## Platform Selection
 
+### CASTELLA_FRAME
+
+Select the desktop frame backend.
+
+| Value | Description |
+|-------|-------------|
+| `glfw` | Use GLFW backend |
+| `sdl` | Use SDL2 backend |
+| `sdl3` | Use SDL3 backend |
+| `tui` | Use terminal UI mode |
+| `auto` | Auto-detect (default) |
+
+```bash
+# Use SDL3 backend
+CASTELLA_FRAME=sdl3 uv run python examples/counter.py
+
+# Use GLFW backend
+CASTELLA_FRAME=glfw uv run python examples/counter.py
+```
+
 ### CASTELLA_IS_TERMINAL_MODE
 
-Force terminal UI mode (using prompt-toolkit) instead of graphical mode.
+Force terminal UI mode (using prompt-toolkit) instead of graphical mode. (Deprecated: use `CASTELLA_FRAME=tui` instead)
 
 | Value | Description |
 |-------|-------------|
@@ -109,11 +129,17 @@ uv run python examples/counter.py
 ### Testing Different Backends
 
 ```bash
-# Desktop (GLFW/SDL with castella-skia)
-uv run python examples/counter.py
+# SDL3 backend
+CASTELLA_FRAME=sdl3 uv run python examples/counter.py
+
+# SDL2 backend
+CASTELLA_FRAME=sdl uv run python examples/counter.py
+
+# GLFW backend
+CASTELLA_FRAME=glfw uv run python examples/counter.py
 
 # Terminal mode
-CASTELLA_IS_TERMINAL_MODE=true uv run python examples/counter.py
+CASTELLA_FRAME=tui uv run python examples/counter.py
 ```
 
 ### Internationalization Testing

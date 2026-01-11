@@ -83,7 +83,7 @@ Each skill follows the [agentskills.io specification](https://agentskills.io/spe
 - `scripts/` - Executable examples
 
 ## Dependencies
-- For desktop platforms, Castella is standing on existing excellent python bindings for window management library (GLFW or SDL2) and 2D graphics library (Skia).
+- For desktop platforms, Castella is standing on existing excellent python bindings for window management library (GLFW, SDL2, or SDL3) and 2D graphics library (Skia).
 - For web browsers, Castella is standing on awesome Pyodide/PyScript and CanvasKit (Wasm version of Skia).
 - For terminals, Castella is standing on prompt_toolkit.
 
@@ -96,9 +96,10 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Create a new project
 uv init my-app && cd my-app
 
-# Add Castella (choose your platform)
-uv add "castella[sdl]"   # Windows/Linux (recommended, no extra install needed)
-uv add "castella[glfw]"  # macOS (with IME support for Japanese/Chinese input)
+# Add Castella (choose your backend)
+uv add "castella[sdl3]"  # For easy setup (all platforms, no extra install)
+uv add "castella[sdl]"   # For easy setup (SDL2 stable alternative)
+uv add "castella[glfw]"  # For better performance
 
 # Run your app
 uv run python your_app.py
@@ -106,13 +107,15 @@ uv run python your_app.py
 
 ### Platform Recommendations
 
-| Platform | Easy Setup | Best Performance |
+| Platform | Easy Setup | Better Performance |
 |----------|------------|------------------|
-| **Windows** | `castella[sdl]` (no extra install) | `castella[glfw]` (requires [GLFW install](https://www.glfw.org/download.html)) |
-| **Linux** | `castella[sdl]` (no extra install) | `castella[glfw]` (requires `apt install libglfw3-dev`) |
-| **macOS** | Both work without extra install | `castella[glfw]` (recommended) |
+| **Windows** | `castella[sdl3]` or `castella[sdl]` | `castella[glfw]` (requires [GLFW install](https://www.glfw.org/download.html)) |
+| **Linux** | `castella[sdl3]` or `castella[sdl]` | `castella[glfw]` (requires `apt install libglfw3-dev`) |
+| **macOS** | All backends work without extra install | `castella[glfw]` |
 
-Both backends support IME (Japanese/Chinese/Korean input).
+### IME Support (Japanese/Chinese/Korean Input)
+
+All backends support IME on all platforms. On macOS, GLFW provides better IME integration via native Cocoa APIs.
 
 For detailed installation instructions (TUI, web), see the [Getting Started Guide](https://i2y.github.io/castella/getting-started/).
 

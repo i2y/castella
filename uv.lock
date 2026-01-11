@@ -346,7 +346,7 @@ wheels = [
 
 [[package]]
 name = "castella"
-version = "0.11.1"
+version = "0.11.4"
 source = { editable = "." }
 
 [package.optional-dependencies]
@@ -398,6 +398,17 @@ sdl = [
     { name = "pysdl2" },
     { name = "pysdl2-dll" },
 ]
+sdl3 = [
+    { name = "castella-skia" },
+    { name = "darkdetect" },
+    { name = "markdown-it-py" },
+    { name = "matplotlib" },
+    { name = "mdit-py-plugins" },
+    { name = "pydantic" },
+    { name = "pygments" },
+    { name = "pyopengl" },
+    { name = "pysdl3" },
+]
 tui = [
     { name = "darkdetect" },
     { name = "markdown-it-py" },
@@ -438,8 +449,10 @@ dev = [
 requires-dist = [
     { name = "castella-skia", marker = "extra == 'glfw'", specifier = ">=0.1.1" },
     { name = "castella-skia", marker = "extra == 'sdl'", specifier = ">=0.1.1" },
+    { name = "castella-skia", marker = "extra == 'sdl3'", specifier = ">=0.1.1" },
     { name = "darkdetect", marker = "extra == 'glfw'", specifier = ">=0.8" },
     { name = "darkdetect", marker = "extra == 'sdl'", specifier = ">=0.8" },
+    { name = "darkdetect", marker = "extra == 'sdl3'", specifier = ">=0.8" },
     { name = "darkdetect", marker = "extra == 'tui'", specifier = ">=0.8" },
     { name = "edda-framework", extras = ["llamaindex"], marker = "extra == 'edda-workflow-manager'", specifier = ">=0.15.0" },
     { name = "glfw", marker = "extra == 'glfw'", specifier = ">=2.7.0" },
@@ -449,33 +462,40 @@ requires-dist = [
     { name = "llama-index-core", marker = "extra == 'llamaindex-studio'", specifier = ">=0.12.0" },
     { name = "markdown-it-py", marker = "extra == 'glfw'", specifier = ">=3.0.0" },
     { name = "markdown-it-py", marker = "extra == 'sdl'", specifier = ">=3.0.0" },
+    { name = "markdown-it-py", marker = "extra == 'sdl3'", specifier = ">=3.0.0" },
     { name = "markdown-it-py", marker = "extra == 'tui'", specifier = ">=3.0.0" },
     { name = "matplotlib", marker = "extra == 'glfw'", specifier = ">=3.9.0" },
     { name = "matplotlib", marker = "extra == 'sdl'", specifier = ">=3.9.0" },
+    { name = "matplotlib", marker = "extra == 'sdl3'", specifier = ">=3.9.0" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.0.0" },
     { name = "mdit-py-plugins", marker = "extra == 'glfw'", specifier = ">=0.4.0" },
     { name = "mdit-py-plugins", marker = "extra == 'sdl'", specifier = ">=0.4.0" },
+    { name = "mdit-py-plugins", marker = "extra == 'sdl3'", specifier = ">=0.4.0" },
     { name = "mdit-py-plugins", marker = "extra == 'tui'", specifier = ">=0.4.0" },
     { name = "prompt-toolkit", marker = "extra == 'tui'", specifier = ">=3.0.48" },
     { name = "pydantic", marker = "extra == 'glfw'", specifier = ">=2.7.4" },
     { name = "pydantic", marker = "extra == 'ios'", specifier = ">=2.7.4" },
     { name = "pydantic", marker = "extra == 'sdl'", specifier = ">=2.7.4" },
+    { name = "pydantic", marker = "extra == 'sdl3'", specifier = ">=2.7.4" },
     { name = "pydantic", marker = "extra == 'tui'", specifier = ">=2.7.4" },
     { name = "pydantic-graph", marker = "extra == 'pydantic-graph-studio'", specifier = ">=0.1.0" },
     { name = "pygments", marker = "extra == 'glfw'", specifier = ">=2.17.0" },
     { name = "pygments", marker = "extra == 'sdl'", specifier = ">=2.17.0" },
+    { name = "pygments", marker = "extra == 'sdl3'", specifier = ">=2.17.0" },
     { name = "pygments", marker = "extra == 'tui'", specifier = ">=2.17.0" },
     { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin' and extra == 'glfw'", specifier = ">=10.0" },
     { name = "pyopengl", marker = "extra == 'glfw'", specifier = ">=3.1.7" },
     { name = "pyopengl", marker = "extra == 'sdl'", specifier = ">=3.1.7" },
+    { name = "pyopengl", marker = "extra == 'sdl3'", specifier = ">=3.1.7" },
     { name = "pyperclip", marker = "extra == 'tui'", specifier = ">=1.9.0" },
     { name = "pysdl2", marker = "extra == 'sdl'", specifier = ">=0.9.16" },
     { name = "pysdl2-dll", marker = "extra == 'sdl'", specifier = ">=2.30.2" },
+    { name = "pysdl3", marker = "extra == 'sdl3'", specifier = ">=0.9.10b0" },
     { name = "python-a2a", marker = "extra == 'agent'", specifier = ">=0.5.0" },
     { name = "rubicon-objc", marker = "extra == 'ios'", specifier = ">=0.4.9" },
     { name = "windows-curses", marker = "sys_platform == 'win32' and extra == 'tui'", specifier = ">=2.3.3" },
 ]
-provides-extras = ["glfw", "sdl", "tui", "agent", "mcp", "langgraph-studio", "llamaindex-studio", "pydantic-graph-studio", "edda-workflow-manager", "ios"]
+provides-extras = ["glfw", "sdl", "sdl3", "tui", "agent", "mcp", "langgraph-studio", "llamaindex-studio", "pydantic-graph-studio", "edda-workflow-manager", "ios"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -3166,6 +3186,20 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/80/11/9bee58ff7aa742e7917d97a926ff3d1c2e9a67ac2e82244c4c50c51e3df8/pysdl2_dll-2.32.0-py2.py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:490f1525c47ab00d8150ed1245fb306f02628d1b43f0e162e6903ed5c1a4a1ef", size = 5176310, upload-time = "2025-03-20T20:59:43.748Z" },
     { url = "https://files.pythonhosted.org/packages/2e/9c/f09d804737501b4813b3612c95e4d74dcbc0c82a51a74542ed8e5a4a27b0/pysdl2_dll-2.32.0-py2.py3-none-win32.whl", hash = "sha256:0139ce2160d8387fa4f9bbd5272b374be521e9dd133cd9a2d76c20a20d599bed", size = 3405412, upload-time = "2025-03-20T20:51:54.036Z" },
     { url = "https://files.pythonhosted.org/packages/47/ef/5ba6580e06aec8f1e3004269a6939457e63e4791ca1e36ab2e3492a120da/pysdl2_dll-2.32.0-py2.py3-none-win_amd64.whl", hash = "sha256:28f577907bf17df3b3600daebbf0534aeaa44af266430ba09c7e04ab3e22b41f", size = 4042963, upload-time = "2025-03-20T20:52:34.372Z" },
+]
+
+[[package]]
+name = "pysdl3"
+version = "0.9.10b0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "packaging" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e3/6e/c315e7ee07dc57929b9b41b06c163c86545759a7c642f439fb10680ef0e3/pysdl3-0.9.10b0.tar.gz", hash = "sha256:174cefa457aaee23c944cfa974690224c841faac18ecf1da42434a691a0bdeb1", size = 1420256, upload-time = "2026-01-07T18:19:51.396Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/38/89/cb4cba7bbfd41d2325e8d0c053d3560a6775946b170878888217edb27cc6/pysdl3-0.9.10b0-py3-none-any.whl", hash = "sha256:62f1c9106bc7dba51b6a1a3a1e7f41d0fa265b6efb71c65399ac146cabd1952f", size = 98082, upload-time = "2026-01-07T18:19:50.242Z" },
 ]
 
 [[package]]

@@ -18,15 +18,15 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 
 ## For Desktop
 
-Castella for Desktop depends on either GLFW or SDL2. The recommended choice depends on your platform:
+Castella for Desktop supports three backends: GLFW, SDL2, and SDL3. The recommended choice depends on your platform:
 
-| Platform | Easy Setup | Best Performance |
+| Platform | Easy Setup | Better Performance |
 |----------|------------|------------------|
-| **Windows** | `castella[sdl]` (no extra install) | `castella[glfw]` (requires [GLFW install](https://www.glfw.org/download.html)) |
-| **Linux** | `castella[sdl]` (no extra install) | `castella[glfw]` (requires `apt install libglfw3-dev`) |
-| **macOS** | Both work without extra install | `castella[glfw]` (recommended) |
+| **Windows** | `castella[sdl3]` or `castella[sdl]` | `castella[glfw]` (requires [GLFW install](https://www.glfw.org/download.html)) |
+| **Linux** | `castella[sdl3]` or `castella[sdl]` | `castella[glfw]` (requires `apt install libglfw3-dev`) |
+| **macOS** | All backends work without extra install | `castella[glfw]` |
 
-Both backends support IME (Japanese/Chinese/Korean input).
+All backends support IME (Japanese/Chinese/Korean input) on all platforms. On macOS, GLFW provides better IME integration via native Cocoa APIs.
 
 ### Quick Start with uv
 
@@ -35,9 +35,10 @@ Both backends support IME (Japanese/Chinese/Korean input).
 uv init my-castella-app
 cd my-castella-app
 
-# Add Castella (choose based on your platform)
-uv add "castella[sdl]"   # Windows/Linux (recommended)
-uv add "castella[glfw]"  # macOS (with IME support)
+# Add Castella (choose your backend)
+uv add "castella[sdl3]"  # For easy setup (all platforms, no extra install)
+uv add "castella[sdl]"   # For easy setup (SDL2 stable alternative)
+uv add "castella[glfw]"  # For better performance
 
 # Run your app
 uv run python your_app.py
@@ -88,7 +89,7 @@ sudo yum install -y libglfw3-dev
 **Windows:**
 Download from [GLFW download page](https://www.glfw.org/download.html).
 
-### Using SDL2 Backend (Recommended for Windows/Linux)
+### Using SDL2 Backend
 
 The SDL2 backend includes all necessary binaries via the `pysdl2-dll` package. **No additional installation is required** on Windows, Linux, or macOS.
 
@@ -134,6 +135,37 @@ export PYSDL2_DLL_PATH=/path/to/sdl2/lib
 
 For more details, see [PySDL2 integration guide](https://pysdl2.readthedocs.io/en/rel_0_9_7/integration.html).
 
+### Using SDL3 Backend
+
+The SDL3 backend uses [PySDL3](https://github.com/Aermoss/PySDL3), the official Python bindings for SDL3. **No additional installation is required** - SDL3 binaries are automatically downloaded on first run.
+
+#### Install from PyPI
+
+```bash
+uv add "castella[sdl3]"
+```
+
+This automatically installs:
+
+- `PySDL3` - Python bindings for SDL3 (auto-downloads SDL3 binaries)
+- `castella-skia` - Pre-built Skia rendering engine for all platforms
+- `PyOpenGL` - OpenGL bindings
+
+#### Install from GitHub (latest source)
+
+```bash
+uv add "castella[sdl3] @ git+https://github.com/i2y/castella.git"
+```
+
+#### Development from Source
+
+```bash
+git clone https://github.com/i2y/castella.git
+cd castella
+uv sync --extra sdl3
+uv run python examples/counter.py
+```
+
 ### Alternative: Using pip
 
 If you prefer traditional pip:
@@ -144,6 +176,9 @@ pip install castella[glfw]
 
 # With SDL2
 pip install castella[sdl]
+
+# With SDL3
+pip install castella[sdl3]
 
 # From GitHub
 pip install "git+https://github.com/i2y/castella.git#egg=castella[glfw]"
