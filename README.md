@@ -106,12 +106,13 @@ uv run python your_app.py
 
 ### Platform Recommendations
 
-| Platform | Recommended Option | Notes |
-|----------|-------------------|-------|
-| **Windows** | `castella[sdl]` | SDL2 binaries included via `pysdl2-dll`, no extra install |
-| **Linux** | `castella[sdl]` | SDL2 binaries included via `pysdl2-dll`, no extra install |
-| **macOS** | `castella[glfw]` | Full IME support for Japanese/Chinese input |
-| **macOS** (ASCII only) | `castella[sdl]` | Simpler setup, no IME support |
+| Platform | Easy Setup | Best Performance |
+|----------|------------|------------------|
+| **Windows** | `castella[sdl]` (no extra install) | `castella[glfw]` (requires [GLFW install](https://www.glfw.org/download.html)) |
+| **Linux** | `castella[sdl]` (no extra install) | `castella[glfw]` (requires `apt install libglfw3-dev`) |
+| **macOS** | Both work without extra install | `castella[glfw]` (recommended) |
+
+Both backends support IME (Japanese/Chinese/Korean input).
 
 For detailed installation instructions (TUI, web), see the [Getting Started Guide](https://i2y.github.io/castella/getting-started/).
 

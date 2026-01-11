@@ -20,12 +20,13 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 
 Castella for Desktop depends on either GLFW or SDL2. The recommended choice depends on your platform:
 
-| Platform | Recommended | Notes |
-|----------|-------------|-------|
-| **Windows** | `castella[sdl]` | SDL2 binaries included via `pysdl2-dll`, no extra install needed |
-| **Linux** | `castella[sdl]` | SDL2 binaries included via `pysdl2-dll`, no extra install needed |
-| **macOS** | `castella[glfw]` | Full IME support for Japanese/Chinese input |
-| **macOS** (ASCII only) | `castella[sdl]` | Simpler setup, no IME support |
+| Platform | Easy Setup | Best Performance |
+|----------|------------|------------------|
+| **Windows** | `castella[sdl]` (no extra install) | `castella[glfw]` (requires [GLFW install](https://www.glfw.org/download.html)) |
+| **Linux** | `castella[sdl]` (no extra install) | `castella[glfw]` (requires `apt install libglfw3-dev`) |
+| **macOS** | Both work without extra install | `castella[glfw]` (recommended) |
+
+Both backends support IME (Japanese/Chinese/Korean input).
 
 ### Quick Start with uv
 
