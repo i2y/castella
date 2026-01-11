@@ -14,7 +14,7 @@ def _get_preferred_frame() -> str:
     """Get preferred frame from environment variable.
 
     Returns:
-        "glfw", "sdl", "tui", or "auto" (default)
+        "glfw", "sdl", "sdl3", "tui", or "auto" (default)
     """
     return os.environ.get("CASTELLA_FRAME", "auto").lower()
 
@@ -69,7 +69,12 @@ else:
     # Desktop (GLFW/SDL + OpenGL)
     _preferred = _get_preferred_frame()
 
-    if _preferred == "sdl":
+    if _preferred == "sdl3":
+        # Explicitly requested SDL3
+        from castella import sdl3_frame
+
+        Frame = sdl3_frame.Frame
+    elif _preferred == "sdl":
         # Explicitly requested SDL2
         from castella import sdl_frame
 

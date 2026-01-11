@@ -43,6 +43,17 @@ sdl = [
     "pygments>=2.17.0",
     "matplotlib>=3.9.0",
 ]
+sdl3 = [
+    "castella-skia>=0.1.1",
+    "PySDL3>=0.9.10b0",
+    "PyOpenGL>=3.1.7",
+    "darkdetect>=0.8",
+    "pydantic>=2.7.4",
+    "markdown-it-py>=3.0.0",
+    "mdit-py-plugins>=0.4.0",
+    "pygments>=2.17.0",
+    "matplotlib>=3.9.0",
+]
 tui = [
     "windows-curses>=2.3.3; sys_platform == 'win32'",
     "prompt-toolkit>=3.0.48",
