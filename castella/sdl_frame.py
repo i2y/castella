@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import platform
-from ctypes import byref, c_int
+from ctypes import CFUNCTYPE, POINTER, byref, c_int, c_void_p
 from typing import TYPE_CHECKING, Final
 
 import sdl2 as sdl
@@ -30,6 +30,9 @@ if platform.system() == "Windows":
 
     user32 = ctypes.windll.user32
     user32.SetProcessDPIAware()
+
+# SDL event filter callback type for handling resize during drag
+SDL_EventFilter = CFUNCTYPE(c_int, c_void_p, POINTER(sdl.SDL_Event))
 
 
 def _rgba_masks() -> tuple[int, int, int, int]:
@@ -101,6 +104,26 @@ class Frame(BaseFrame):
         self._ime_rect = sdl.SDL_Rect(0, 0, 1, 20)
 
         self._update_surface_and_painter()
+
+        # Register event filter for real-time resize updates during drag
+        self._event_filter = self._create_event_filter()
+        sdl.SDL_SetEventFilter(self._event_filter, None)
+
+    def _create_event_filter(self):
+        """Create event filter callback for handling resize during drag."""
+
+        @SDL_EventFilter
+        def event_filter(userdata, event_ptr):
+            event = event_ptr.contents
+            if event.type == sdl.SDL_WINDOWEVENT:
+                if event.window.event in (
+                    sdl.SDL_WINDOWEVENT_RESIZED,
+                    sdl.SDL_WINDOWEVENT_SIZE_CHANGED,
+                ):
+                    self._on_resize(event.window.data1, event.window.data2)
+            return 1  # Keep event in queue
+
+        return event_filter
 
     def _update_surface_and_painter(self) -> None:
         """Create/recreate the Skia surface for the current size."""
