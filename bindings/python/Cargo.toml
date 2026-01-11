@@ -1,7 +1,7 @@
 [package]
 name = "castella-skia-python"
-version = "0.1.0"
-edition = "2021"
+version = "0.1.1"
+edition = "2024"
 description = "Python bindings for castella-skia-core (Skia rendering for Castella UI)"
 license = "MIT"
 repository = "https://github.com/i2y/castella"

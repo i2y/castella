@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "castella-skia"
-version = "0.1.0"
+version = "0.1.1"
 description = "Unified Skia rendering backend for Castella UI framework"
 readme = "README.md"
 license = { text = "MIT" }
