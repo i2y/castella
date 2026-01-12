@@ -6,6 +6,7 @@ Castella provides native interactive chart widgets with GPU rendering via Skia (
 
 - **8 Chart Types**: Bar, Line, Pie, Scatter, Area, Stacked Bar, Gauge, Heatmap
 - **Full Interactivity**: Tooltips, hover effects, click events
+- **Drill-Down Navigation**: Click to explore hierarchical data (Region → Country → City)
 - **Scientific Colormaps**: Viridis, Plasma, Inferno, Magma (colorblind-friendly)
 - **Pydantic v2 Models**: Type-safe, validated data models
 - **Theme Integration**: Automatically uses current Castella theme
@@ -532,6 +533,228 @@ class ChartDemo(Component):
 
 
 App(Frame("Chart Demo", 1000, 700), ChartDemo()).run()
+```
+
+## Drill-Down Charts
+
+Drill-down charts allow users to navigate through hierarchical data by clicking on data points to see more detailed breakdowns.
+
+### Supported Chart Types
+
+- **BarChart**: Click bars to drill down
+- **PieChart**: Click slices to drill down
+- **StackedBarChart**: Click stacked segments to drill down
+- **HeatmapChart**: Click cells (row-based) to drill down
+
+### Basic Usage
+
+```python
+from castella.chart import (
+    DrillDownChart, HierarchicalChartData, HierarchicalNode,
+    DataPoint, BarChart,
+)
+
+# Create hierarchical data: Region -> Country -> City
+data = HierarchicalChartData(
+    title="Global Sales",
+    root=HierarchicalNode(
+        id="world",
+        label="World",
+        level_name="Region",
+        data=[
+            DataPoint(category="North America", value=1500, label="North America"),
+            DataPoint(category="Europe", value=1200, label="Europe"),
+            DataPoint(category="Asia", value=1800, label="Asia"),
+        ],
+    ),
+)
+
+# Add child data for North America
+na_node = HierarchicalNode(
+    id="na",
+    label="North America",
+    level_name="Country",
+    data=[
+        DataPoint(category="USA", value=900, label="USA"),
+        DataPoint(category="Canada", value=400, label="Canada"),
+        DataPoint(category="Mexico", value=200, label="Mexico"),
+    ],
+)
+data.root.add_child("North America", na_node)
+
+# Create drill-down chart
+chart = (
+    DrillDownChart(data, chart_type=BarChart, show_values=True)
+    .on_drill_down(lambda ev: print(f"Drilled into: {ev.clicked_key}"))
+    .on_drill_up(lambda ev: print(f"Drilled up to: {ev.to_node_id}"))
+)
+```
+
+### Navigation Controls
+
+- **Click on data**: Drill down into child data
+- **Back button**: Go up one level
+- **Breadcrumb**: Navigate to any ancestor level
+
+### Multi-Series Data (StackedBarChart / HeatmapChart)
+
+For StackedBarChart and HeatmapChart, use `series_data` instead of `data`:
+
+```python
+from castella.chart import (
+    DrillDownChart, HierarchicalChartData, HierarchicalNode,
+    DataPoint, StackedBarChart, HeatmapChart,
+)
+
+def make_quarterly_data(categories, base_values):
+    """Create quarterly breakdown for each category."""
+    quarters = ["Q1", "Q2", "Q3", "Q4"]
+    ratios = [0.2, 0.25, 0.25, 0.3]
+    result = {}
+    for q_idx, quarter in enumerate(quarters):
+        points = []
+        for cat, base in zip(categories, base_values):
+            value = base * ratios[q_idx]
+            points.append(DataPoint(category=cat, value=value, label=cat))
+        result[quarter] = points
+    return result
+
+# Root level with quarterly breakdown
+data = HierarchicalChartData(
+    title="Quarterly Sales by Region",
+    root=HierarchicalNode(
+        id="world",
+        label="World",
+        level_name="Region",
+        series_data=make_quarterly_data(
+            ["North America", "Europe", "Asia"],
+            [1500, 1200, 1800],
+        ),
+    ),
+)
+
+# StackedBarChart shows stacked bars with Q1-Q4 colors
+stacked_chart = DrillDownChart(data, chart_type=StackedBarChart, show_values=True)
+
+# HeatmapChart shows 2D matrix (rows=categories, columns=quarters)
+heatmap_chart = DrillDownChart(data, chart_type=HeatmapChart, show_values=True)
+```
+
+### Time-Series Drill-Down
+
+Helper function for Year → Month → Day hierarchy:
+
+```python
+from datetime import date
+from castella.chart import (
+    DrillDownChart, hierarchical_from_timeseries, BarChart,
+)
+
+# Sample data: (date, value) tuples
+daily_sales = [
+    (date(2023, 1, 1), 120.0),
+    (date(2023, 1, 2), 145.0),
+    # ... more data
+]
+
+# Create hierarchical structure automatically
+data = hierarchical_from_timeseries(
+    daily_sales,
+    title="Daily Sales",
+    aggregation="sum",      # sum, avg, count, min, max
+    depth="day",            # year, month, or day
+    short_month_names=True, # "Jan" vs "January"
+    value_format=lambda v: f"${v:,.0f}",
+)
+
+chart = DrillDownChart(data, chart_type=BarChart, show_values=True)
+```
+
+### Programmatic Navigation
+
+```python
+chart = DrillDownChart(data, chart_type=BarChart)
+
+# Access the drill-down state
+state = chart.state
+
+# Navigate programmatically
+state.drill_down("North America")
+state.drill_up()
+state.navigate_to("world")  # Jump to specific node
+state.reset()               # Reset to root
+
+# Check navigation state
+print(state.current_depth)   # 0 = root
+print(state.can_drill_up)    # True if not at root
+print(state.breadcrumbs)     # [(node_id, label), ...]
+```
+
+### Visual Indicators
+
+Drillable data points show a small white dot indicator:
+
+- **BarChart**: Bottom-right corner of the bar
+- **PieChart**: Inside the slice at 60% radius
+- **StackedBarChart**: Bottom-right of each segment
+- **HeatmapChart**: Left edge of the first cell in each drillable row
+
+### Example Application
+
+```python
+from castella import App, Column, Text
+from castella.core import Component, Widget
+from castella.frame import Frame
+from castella.chart import (
+    DrillDownChart, HierarchicalChartData, HierarchicalNode,
+    DataPoint, BarChart,
+)
+
+
+class SalesDashboard(Component):
+    def __init__(self):
+        super().__init__()
+        self._data = self._create_sales_data()
+
+    def _create_sales_data(self):
+        data = HierarchicalChartData(
+            title="Sales by Region",
+            root=HierarchicalNode(
+                id="world",
+                label="World",
+                level_name="Region",
+                data=[
+                    DataPoint(category="Americas", value=2500),
+                    DataPoint(category="EMEA", value=1800),
+                    DataPoint(category="APAC", value=2200),
+                ],
+            ),
+        )
+        # Add children for Americas
+        data.root.add_child("Americas", HierarchicalNode(
+            id="americas",
+            label="Americas",
+            level_name="Country",
+            data=[
+                DataPoint(category="USA", value=1500),
+                DataPoint(category="Canada", value=600),
+                DataPoint(category="Brazil", value=400),
+            ],
+        ))
+        return data
+
+    def view(self) -> Widget:
+        return Column(
+            Text("Sales Dashboard", font_size=20).fixed_height(40),
+            DrillDownChart(
+                self._data,
+                chart_type=BarChart,
+                show_values=True,
+            ),
+        )
+
+
+App(Frame("Sales Dashboard", 800, 600), SalesDashboard()).run()
 ```
 
 ## ASCII Charts (Terminal)
