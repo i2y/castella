@@ -125,6 +125,10 @@ class Painter:
         """Translate the canvas origin."""
         self._painter.translate(pos.x, pos.y)
 
+    def scale(self, sx: float, sy: float) -> None:
+        """Scale the canvas."""
+        self._painter.scale(sx, sy)
+
     def clip(self, rect: core.Rect) -> None:
         """Set the clipping region."""
         # Like skia_painter, we clip to origin (0,0) with the given size

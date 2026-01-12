@@ -85,6 +85,9 @@ class Frame(BaseFrame):
         # IME cursor rect for candidate window positioning
         self._ime_rect = sdl3.SDL_Rect(0, 0, 1, 20)
 
+        # HiDPI scale factor (updated in _update_surface_and_painter)
+        self._hidpi_scale = 1.0
+
         self._update_surface_and_painter()
 
         # Register event filter for real-time resize updates during drag
@@ -115,6 +118,10 @@ class Frame(BaseFrame):
 
         width = fb_width.value
         height = fb_height.value
+
+        # Calculate HiDPI scale factor
+        logical_width = self._size.width if self._size.width > 0 else width
+        self._hidpi_scale = width / logical_width if logical_width > 0 else 1.0
 
         if hasattr(self, "_surface") and self._surface is not None:
             # Resize existing surface (faster, avoids recreating context)
@@ -250,7 +257,18 @@ class Frame(BaseFrame):
         """Handle window resize."""
         self._size = Size(width=w, height=h)
         self._update_surface_and_painter()
+        # Apply HiDPI scale before redraw
+        self._painter.save()
+        self._painter.scale(self._hidpi_scale, self._hidpi_scale)
         self._callback_on_redraw(self._painter, True)
+        self._painter.restore()
+
+    def _post_update(self, ev) -> None:
+        """Override to apply HiDPI scale before drawing."""
+        self._painter.save()
+        self._painter.scale(self._hidpi_scale, self._hidpi_scale)
+        super()._post_update(ev)
+        self._painter.restore()
 
     # ========== IME Support ==========
 
