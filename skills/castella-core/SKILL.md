@@ -357,6 +357,20 @@ uv run python scripts/counter.py
 uv run python tools/hot_restarter.py scripts/counter.py
 ```
 
+## Packaging
+
+Package your Castella app for distribution:
+
+```bash
+# Install ux bundler
+uv tool install ux-py
+
+# Create executable
+ux bundle --project . --output ./dist/
+```
+
+See `castella-packaging` skill for detailed options (macOS app bundles, code signing, cross-compilation).
+
 ## Reference
 
 - `references/widgets.md` - Complete widget API
