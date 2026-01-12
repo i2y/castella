@@ -129,8 +129,13 @@ class Frame(BaseFrame):
         """Create/recreate the Skia surface for the current size."""
         from castella import rust_skia_painter as painter
 
-        width = int(self._size.width)
-        height = int(self._size.height)
+        # Get actual framebuffer size in pixels (HiDPI aware)
+        fb_width = c_int()
+        fb_height = c_int()
+        sdl.SDL_GL_GetDrawableSize(self._window, byref(fb_width), byref(fb_height))
+
+        width = fb_width.value
+        height = fb_height.value
 
         if hasattr(self, "_surface") and self._surface is not None:
             # Resize existing surface (faster, avoids recreating context)
