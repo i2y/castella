@@ -1,10 +1,10 @@
 """Drill-down chart example.
 
 This example demonstrates the drill-down chart functionality:
-- Click on a bar/slice to drill down into child data
+- Click on a bar/slice/cell to drill down into child data
 - Use the Back button or breadcrumb navigation to go back
 - The chart automatically updates to show the current level
-- Switch between BarChart, PieChart, and StackedBarChart using tabs
+- Switch between BarChart, PieChart, StackedBarChart, and HeatmapChart using tabs
 
 Run with:
     uv run python examples/drilldown_chart.py
@@ -21,6 +21,7 @@ from castella.chart import (
     BarChart,
     PieChart,
     StackedBarChart,
+    HeatmapChart,
 )
 
 
@@ -262,7 +263,7 @@ def create_stacked_sales_data() -> HierarchicalChartData:
 
 
 class DrillDownDemo(Component):
-    """Demo component with tab switching between BarChart, PieChart, and StackedBarChart."""
+    """Demo with tabs for BarChart, PieChart, StackedBarChart, and HeatmapChart."""
 
     def __init__(self):
         super().__init__()
@@ -274,6 +275,7 @@ class DrillDownDemo(Component):
         self._bar_data = create_sales_data()
         self._pie_data = create_sales_data()
         self._stacked_data = create_stacked_sales_data()  # Multi-series for stacking
+        self._heatmap_data = create_stacked_sales_data()  # Reuse multi-series for heatmap
 
     def view(self) -> Widget:
         chart_type = self._chart_type()
@@ -293,6 +295,11 @@ class DrillDownDemo(Component):
             Button("StackedBarChart", font_size=12)
             .on_click(lambda _: self._chart_type.set("stacked"))
             .bg_color("#3b82f6" if chart_type == "stacked" else "#333333")
+            .fixed_height(32)
+            .width_policy(SizePolicy.CONTENT),
+            Button("HeatmapChart", font_size=12)
+            .on_click(lambda _: self._chart_type.set("heatmap"))
+            .bg_color("#3b82f6" if chart_type == "heatmap" else "#333333")
             .fixed_height(32)
             .width_policy(SizePolicy.CONTENT),
         ).fixed_height(40)
@@ -316,7 +323,7 @@ class DrillDownDemo(Component):
                 )
                 .on_drill_down(lambda ev: print(f"[Pie] Drilled: {ev.clicked_key}"))
             )
-        else:
+        elif chart_type == "stacked":
             chart = (
                 DrillDownChart(
                     self._stacked_data,
@@ -325,12 +332,21 @@ class DrillDownDemo(Component):
                 )
                 .on_drill_down(lambda ev: print(f"[Stacked] Drilled: {ev.clicked_key}"))
             )
+        else:  # heatmap
+            chart = (
+                DrillDownChart(
+                    self._heatmap_data,
+                    chart_type=HeatmapChart,
+                    show_values=True,
+                )
+                .on_drill_down(lambda ev: print(f"[Heatmap] Drilled: {ev.clicked_key}"))
+            )
 
         return Column(
             Text("Drill-Down Chart Demo", font_size=18)
             .text_color("#ffffff")
             .fixed_height(30),
-            Text("Click on a bar/slice to drill down, use Back or breadcrumbs to go up", font_size=12)
+            Text("Click on a bar/slice/cell to drill down, use Back or breadcrumbs to go up", font_size=12)
             .text_color("#888888")
             .fixed_height(24),
             tab_bar,

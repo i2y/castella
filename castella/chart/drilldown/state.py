@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from castella.chart.models.hierarchy import HierarchicalChartData, HierarchicalNode
 from castella.chart.models.series import CategoricalSeries, SeriesStyle
 from castella.chart.models.chart_data import CategoricalChartData
+from castella.chart.models.heatmap_data import HeatmapChartData
 
 from .events import DrillDownEvent, DrillUpEvent
 
@@ -340,6 +341,53 @@ class DrillDownState(BaseModel):
         return CategoricalChartData(
             title=self.hierarchical_data.title,
             series=[series],
+        )
+
+    def to_heatmap_chart_data(self) -> HeatmapChartData:
+        """Convert current node to HeatmapChartData for heatmap rendering.
+
+        Uses series_data where:
+        - Series names become column labels
+        - Categories become row labels
+        - Values fill the 2D matrix
+
+        The returned data includes 'drillable' metadata tracking for row-based
+        drill-down (clicking any cell in a row drills into that row's children).
+
+        Returns:
+            HeatmapChartData suitable for HeatmapChart.
+        """
+        node = self.current_node
+        if node is None:
+            return HeatmapChartData()
+
+        if not node.is_multi_series:
+            # Fall back to empty heatmap if no multi-series data
+            return HeatmapChartData(title=self.hierarchical_data.title)
+
+        # Get column labels (series names) and row labels (categories)
+        column_labels = list(node.series_data.keys())
+        row_labels = node.all_categories
+
+        # Build the 2D value matrix
+        values: list[list[float]] = []
+        for category in row_labels:
+            row: list[float] = []
+            for col_name in column_labels:
+                points = node.series_data[col_name]
+                # Find the value for this category in this series
+                value = next(
+                    (p.value for p in points if p.category == category),
+                    0.0,
+                )
+                row.append(value)
+            values.append(row)
+
+        return HeatmapChartData(
+            title=self.hierarchical_data.title,
+            values=values,
+            row_labels=row_labels,
+            column_labels=column_labels,
         )
 
     def on_drill_down_callback(

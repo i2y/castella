@@ -15,6 +15,7 @@ from castella.chart.base import BaseChart
 from castella.chart.bar_chart import BarChart
 from castella.chart.pie_chart import PieChart
 from castella.chart.stacked_bar_chart import StackedBarChart
+from castella.chart.heatmap_chart import HeatmapChart
 from castella.chart.events import ChartClickEvent
 from castella.chart.models.hierarchy import HierarchicalChartData
 
@@ -25,6 +26,7 @@ from .drillable_charts import (
     DrillableBarChart,
     DrillablePieChart,
     DrillableStackedBarChart,
+    DrillableHeatmapChart,
 )
 
 
@@ -113,17 +115,34 @@ class DrillDownChart(Component):
 
     def view(self) -> Widget:
         """Build the drill-down chart widget."""
-        # Convert current node to chart-compatible data
-        chart_data = self._drill_state.to_categorical_chart_data()
-
         # Use drillable chart variants for visual indicators
         actual_chart_type = self._get_drillable_chart_type()
 
-        # Create the chart with click handler
-        chart = actual_chart_type(
-            state=chart_data,
-            **self._chart_kwargs,
-        ).on_click(self._handle_chart_click)
+        # Handle HeatmapChart specially (uses different data type)
+        if self._chart_type is HeatmapChart or self._chart_type is DrillableHeatmapChart:
+            chart_data = self._drill_state.to_heatmap_chart_data()
+            # Determine which rows are drillable
+            node = self._drill_state.current_node
+            drillable_rows: set[int] = set()
+            if node and node.is_multi_series:
+                row_labels = node.all_categories
+                for i, cat in enumerate(row_labels):
+                    if node.has_children(cat):
+                        drillable_rows.add(i)
+            # Create the heatmap chart with drillable rows info
+            chart = DrillableHeatmapChart(
+                state=chart_data,
+                drillable_rows=drillable_rows,
+                **self._chart_kwargs,
+            ).on_click(self._handle_chart_click)
+        else:
+            # Convert current node to chart-compatible data
+            chart_data = self._drill_state.to_categorical_chart_data()
+            # Create the chart with click handler
+            chart = actual_chart_type(
+                state=chart_data,
+                **self._chart_kwargs,
+            ).on_click(self._handle_chart_click)
 
         # Build navigation bar
         nav_items: list[Widget] = []
@@ -184,6 +203,11 @@ class DrillDownChart(Component):
             or self._chart_type is DrillableStackedBarChart
         ):
             return DrillableStackedBarChart
+        elif (
+            self._chart_type is HeatmapChart
+            or self._chart_type is DrillableHeatmapChart
+        ):
+            return DrillableHeatmapChart
         else:
             # For other chart types, use the original
             return self._chart_type
@@ -220,6 +244,9 @@ class DrillDownChart(Component):
         For StackedBarChart, the label is "Category: SeriesName", so we need
         to get the actual category from the data point.
 
+        For HeatmapChart, series_index is the row index, so we get the
+        category from row labels (all_categories).
+
         Args:
             event: The chart click event.
 
@@ -228,6 +255,15 @@ class DrillDownChart(Component):
         """
         node = self._drill_state.current_node
         if node is None:
+            return None
+
+        # For HeatmapChart: series_index = row, data_index = column
+        # We drill based on row (category)
+        if self._chart_type is HeatmapChart or self._chart_type is DrillableHeatmapChart:
+            row_idx = event.series_index
+            categories = node.all_categories
+            if row_idx < len(categories):
+                return categories[row_idx]
             return None
 
         # For multi-series data (StackedBarChart)
