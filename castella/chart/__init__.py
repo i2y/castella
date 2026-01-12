@@ -96,6 +96,23 @@ from castella.chart.ascii import (
     ASCIIGaugeChart,
 )
 
+# Drill-down charts
+from castella.chart.models.hierarchy import (
+    HierarchicalNode,
+    HierarchicalChartData,
+    hierarchical_from_dict,
+)
+from castella.chart.drilldown import (
+    DrillDownChart,
+    DrillDownState,
+    DrillPath,
+    DrillDownEvent,
+    DrillUpEvent,
+    Breadcrumb,
+    DrillableBarChart,
+    DrillablePieChart,
+)
+
 __all__ = [
     # Data points
     "DataPoint",
@@ -181,4 +198,16 @@ __all__ = [
     "ASCIIPieData",
     "ASCIILineChart",
     "ASCIIGaugeChart",
+    # Drill-down charts
+    "HierarchicalNode",
+    "HierarchicalChartData",
+    "hierarchical_from_dict",
+    "DrillDownChart",
+    "DrillDownState",
+    "DrillPath",
+    "DrillDownEvent",
+    "DrillUpEvent",
+    "Breadcrumb",
+    "DrillableBarChart",
+    "DrillablePieChart",
 ]

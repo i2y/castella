@@ -1,0 +1,328 @@
+"""Drill-down navigation state management."""
+
+from __future__ import annotations
+
+from typing import Any, Callable, Self
+
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+
+from castella.chart.models.hierarchy import HierarchicalChartData, HierarchicalNode
+from castella.chart.models.series import CategoricalSeries, SeriesStyle
+from castella.chart.models.chart_data import CategoricalChartData
+
+from .events import DrillDownEvent, DrillUpEvent
+
+
+class DrillPath(BaseModel):
+    """Represents a single step in the drill-down path.
+
+    Attributes:
+        node_id: The ID of the node at this step.
+        clicked_key: The key (category) that was clicked to reach this level.
+        label: Display label for breadcrumb navigation.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    node_id: str
+    clicked_key: str = ""
+    label: str = ""
+
+
+class DrillDownState(BaseModel):
+    """Observable state for drill-down navigation.
+
+    Manages the current position in the hierarchy and provides
+    navigation methods for drill-down/drill-up operations.
+    The state is observable, triggering UI updates when navigation occurs.
+
+    Attributes:
+        hierarchical_data: The hierarchical data being navigated.
+        path: The current drill-down path from root.
+        current_node_id: ID of the currently displayed node.
+
+    Example:
+        >>> state = DrillDownState(hierarchical_data=data)
+        >>> state.attach(my_component)  # Component will rebuild on changes
+        >>>
+        >>> # Navigate down
+        >>> if state.can_drill_down("North America"):
+        ...     state.drill_down("North America")
+        >>>
+        >>> # Navigate up
+        >>> if state.can_drill_up:
+        ...     state.drill_up()
+        >>>
+        >>> # Jump to specific node via breadcrumb
+        >>> state.navigate_to("world")
+    """
+
+    model_config = ConfigDict(validate_assignment=True, arbitrary_types_allowed=True)
+
+    hierarchical_data: HierarchicalChartData
+    path: list[DrillPath] = Field(default_factory=list)
+    current_node_id: str = ""
+
+    # Observable pattern
+    _observers: list[Any] = PrivateAttr(default_factory=list)
+    _on_drill_down: Callable[[DrillDownEvent], None] | None = PrivateAttr(default=None)
+    _on_drill_up: Callable[[DrillUpEvent], None] | None = PrivateAttr(default=None)
+
+    def model_post_init(self, __context: Any) -> None:
+        """Initialize current node to root if not set."""
+        if not self.current_node_id:
+            self.current_node_id = self.hierarchical_data.root.id
+            self.path = [
+                DrillPath(
+                    node_id=self.hierarchical_data.root.id,
+                    label=self.hierarchical_data.root.label,
+                )
+            ]
+
+    def attach(self, observer: Any) -> None:
+        """Attach an observer for reactive updates.
+
+        Args:
+            observer: An object with on_notify() method.
+        """
+        if observer not in self._observers:
+            self._observers.append(observer)
+            if hasattr(observer, "on_attach"):
+                observer.on_attach(self)
+
+    def detach(self, observer: Any) -> None:
+        """Detach an observer.
+
+        Args:
+            observer: The observer to remove.
+        """
+        if observer in self._observers:
+            self._observers.remove(observer)
+            if hasattr(observer, "on_detach"):
+                observer.on_detach(self)
+
+    def notify(self, event: Any = None) -> None:
+        """Notify all observers of a change.
+
+        Args:
+            event: Optional event data to pass to observers.
+        """
+        for observer in self._observers:
+            observer.on_notify(event)
+
+    @property
+    def current_node(self) -> HierarchicalNode | None:
+        """Get the currently displayed node."""
+        return self.hierarchical_data.find_node(self.current_node_id)
+
+    @property
+    def current_depth(self) -> int:
+        """Get the current depth in the hierarchy (0 = root)."""
+        return len(self.path) - 1
+
+    @property
+    def can_drill_up(self) -> bool:
+        """Check if drill-up is possible (not at root)."""
+        return len(self.path) > 1
+
+    @property
+    def breadcrumbs(self) -> list[tuple[str, str]]:
+        """Get breadcrumb items as (node_id, label) tuples.
+
+        Returns:
+            List of (node_id, label) tuples representing the path.
+        """
+        return [(p.node_id, p.label) for p in self.path]
+
+    def can_drill_down(self, key: str) -> bool:
+        """Check if a data point can be drilled into.
+
+        Args:
+            key: The category to check.
+
+        Returns:
+            True if the category has child data.
+        """
+        node = self.current_node
+        return node is not None and node.has_children(key)
+
+    def drill_down(self, key: str) -> bool:
+        """Navigate into a child node.
+
+        Args:
+            key: The category of the clicked data point.
+
+        Returns:
+            True if navigation succeeded, False if no children.
+        """
+        node = self.current_node
+        if node is None or not node.has_children(key):
+            return False
+
+        child = node.get_child(key)
+        if child is None:
+            return False
+
+        old_node_id = self.current_node_id
+
+        # Update path and current node
+        self.path = [
+            *self.path,
+            DrillPath(
+                node_id=child.id,
+                clicked_key=key,
+                label=child.label or key,
+            ),
+        ]
+        self.current_node_id = child.id
+
+        # Fire callback
+        if self._on_drill_down:
+            self._on_drill_down(
+                DrillDownEvent(
+                    from_node_id=old_node_id,
+                    to_node_id=child.id,
+                    clicked_key=key,
+                    new_depth=self.current_depth,
+                )
+            )
+
+        self.notify()
+        return True
+
+    def drill_up(self) -> bool:
+        """Navigate to the parent node.
+
+        Returns:
+            True if navigation succeeded, False if at root.
+        """
+        if not self.can_drill_up:
+            return False
+
+        old_id = self.current_node_id
+        self.path = self.path[:-1]
+        self.current_node_id = self.path[-1].node_id
+
+        # Fire callback
+        if self._on_drill_up:
+            self._on_drill_up(
+                DrillUpEvent(
+                    from_node_id=old_id,
+                    to_node_id=self.current_node_id,
+                    new_depth=self.current_depth,
+                )
+            )
+
+        self.notify()
+        return True
+
+    def navigate_to(self, node_id: str) -> bool:
+        """Navigate directly to a node (e.g., from breadcrumb click).
+
+        Only nodes in the current path can be navigated to directly.
+        To navigate to arbitrary nodes, use drill_down/drill_up.
+
+        Args:
+            node_id: The target node ID.
+
+        Returns:
+            True if navigation succeeded.
+        """
+        # Find the node in the current path
+        for i, step in enumerate(self.path):
+            if step.node_id == node_id:
+                old_id = self.current_node_id
+                self.path = self.path[: i + 1]
+                self.current_node_id = node_id
+
+                # Fire drill-up callback if going up
+                if self._on_drill_up and old_id != node_id:
+                    self._on_drill_up(
+                        DrillUpEvent(
+                            from_node_id=old_id,
+                            to_node_id=node_id,
+                            new_depth=self.current_depth,
+                        )
+                    )
+
+                self.notify()
+                return True
+        return False
+
+    def reset(self) -> None:
+        """Reset to root node."""
+        old_id = self.current_node_id
+        root = self.hierarchical_data.root
+
+        self.path = [
+            DrillPath(
+                node_id=root.id,
+                label=root.label,
+            )
+        ]
+        self.current_node_id = root.id
+
+        # Fire drill-up callback
+        if self._on_drill_up and old_id != root.id:
+            self._on_drill_up(
+                DrillUpEvent(
+                    from_node_id=old_id,
+                    to_node_id=root.id,
+                    new_depth=0,
+                )
+            )
+
+        self.notify()
+
+    def to_categorical_chart_data(self) -> CategoricalChartData:
+        """Convert current node to CategoricalChartData for chart rendering.
+
+        The returned data includes 'drillable' metadata on each data point
+        to indicate whether it can be drilled into.
+
+        Returns:
+            CategoricalChartData suitable for BarChart, PieChart, etc.
+        """
+        node = self.current_node
+        if node is None:
+            return CategoricalChartData()
+
+        # Get data points with drillable metadata
+        data_points = node.get_data_with_drillable_metadata()
+
+        series = CategoricalSeries(
+            name=node.label,
+            data=tuple(data_points),
+            style=node.style or SeriesStyle(),
+        )
+
+        return CategoricalChartData(
+            title=self.hierarchical_data.title,
+            series=[series],
+        )
+
+    def on_drill_down_callback(
+        self, callback: Callable[[DrillDownEvent], None]
+    ) -> Self:
+        """Set callback for drill-down events.
+
+        Args:
+            callback: Function to call when drilling down.
+
+        Returns:
+            Self for method chaining.
+        """
+        self._on_drill_down = callback
+        return self
+
+    def on_drill_up_callback(self, callback: Callable[[DrillUpEvent], None]) -> Self:
+        """Set callback for drill-up events.
+
+        Args:
+            callback: Function to call when drilling up.
+
+        Returns:
+            Self for method chaining.
+        """
+        self._on_drill_up = callback
+        return self
