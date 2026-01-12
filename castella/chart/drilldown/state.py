@@ -294,12 +294,25 @@ class DrillDownState(BaseModel):
         if node.is_multi_series:
             series_data = node.get_series_data_with_drillable_metadata()
             series_list = []
-            for series_name, data_points in series_data.items():
+            # Color palette for multi-series
+            colors = [
+                "#3b82f6",  # Blue
+                "#22c55e",  # Green
+                "#f59e0b",  # Amber
+                "#ef4444",  # Red
+                "#8b5cf6",  # Purple
+                "#06b6d4",  # Cyan
+                "#ec4899",  # Pink
+                "#84cc16",  # Lime
+            ]
+            for i, (series_name, data_points) in enumerate(series_data.items()):
+                color = colors[i % len(colors)]
+                style = SeriesStyle(color=color)
                 series_list.append(
                     CategoricalSeries(
                         name=series_name,
                         data=tuple(data_points),
-                        style=node.style or SeriesStyle(),
+                        style=style,
                     )
                 )
             return CategoricalChartData(
