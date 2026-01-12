@@ -22,7 +22,8 @@ class HierarchicalNode(BaseModel):
     Attributes:
         id: Unique identifier for this node.
         label: Display label for breadcrumb navigation.
-        data: The chart data at this level (list of DataPoint).
+        data: The chart data at this level (list of DataPoint). For single-series charts.
+        series_data: Multi-series data for StackedBarChart. Dict of series_name -> list of DataPoint.
         children: Mapping of data point categories to child nodes.
         parent_id: ID of the parent node (None for root).
         level_name: Human-readable name for this level (e.g., "Region", "Country").
@@ -55,10 +56,27 @@ class HierarchicalNode(BaseModel):
     id: str
     label: str
     data: list[DataPoint] = Field(default_factory=list)
+    series_data: dict[str, list[DataPoint]] = Field(default_factory=dict)
     children: dict[str, "HierarchicalNode"] = Field(default_factory=dict)
     parent_id: str | None = None
     level_name: str = ""
     style: SeriesStyle | None = None
+
+    @property
+    def is_multi_series(self) -> bool:
+        """Check if this node has multi-series data."""
+        return len(self.series_data) > 0
+
+    @property
+    def all_categories(self) -> list[str]:
+        """Get all unique categories from data or series_data."""
+        if self.is_multi_series:
+            categories: set[str] = set()
+            for points in self.series_data.values():
+                for p in points:
+                    categories.add(p.category)
+            return sorted(categories)
+        return [p.category for p in self.data]
 
     def add_child(self, key: str, child: "HierarchicalNode") -> Self:
         """Add a child node for drill-down.
@@ -121,6 +139,24 @@ class HierarchicalNode(BaseModel):
             drillable = self.has_children(point.category)
             new_metadata = {**point.metadata, "drillable": drillable}
             result.append(point.model_copy(update={"metadata": new_metadata}))
+        return result
+
+    def get_series_data_with_drillable_metadata(
+        self,
+    ) -> dict[str, list[DataPoint]]:
+        """Get multi-series data with 'drillable' flag set in metadata.
+
+        Returns:
+            Dict of series_name -> list of DataPoint with drillable metadata.
+        """
+        result: dict[str, list[DataPoint]] = {}
+        for series_name, points in self.series_data.items():
+            series_points = []
+            for point in points:
+                drillable = self.has_children(point.category)
+                new_metadata = {**point.metadata, "drillable": drillable}
+                series_points.append(point.model_copy(update={"metadata": new_metadata}))
+            result[series_name] = series_points
         return result
 
 

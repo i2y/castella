@@ -137,6 +137,130 @@ def create_sales_data() -> HierarchicalChartData:
     return data
 
 
+def create_stacked_sales_data() -> HierarchicalChartData:
+    """Create hierarchical multi-series sales data for StackedBarChart.
+
+    Each level has quarterly breakdown (Q1, Q2, Q3, Q4).
+    Region -> Country -> City with quarterly data.
+    """
+
+    def make_quarterly_data(
+        categories: list[str], base_values: list[float]
+    ) -> dict[str, list[DataPoint]]:
+        """Create quarterly series data for given categories."""
+        quarters = ["Q1", "Q2", "Q3", "Q4"]
+        # Quarterly ratios (Q4 is typically highest)
+        ratios = [0.2, 0.25, 0.25, 0.3]
+        result: dict[str, list[DataPoint]] = {}
+        for q_idx, quarter in enumerate(quarters):
+            points = []
+            for cat, base in zip(categories, base_values):
+                value = base * ratios[q_idx]
+                points.append(DataPoint(category=cat, value=value, label=cat))
+            result[quarter] = points
+        return result
+
+    # Root level: Regions with quarterly breakdown
+    data = HierarchicalChartData(
+        title="Quarterly Sales by Region (Click to drill down)",
+        root=HierarchicalNode(
+            id="world",
+            label="World",
+            level_name="Region",
+            series_data=make_quarterly_data(
+                ["North America", "Europe", "Asia"],
+                [1500, 1200, 1800],
+            ),
+        ),
+    )
+
+    # North America -> Countries
+    na_node = HierarchicalNode(
+        id="na",
+        label="North America",
+        level_name="Country",
+        series_data=make_quarterly_data(
+            ["USA", "Canada", "Mexico"],
+            [900, 400, 200],
+        ),
+    )
+    data.root.add_child("North America", na_node)
+
+    # USA -> Cities
+    usa_node = HierarchicalNode(
+        id="usa",
+        label="USA",
+        level_name="City",
+        series_data=make_quarterly_data(
+            ["New York", "Los Angeles", "Chicago", "Houston"],
+            [350, 280, 170, 100],
+        ),
+    )
+    na_node.add_child("USA", usa_node)
+
+    # Canada -> Cities
+    canada_node = HierarchicalNode(
+        id="canada",
+        label="Canada",
+        level_name="City",
+        series_data=make_quarterly_data(
+            ["Toronto", "Vancouver", "Montreal"],
+            [180, 120, 100],
+        ),
+    )
+    na_node.add_child("Canada", canada_node)
+
+    # Europe -> Countries
+    europe_node = HierarchicalNode(
+        id="europe",
+        label="Europe",
+        level_name="Country",
+        series_data=make_quarterly_data(
+            ["UK", "Germany", "France"],
+            [450, 400, 350],
+        ),
+    )
+    data.root.add_child("Europe", europe_node)
+
+    # UK -> Cities
+    uk_node = HierarchicalNode(
+        id="uk",
+        label="UK",
+        level_name="City",
+        series_data=make_quarterly_data(
+            ["London", "Manchester", "Birmingham"],
+            [250, 120, 80],
+        ),
+    )
+    europe_node.add_child("UK", uk_node)
+
+    # Asia -> Countries
+    asia_node = HierarchicalNode(
+        id="asia",
+        label="Asia",
+        level_name="Country",
+        series_data=make_quarterly_data(
+            ["Japan", "China", "South Korea"],
+            [800, 600, 400],
+        ),
+    )
+    data.root.add_child("Asia", asia_node)
+
+    # Japan -> Cities
+    japan_node = HierarchicalNode(
+        id="japan",
+        label="Japan",
+        level_name="City",
+        series_data=make_quarterly_data(
+            ["Tokyo", "Osaka", "Nagoya"],
+            [400, 250, 150],
+        ),
+    )
+    asia_node.add_child("Japan", japan_node)
+
+    return data
+
+
 class DrillDownDemo(Component):
     """Demo component with tab switching between BarChart, PieChart, and StackedBarChart."""
 
@@ -149,7 +273,7 @@ class DrillDownDemo(Component):
         # (each needs its own DrillDownState)
         self._bar_data = create_sales_data()
         self._pie_data = create_sales_data()
-        self._stacked_data = create_sales_data()
+        self._stacked_data = create_stacked_sales_data()  # Multi-series for stacking
 
     def view(self) -> Widget:
         chart_type = self._chart_type()

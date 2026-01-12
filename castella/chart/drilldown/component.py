@@ -194,10 +194,11 @@ class DrillDownChart(Component):
         Args:
             event: The chart click event.
         """
-        # Get the clicked category/label
-        key = event.label
+        # Get the clicked category from data point
+        # Use data_index to get the actual category (not label which may include series name)
+        key = self._get_category_from_event(event)
 
-        if self._drill_state.can_drill_down(key):
+        if key and self._drill_state.can_drill_down(key):
             old_node_id = self._drill_state.current_node_id
 
             # Perform drill-down
@@ -212,6 +213,46 @@ class DrillDownChart(Component):
                             new_depth=self._drill_state.current_depth,
                         )
                     )
+
+    def _get_category_from_event(self, event: ChartClickEvent) -> str | None:
+        """Extract the category key from a click event.
+
+        For StackedBarChart, the label is "Category: SeriesName", so we need
+        to get the actual category from the data point.
+
+        Args:
+            event: The chart click event.
+
+        Returns:
+            The category key for drill-down lookup.
+        """
+        node = self._drill_state.current_node
+        if node is None:
+            return None
+
+        # For multi-series data (StackedBarChart)
+        if node.is_multi_series:
+            # Get category from the series data using series_index and data_index
+            series_names = list(node.series_data.keys())
+            series_idx = event.series_index
+            data_idx = event.data_index
+            if series_idx < len(series_names):
+                series_name = series_names[series_idx]
+                points = node.series_data[series_name]
+                if data_idx < len(points):
+                    return points[data_idx].category
+            # Fallback: use all_categories
+            categories = node.all_categories
+            if data_idx < len(categories):
+                return categories[data_idx]
+
+        # For single-series data (BarChart, PieChart)
+        data_idx = event.data_index
+        if data_idx < len(node.data):
+            return node.data[data_idx].category
+
+        # Fallback to label (for charts that set label to category)
+        return event.label
 
     def _handle_back_click(self, _: Any) -> None:
         """Handle back button click."""

@@ -280,14 +280,34 @@ class DrillDownState(BaseModel):
         The returned data includes 'drillable' metadata on each data point
         to indicate whether it can be drilled into.
 
+        For multi-series data (StackedBarChart), returns multiple series.
+        For single-series data (BarChart, PieChart), returns one series.
+
         Returns:
-            CategoricalChartData suitable for BarChart, PieChart, etc.
+            CategoricalChartData suitable for BarChart, PieChart, StackedBarChart.
         """
         node = self.current_node
         if node is None:
             return CategoricalChartData()
 
-        # Get data points with drillable metadata
+        # Handle multi-series data (for StackedBarChart)
+        if node.is_multi_series:
+            series_data = node.get_series_data_with_drillable_metadata()
+            series_list = []
+            for series_name, data_points in series_data.items():
+                series_list.append(
+                    CategoricalSeries(
+                        name=series_name,
+                        data=tuple(data_points),
+                        style=node.style or SeriesStyle(),
+                    )
+                )
+            return CategoricalChartData(
+                title=self.hierarchical_data.title,
+                series=series_list,
+            )
+
+        # Handle single-series data (for BarChart, PieChart)
         data_points = node.get_data_with_drillable_metadata()
 
         series = CategoricalSeries(

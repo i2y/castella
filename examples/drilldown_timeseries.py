@@ -1,9 +1,8 @@
 """Time-series drill-down chart example.
 
 This example demonstrates the time-series drill-down functionality:
-- Drill down from Year → Month → Day
-- Automatic aggregation of values
-- Support for multiple aggregation methods (sum, avg, count, min, max)
+- Drill down from Year -> Month -> Day
+- Automatic aggregation of values (sum)
 
 Run with:
     uv run python examples/drilldown_timeseries.py
@@ -12,8 +11,8 @@ Run with:
 from datetime import date
 import random
 
-from castella import App, Column, Row, Text, Button, SizePolicy
-from castella.core import Component, State, Widget
+from castella import App, Column, Text
+from castella.core import Component, Widget
 from castella.frame import Frame
 from castella.chart import (
     DrillDownChart,
@@ -54,52 +53,22 @@ class TimeSeriesDrillDownDemo(Component):
 
     def __init__(self):
         super().__init__()
-        self._aggregation = State("sum")
-        self._aggregation.attach(self)
 
-        # Generate sample data
-        self._raw_data = generate_sales_data()
-
-    def view(self) -> Widget:
-        aggregation = self._aggregation()
-
-        # Aggregation buttons
-        agg_bar = Row(
-            Button("Sum", font_size=12)
-            .on_click(lambda _: self._aggregation.set("sum"))
-            .bg_color("#3b82f6" if aggregation == "sum" else "#333333")
-            .fixed_height(32)
-            .width_policy(SizePolicy.CONTENT),
-            Button("Average", font_size=12)
-            .on_click(lambda _: self._aggregation.set("avg"))
-            .bg_color("#3b82f6" if aggregation == "avg" else "#333333")
-            .fixed_height(32)
-            .width_policy(SizePolicy.CONTENT),
-            Button("Count", font_size=12)
-            .on_click(lambda _: self._aggregation.set("count"))
-            .bg_color("#3b82f6" if aggregation == "count" else "#333333")
-            .fixed_height(32)
-            .width_policy(SizePolicy.CONTENT),
-            Button("Max", font_size=12)
-            .on_click(lambda _: self._aggregation.set("max"))
-            .bg_color("#3b82f6" if aggregation == "max" else "#333333")
-            .fixed_height(32)
-            .width_policy(SizePolicy.CONTENT),
-        ).fixed_height(40)
-
-        # Create hierarchical data from time-series
-        chart_data = hierarchical_from_timeseries(
-            self._raw_data,
-            title=f"Daily Sales ({aggregation.upper()})",
-            aggregation=aggregation,  # type: ignore
+        # Generate sample data and create hierarchical structure once
+        raw_data = generate_sales_data()
+        self._chart_data = hierarchical_from_timeseries(
+            raw_data,
+            title="Daily Sales (SUM)",
+            aggregation="sum",
             depth="day",
             short_month_names=True,
             value_format=lambda v: f"${v:,.0f}",
         )
 
+    def view(self) -> Widget:
         chart = (
             DrillDownChart(
-                chart_data,
+                self._chart_data,
                 chart_type=BarChart,
                 show_values=True,
             )
@@ -110,10 +79,9 @@ class TimeSeriesDrillDownDemo(Component):
             Text("Time-Series Drill-Down Demo", font_size=18)
             .text_color("#ffffff")
             .fixed_height(30),
-            Text("Click on a bar to drill down: Year → Month → Day", font_size=12)
+            Text("Click on a bar to drill down: Year -> Month -> Day", font_size=12)
             .text_color("#888888")
             .fixed_height(24),
-            agg_bar,
             chart,
         )
 
