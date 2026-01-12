@@ -195,10 +195,17 @@ class BarChart(BaseChart):
                 continue
 
             series_idx = element.series_index
+            data_idx = element.data_index
             series = (
                 state.series[series_idx] if series_idx < len(state.series) else None
             )
             color = series.style.color if series else self.get_series_color(series_idx)
+
+            # Check for per-point color in metadata
+            if series and data_idx < len(series.data):
+                point_color = series.data[data_idx].metadata.get("color")
+                if point_color:
+                    color = point_color
 
             # Highlight on hover
             if self.is_element_hovered(element.series_index, element.data_index):

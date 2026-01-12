@@ -290,21 +290,22 @@ class DrillDownState(BaseModel):
         if node is None:
             return CategoricalChartData()
 
+        # Color palette for visual distinction
+        colors = [
+            "#3b82f6",  # Blue
+            "#22c55e",  # Green
+            "#f59e0b",  # Amber
+            "#ef4444",  # Red
+            "#8b5cf6",  # Purple
+            "#06b6d4",  # Cyan
+            "#ec4899",  # Pink
+            "#84cc16",  # Lime
+        ]
+
         # Handle multi-series data (for StackedBarChart)
         if node.is_multi_series:
             series_data = node.get_series_data_with_drillable_metadata()
             series_list = []
-            # Color palette for multi-series
-            colors = [
-                "#3b82f6",  # Blue
-                "#22c55e",  # Green
-                "#f59e0b",  # Amber
-                "#ef4444",  # Red
-                "#8b5cf6",  # Purple
-                "#06b6d4",  # Cyan
-                "#ec4899",  # Pink
-                "#84cc16",  # Lime
-            ]
             for i, (series_name, data_points) in enumerate(series_data.items()):
                 color = colors[i % len(colors)]
                 style = SeriesStyle(color=color)
@@ -323,9 +324,16 @@ class DrillDownState(BaseModel):
         # Handle single-series data (for BarChart, PieChart)
         data_points = node.get_data_with_drillable_metadata()
 
+        # Assign colors to each data point for visual distinction
+        colored_points = []
+        for i, point in enumerate(data_points):
+            color = colors[i % len(colors)]
+            new_metadata = {**point.metadata, "color": color}
+            colored_points.append(point.model_copy(update={"metadata": new_metadata}))
+
         series = CategoricalSeries(
             name=node.label,
-            data=tuple(data_points),
+            data=tuple(colored_points),
             style=node.style or SeriesStyle(),
         )
 
