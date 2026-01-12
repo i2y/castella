@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Self, Sequence
+from collections import defaultdict
+from datetime import date, datetime
+from typing import Any, Callable, Literal, Self, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
@@ -334,3 +336,261 @@ def hierarchical_from_dict(
             node.add_child(key, child_node)
 
     return node
+
+
+# Time-series helper types
+AggregationMethod = Literal["sum", "avg", "count", "min", "max"]
+
+# Month names for labels
+_MONTH_NAMES = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+]
+
+_MONTH_NAMES_SHORT = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+]
+
+
+def _aggregate_values(values: list[float], method: AggregationMethod) -> float:
+    """Aggregate a list of values using the specified method."""
+    if not values:
+        return 0.0
+    if method == "sum":
+        return sum(values)
+    elif method == "avg":
+        return sum(values) / len(values)
+    elif method == "count":
+        return float(len(values))
+    elif method == "min":
+        return min(values)
+    elif method == "max":
+        return max(values)
+    else:
+        return sum(values)
+
+
+def hierarchical_from_timeseries(
+    data: Sequence[tuple[date | datetime, float]],
+    title: str = "Time Series Data",
+    aggregation: AggregationMethod = "sum",
+    depth: Literal["year", "month", "day"] = "day",
+    short_month_names: bool = True,
+    value_format: Callable[[float], str] | None = None,
+) -> HierarchicalChartData:
+    """Create hierarchical drill-down data from time-series data.
+
+    Automatically groups data by Year → Month → Day with the specified
+    aggregation method. Users can drill down from yearly totals to monthly
+    breakdowns to daily values.
+
+    Args:
+        data: Sequence of (date/datetime, value) tuples.
+        title: Chart title.
+        aggregation: How to aggregate values ("sum", "avg", "count", "min", "max").
+        depth: Maximum drill-down depth ("year", "month", or "day").
+        short_month_names: Use "Jan" instead of "January".
+        value_format: Optional function to format values for labels.
+
+    Returns:
+        HierarchicalChartData ready for use with DrillDownChart.
+
+    Example:
+        >>> from datetime import date
+        >>> data = [
+        ...     (date(2024, 1, 15), 100),
+        ...     (date(2024, 1, 20), 150),
+        ...     (date(2024, 2, 10), 200),
+        ...     (date(2024, 3, 5), 120),
+        ...     (date(2023, 12, 1), 80),
+        ... ]
+        >>> chart_data = hierarchical_from_timeseries(
+        ...     data,
+        ...     title="Sales by Date",
+        ...     aggregation="sum",
+        ...     depth="day",
+        ... )
+        >>> # Root shows years: 2023, 2024
+        >>> # Drill into 2024 shows months: Jan, Feb, Mar
+        >>> # Drill into Jan shows days: 15, 20
+    """
+    month_names = _MONTH_NAMES_SHORT if short_month_names else _MONTH_NAMES
+
+    # Group data by year, month, day
+    by_year: dict[int, list[tuple[date, float]]] = defaultdict(list)
+    for dt, value in data:
+        if isinstance(dt, datetime):
+            dt = dt.date()
+        by_year[dt.year].append((dt, value))
+
+    # Create root node with yearly data
+    year_data_points: list[DataPoint] = []
+    for year in sorted(by_year.keys()):
+        values = [v for _, v in by_year[year]]
+        agg_value = _aggregate_values(values, aggregation)
+        label_value = value_format(agg_value) if value_format else str(int(agg_value))
+        year_data_points.append(
+            DataPoint(
+                category=str(year),
+                value=agg_value,
+                label=f"{year}: {label_value}",
+            )
+        )
+
+    root = HierarchicalNode(
+        id="root",
+        label="All Years",
+        level_name="Year",
+        data=year_data_points,
+    )
+
+    # If depth is "year", we're done
+    if depth == "year":
+        return HierarchicalChartData(title=title, root=root)
+
+    # Create month-level nodes for each year
+    for year in sorted(by_year.keys()):
+        by_month: dict[int, list[tuple[date, float]]] = defaultdict(list)
+        for dt, value in by_year[year]:
+            by_month[dt.month].append((dt, value))
+
+        month_data_points: list[DataPoint] = []
+        for month in sorted(by_month.keys()):
+            values = [v for _, v in by_month[month]]
+            agg_value = _aggregate_values(values, aggregation)
+            month_name = month_names[month - 1]
+            label_value = value_format(agg_value) if value_format else str(int(agg_value))
+            month_data_points.append(
+                DataPoint(
+                    category=month_name,
+                    value=agg_value,
+                    label=f"{month_name}: {label_value}",
+                )
+            )
+
+        year_node = HierarchicalNode(
+            id=f"year_{year}",
+            label=str(year),
+            level_name="Month",
+            data=month_data_points,
+        )
+        root.add_child(str(year), year_node)
+
+        # If depth is "month", we're done for this year
+        if depth == "month":
+            continue
+
+        # Create day-level nodes for each month
+        for month in sorted(by_month.keys()):
+            day_data_points: list[DataPoint] = []
+            for dt, value in sorted(by_month[month], key=lambda x: x[0]):
+                day = dt.day
+                label_value = value_format(value) if value_format else str(int(value))
+                day_data_points.append(
+                    DataPoint(
+                        category=str(day),
+                        value=value,
+                        label=f"Day {day}: {label_value}",
+                    )
+                )
+
+            month_name = month_names[month - 1]
+            month_node = HierarchicalNode(
+                id=f"year_{year}_month_{month}",
+                label=f"{month_name} {year}",
+                level_name="Day",
+                data=day_data_points,
+            )
+            year_node.add_child(month_name, month_node)
+
+    return HierarchicalChartData(title=title, root=root)
+
+
+def hierarchical_from_timeseries_with_categories(
+    data: Sequence[tuple[date | datetime, str, float]],
+    title: str = "Time Series by Category",
+    aggregation: AggregationMethod = "sum",
+    depth: Literal["year", "month", "day"] = "day",
+    short_month_names: bool = True,
+) -> HierarchicalChartData:
+    """Create hierarchical data from categorized time-series.
+
+    Similar to hierarchical_from_timeseries but groups by category first,
+    then drills down into time periods within each category.
+
+    The hierarchy is: Category → Year → Month → Day
+
+    Args:
+        data: Sequence of (date/datetime, category, value) tuples.
+        title: Chart title.
+        aggregation: How to aggregate values.
+        depth: Maximum time drill-down depth.
+        short_month_names: Use "Jan" instead of "January".
+
+    Returns:
+        HierarchicalChartData with Category → Time hierarchy.
+
+    Example:
+        >>> data = [
+        ...     (date(2024, 1, 15), "Product A", 100),
+        ...     (date(2024, 1, 20), "Product A", 150),
+        ...     (date(2024, 1, 15), "Product B", 80),
+        ... ]
+        >>> chart_data = hierarchical_from_timeseries_with_categories(
+        ...     data,
+        ...     title="Sales by Product",
+        ... )
+        >>> # Root shows categories: Product A, Product B
+        >>> # Drill into Product A shows years
+        >>> # Drill into year shows months, etc.
+    """
+    # Group by category first
+    by_category: dict[str, list[tuple[date, float]]] = defaultdict(list)
+    for dt, category, value in data:
+        if isinstance(dt, datetime):
+            dt = dt.date()
+        by_category[category].append((dt, value))
+
+    # Create root with category totals
+    category_data_points: list[DataPoint] = []
+    for category in sorted(by_category.keys()):
+        values = [v for _, v in by_category[category]]
+        agg_value = _aggregate_values(values, aggregation)
+        category_data_points.append(
+            DataPoint(
+                category=category,
+                value=agg_value,
+                label=category,
+            )
+        )
+
+    root = HierarchicalNode(
+        id="root",
+        label="All Categories",
+        level_name="Category",
+        data=category_data_points,
+    )
+
+    # For each category, create time-based hierarchy
+    for category in sorted(by_category.keys()):
+        category_data = by_category[category]
+        category_id = category.lower().replace(" ", "_")
+
+        # Create a sub-hierarchy for this category's time data
+        time_data = [(dt, val) for dt, val in category_data]
+        sub_chart = hierarchical_from_timeseries(
+            time_data,
+            title=category,
+            aggregation=aggregation,
+            depth=depth,
+            short_month_names=short_month_names,
+        )
+
+        # Rename the sub-chart's root to represent the category
+        sub_root = sub_chart.root
+        sub_root.id = f"category_{category_id}"
+        sub_root.label = category
+        root.add_child(category, sub_root)
+
+    return HierarchicalChartData(title=title, root=root)

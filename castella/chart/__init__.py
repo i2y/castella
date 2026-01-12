@@ -101,6 +101,8 @@ from castella.chart.models.hierarchy import (
     HierarchicalNode,
     HierarchicalChartData,
     hierarchical_from_dict,
+    hierarchical_from_timeseries,
+    hierarchical_from_timeseries_with_categories,
 )
 from castella.chart.drilldown import (
     DrillDownChart,
@@ -203,6 +205,8 @@ __all__ = [
     "HierarchicalNode",
     "HierarchicalChartData",
     "hierarchical_from_dict",
+    "hierarchical_from_timeseries",
+    "hierarchical_from_timeseries_with_categories",
     "DrillDownChart",
     "DrillDownState",
     "DrillPath",
