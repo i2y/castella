@@ -41,7 +41,7 @@ from .events import DrillDownEvent, DrillUpEvent
 from .state import DrillDownState, DrillPath
 from .breadcrumb import Breadcrumb
 from .component import DrillDownChart
-from .drillable_charts import DrillableBarChart, DrillablePieChart
+from .drillable_charts import DrillableBarChart, DrillablePieChart, DrillableStackedBarChart
 from .indicator import (
     draw_drill_indicator_on_rect,
     draw_drill_indicator_on_arc,
@@ -61,6 +61,7 @@ __all__ = [
     # Drillable chart variants
     "DrillableBarChart",
     "DrillablePieChart",
+    "DrillableStackedBarChart",
     # Indicator utilities
     "draw_drill_indicator_on_rect",
     "draw_drill_indicator_on_arc",

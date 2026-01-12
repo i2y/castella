@@ -111,6 +111,7 @@ from castella.chart.drilldown import (
     Breadcrumb,
     DrillableBarChart,
     DrillablePieChart,
+    DrillableStackedBarChart,
 )
 
 __all__ = [
@@ -210,4 +211,5 @@ __all__ = [
     "Breadcrumb",
     "DrillableBarChart",
     "DrillablePieChart",
+    "DrillableStackedBarChart",
 ]

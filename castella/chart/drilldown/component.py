@@ -14,13 +14,18 @@ from castella.spacer import Spacer
 from castella.chart.base import BaseChart
 from castella.chart.bar_chart import BarChart
 from castella.chart.pie_chart import PieChart
+from castella.chart.stacked_bar_chart import StackedBarChart
 from castella.chart.events import ChartClickEvent
 from castella.chart.models.hierarchy import HierarchicalChartData
 
 from .state import DrillDownState
 from .breadcrumb import Breadcrumb
 from .events import DrillDownEvent, DrillUpEvent
-from .drillable_charts import DrillableBarChart, DrillablePieChart
+from .drillable_charts import (
+    DrillableBarChart,
+    DrillablePieChart,
+    DrillableStackedBarChart,
+)
 
 
 class DrillDownChart(Component):
@@ -174,6 +179,11 @@ class DrillDownChart(Component):
             return DrillableBarChart
         elif self._chart_type is PieChart or self._chart_type is DrillablePieChart:
             return DrillablePieChart
+        elif (
+            self._chart_type is StackedBarChart
+            or self._chart_type is DrillableStackedBarChart
+        ):
+            return DrillableStackedBarChart
         else:
             # For other chart types, use the original
             return self._chart_type
