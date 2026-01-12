@@ -14,7 +14,7 @@ Select the desktop frame backend.
 | `sdl` | Use SDL2 backend |
 | `sdl3` | Use SDL3 backend |
 | `tui` | Use terminal UI mode |
-| `auto` | Auto-detect (default) |
+| `auto` | Auto-detect (default): GLFW → SDL3 → SDL2 → TUI |
 
 ```bash
 # Use SDL3 backend

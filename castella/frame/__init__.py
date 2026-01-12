@@ -90,23 +90,30 @@ else:
 
         Frame = pt_frame.PTFrame
     else:
-        # Auto-detect: try GLFW first, then SDL2, then TUI
+        # Auto-detect: try GLFW first, then SDL3, then SDL2, then TUI
         try:
             from castella import glfw_frame
 
             Frame = glfw_frame.Frame
         except Exception:
             try:
-                from castella import sdl_frame
+                from castella import sdl3_frame
 
-                Frame = sdl_frame.Frame
+                Frame = sdl3_frame.Frame
             except Exception:
                 try:
-                    from castella import pt_frame
+                    from castella import sdl_frame
 
-                    Frame = pt_frame.PTFrame
+                    Frame = sdl_frame.Frame
                 except Exception:
-                    raise ImportError("Could not import any frame implementation")
+                    try:
+                        from castella import pt_frame
+
+                        Frame = pt_frame.PTFrame
+                    except Exception:
+                        raise ImportError(
+                            "Could not import any frame implementation"
+                        )
 
 
 __all__ = ["BaseFrame", "Frame"]
