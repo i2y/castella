@@ -4,6 +4,79 @@ This guide covers packaging Castella applications for distribution.
 
 ## Desktop Applications
 
+### ux
+
+[ux](https://github.com/i2y/ux) is a Rust-based Python app bundler that leverages `uv` to create single distributable executables. End users don't need Python or uv installed to run the bundled app.
+
+**Features:**
+
+- Single executable distribution
+- Cross-platform compilation
+- macOS app bundles with code signing and notarization
+- DMG packaging for macOS distribution
+
+**Installation:**
+
+```bash
+# With uv (recommended)
+uv tool install ux-py
+
+# With pip
+pip install ux-py
+```
+
+**Basic usage:**
+
+```bash
+ux bundle --project . --output ./dist/
+```
+
+**Configuration in pyproject.toml:**
+
+```toml
+[tool.ux]
+entry = "your_app"
+include = ["assets/"]
+
+[tool.ux.macos]
+icon = "assets/icon.png"
+bundle_identifier = "com.example.yourapp"
+bundle_name = "Your App"
+```
+
+**macOS app bundle with code signing:**
+
+```bash
+# Create signed .app bundle
+ux bundle --format app --codesign --output ./dist/
+
+# Create signed .app and DMG
+ux bundle --format app --codesign --dmg --output ./dist/
+
+# With notarization (for distribution)
+ux bundle --format app --codesign --notarize --dmg --output ./dist/
+```
+
+**Cross-compilation:**
+
+```bash
+# Build for Linux
+ux bundle --target linux-x86_64 --output ./dist/
+
+# Build for Windows
+ux bundle --target windows-x86_64 --output ./dist/
+```
+
+**Supported targets:**
+
+| Target | PyPI | Notes |
+|--------|------|-------|
+| darwin-x86_64 | Yes | Intel Mac |
+| darwin-aarch64 | Yes | Apple Silicon Mac |
+| linux-x86_64 | Yes | |
+| linux-aarch64 | GitHub | ARM64 Linux |
+| windows-x86_64 | Yes | |
+
 ### PyInstaller
 
 [PyInstaller](https://pyinstaller.org/) packages your app as a standalone executable:
