@@ -162,7 +162,9 @@ class Modal(StatefulComponent):
             title_elements = []
             if self._title:
                 title_elements.append(
-                    Text(self._title).text_color(theme.colors.text_primary)
+                    Text(self._title)
+                    .text_color(theme.colors.text_primary)
+                    .erase_border()
                 )
             title_elements.append(Spacer())
             if self._show_close_button:

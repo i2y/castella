@@ -273,7 +273,7 @@ class AllWidgetsDemoApp(Component):
                 Text("All Widgets Demo", font_size=20)
                 .text_color(theme.colors.text_primary)
                 .fit_content()
-                ,
+                .erase_border(),
                 Spacer(),
             ).fixed_height(40),
 

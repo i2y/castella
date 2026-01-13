@@ -206,7 +206,7 @@ class ChartsDemoApp(Component):
             Spacer(),
             Button("<").on_click(self._prev_chart).fixed_size(60, 44),
             Spacer().fixed_width(20),
-            Text(chart_name).font_size(20).text_color("#FFFFFF").fixed_size(80, 44),
+            Text(chart_name).font_size(20).text_color("#FFFFFF").fixed_size(80, 44).erase_border(),
             Spacer().fixed_width(20),
             Button(">").on_click(self._next_chart).fixed_size(60, 44),
             Spacer(),
@@ -225,7 +225,7 @@ class ChartsDemoApp(Component):
             # Header
             Row(
                 Spacer(),
-                Text("Castella Charts").font_size(28).text_color("#9ECE6A").fit_content(),
+                Text("Castella Charts").font_size(28).text_color("#9ECE6A").fit_content().erase_border(),
                 Spacer(),
             ).height(35).height_policy(SizePolicy.FIXED),
 
@@ -247,7 +247,7 @@ class ChartsDemoApp(Component):
             # Info
             Row(
                 Spacer(),
-                Text("Tap arrows to navigate").font_size(12).text_color("#565F89").fit_content(),
+                Text("Tap arrows to navigate").font_size(12).text_color("#565F89").fit_content().erase_border(),
                 Spacer(),
             ).height(20).height_policy(SizePolicy.FIXED),
 

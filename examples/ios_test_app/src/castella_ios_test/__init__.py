@@ -143,7 +143,7 @@ class CounterApp(Component):
 
         # Progress bar section
         progress_section = Column(
-            Row(Spacer(), Text("Progress").font_size(14).text_color("#565F89").fit_content(), Spacer())
+            Row(Spacer(), Text("Progress").font_size(14).text_color("#565F89").fit_content().erase_border(), Spacer())
                 .height(20).height_policy(SizePolicy.FIXED),
             Spacer().fixed_height(8),
             ProgressBar(self._progress)
@@ -158,7 +158,7 @@ class CounterApp(Component):
             # Header
             Row(
                 Spacer(),
-                Text("Castella iOS").font_size(32).text_color("#FFFFFF").fit_content(),
+                Text("Castella iOS").font_size(32).text_color("#FFFFFF").fit_content().erase_border(),
                 Spacer(),
             ).height(40).height_policy(SizePolicy.FIXED),
 
@@ -167,7 +167,7 @@ class CounterApp(Component):
             # Counter display
             Row(
                 Spacer(),
-                Text(str(count)).font_size(80).text_color("#9ECE6A").fit_content(),
+                Text(str(count)).font_size(80).text_color("#9ECE6A").fit_content().erase_border(),
                 Spacer(),
             ).height(90).height_policy(SizePolicy.FIXED),
 
@@ -186,7 +186,7 @@ class CounterApp(Component):
             # Info section
             Row(
                 Spacer(),
-                Text("iOSFrame + Metal + Pydantic").font_size(14).text_color("#7DCFFF").fit_content(),
+                Text("iOSFrame + Metal + Pydantic").font_size(14).text_color("#7DCFFF").fit_content().erase_border(),
                 Spacer(),
             ).height(20).height_policy(SizePolicy.FIXED),
 

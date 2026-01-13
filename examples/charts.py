@@ -73,12 +73,12 @@ class ChartsDemo(Component):
             Row(
                 Column(
                     Row(
-                        Text("Foo", align=TextAlign.RIGHT),
+                        Text("Foo", align=TextAlign.RIGHT).erase_border(),
                         CheckBox(self._foo).on_change(self._on_foo_change).fixed_width(40),
                         Spacer().fixed_width(10),
                     ).fixed_height(40),
                     Row(
-                        Text("Bar", align=TextAlign.RIGHT),
+                        Text("Bar", align=TextAlign.RIGHT).erase_border(),
                         CheckBox(self._bar).on_change(self._on_bar_change).fixed_width(40),
                         Spacer().fixed_width(10),
                     ).fixed_height(40),

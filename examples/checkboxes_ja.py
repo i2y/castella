@@ -8,13 +8,13 @@ App(
     Frame("Checkboxes", 480, 300),
     Column(
         Row(
-            Text("あいうえお", align=TextAlign.RIGHT),
+            Text("あいうえお", align=TextAlign.RIGHT).erase_border(),
             CheckBox(True).fixed_width(40),
         )
         .fixed_height(40)
         .spacing(10),
         Row(
-            Text("かきくけこ", align=TextAlign.RIGHT),
+            Text("かきくけこ", align=TextAlign.RIGHT).erase_border(),
             CheckBox().fixed_width(40),
         )
         .fixed_height(40)

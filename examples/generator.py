@@ -28,7 +28,7 @@ class ExampleUsingGenerator(StatefulComponent):
 def switch(mode: State[bool]):
     return Row(
         Spacer(),
-        Text("Column", align=TextAlign.RIGHT).fixed_width(80),
+        Text("Column", align=TextAlign.RIGHT).fixed_width(80).erase_border(),
         Switch(mode).fixed_width(80),
     ).fixed_height(40)
 

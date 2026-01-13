@@ -333,7 +333,7 @@ class DateTimeInput(StatefulComponent):
 
         main_row = (
             Row(
-                Text(display_text).text_color(theme.colors.text_primary),
+                Text(display_text).text_color(theme.colors.text_primary).erase_border(),
                 Button("...")
                 .on_click(lambda _: self._toggle_picker())
                 .fixed_size(40, 32),

@@ -480,6 +480,7 @@ class Tree(StatefulComponent):
                 .width_policy(SizePolicy.FIXED)
                 .height(self._row_height)
                 .height_policy(SizePolicy.FIXED)
+                .erase_border()
             )
 
         # Expand/collapse toggle (or placeholder for leaf)
@@ -490,6 +491,7 @@ class Tree(StatefulComponent):
                 .width_policy(SizePolicy.FIXED)
                 .height(self._row_height)
                 .height_policy(SizePolicy.FIXED)
+                .erase_border()
             )
         else:
             toggle_text = DEFAULT_COLLAPSE_ICON if is_expanded else DEFAULT_EXPAND_ICON
@@ -511,6 +513,7 @@ class Tree(StatefulComponent):
                 .width_policy(SizePolicy.FIXED)
                 .height(self._row_height)
                 .height_policy(SizePolicy.FIXED)
+                .erase_border()
             )
             row_elements.append(icon)
 
