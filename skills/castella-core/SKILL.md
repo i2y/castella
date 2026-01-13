@@ -212,6 +212,19 @@ Text("Hello")
     .padding(10)
 ```
 
+### Border Styling
+
+Text and Layout widgets have no border by default. Button and Input have borders.
+
+```python
+# Add border to Text (which has no border by default)
+Text("Hello").show_border()           # Use theme's border color
+Text("Hello").show_border("#ff0000")  # Use custom color
+
+# Remove border from Button/Input (which have border by default)
+Button("Click").erase_border()
+```
+
 ### Theme System
 
 Access and toggle themes:
