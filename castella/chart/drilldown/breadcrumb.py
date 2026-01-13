@@ -76,9 +76,7 @@ class Breadcrumb(Component):
                 items.append(self._create_breadcrumb_button(node_id, label))
                 items.append(self._create_separator_text())
                 items.append(
-                    Text("...", font_size=12)
-                    .text_color("#666666")
-                    .fixed_height(24)
+                    Text("...", font_size=12).text_color("#666666").fixed_height(24)
                 )
                 items.append(self._create_separator_text())
                 continue
@@ -86,9 +84,7 @@ class Breadcrumb(Component):
             if is_last:
                 # Current level - not clickable, different styling
                 items.append(
-                    Text(label, font_size=12)
-                    .text_color("#ffffff")
-                    .fixed_height(24)
+                    Text(label, font_size=12).text_color("#ffffff").fixed_height(24)
                 )
             else:
                 # Clickable breadcrumb
@@ -108,9 +104,7 @@ class Breadcrumb(Component):
     def _create_separator_text(self) -> Widget:
         """Create separator text between breadcrumb items."""
         return (
-            Text(self._separator, font_size=12)
-            .text_color("#888888")
-            .fixed_height(24)
+            Text(self._separator, font_size=12).text_color("#888888").fixed_height(24)
         )
 
     def _create_breadcrumb_button(self, node_id: str, label: str) -> Widget:

@@ -111,9 +111,7 @@ else:
 
                         Frame = pt_frame.PTFrame
                     except Exception:
-                        raise ImportError(
-                            "Could not import any frame implementation"
-                        )
+                        raise ImportError("Could not import any frame implementation")
 
 
 __all__ = ["BaseFrame", "Frame"]

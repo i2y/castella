@@ -155,7 +155,9 @@ class HierarchicalNode(BaseModel):
             for point in points:
                 drillable = self.has_children(point.category)
                 new_metadata = {**point.metadata, "drillable": drillable}
-                series_points.append(point.model_copy(update={"metadata": new_metadata}))
+                series_points.append(
+                    point.model_copy(update={"metadata": new_metadata})
+                )
             result[series_name] = series_points
         return result
 
@@ -379,13 +381,33 @@ AggregationMethod = Literal["sum", "avg", "count", "min", "max"]
 
 # Month names for labels
 _MONTH_NAMES = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
 ]
 
 _MONTH_NAMES_SHORT = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
 ]
 
 
@@ -496,7 +518,9 @@ def hierarchical_from_timeseries(
             values = [v for _, v in by_month[month]]
             agg_value = _aggregate_values(values, aggregation)
             month_name = month_names[month - 1]
-            label_value = value_format(agg_value) if value_format else str(int(agg_value))
+            label_value = (
+                value_format(agg_value) if value_format else str(int(agg_value))
+            )
             month_data_points.append(
                 DataPoint(
                     category=month_name,

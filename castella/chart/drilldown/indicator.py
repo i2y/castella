@@ -40,7 +40,9 @@ def draw_drill_indicator_on_rect(
     y = element.y + element.height - indicator_size - padding
 
     # Draw indicator using small circle as a dot
-    _draw_indicator_dot(p, x + indicator_size / 2, y + indicator_size / 2, indicator_size / 3, color)
+    _draw_indicator_dot(
+        p, x + indicator_size / 2, y + indicator_size / 2, indicator_size / 3, color
+    )
 
 
 def draw_drill_indicator_on_arc(
@@ -88,8 +90,9 @@ def _draw_indicator_dot(
         color: Fill color.
     """
     # Check if painter supports circles
-    if hasattr(p, 'fill_circle'):
+    if hasattr(p, "fill_circle"):
         from castella.models.geometry import Circle
+
         p.save()
         p.style(Style(fill=FillStyle(color=color)))
         p.fill_circle(Circle(center=Point(x=x, y=y), radius=radius))
@@ -99,10 +102,12 @@ def _draw_indicator_dot(
         p.save()
         p.style(Style(fill=FillStyle(color=color)))
         half = radius
-        p.fill_rect(Rect(
-            origin=Point(x=x - half, y=y - half),
-            size=Size(width=half * 2, height=half * 2)
-        ))
+        p.fill_rect(
+            Rect(
+                origin=Point(x=x - half, y=y - half),
+                size=Size(width=half * 2, height=half * 2),
+            )
+        )
         p.restore()
 
 
@@ -127,6 +132,7 @@ def draw_drill_indicator_text(
         text: The indicator character (default: +).
     """
     from castella.models.font import Font
+
     p.save()
     p.style(Style(fill=FillStyle(color=color), font=Font(size=int(size))))
     p.fill_text(text, Point(x=x, y=y), None)

@@ -119,7 +119,10 @@ class DrillDownChart(Component):
         actual_chart_type = self._get_drillable_chart_type()
 
         # Handle HeatmapChart specially (uses different data type)
-        if self._chart_type is HeatmapChart or self._chart_type is DrillableHeatmapChart:
+        if (
+            self._chart_type is HeatmapChart
+            or self._chart_type is DrillableHeatmapChart
+        ):
             chart_data = self._drill_state.to_heatmap_chart_data()
             # Determine which rows are drillable
             node = self._drill_state.current_node
@@ -259,7 +262,10 @@ class DrillDownChart(Component):
 
         # For HeatmapChart: series_index = row, data_index = column
         # We drill based on row (category)
-        if self._chart_type is HeatmapChart or self._chart_type is DrillableHeatmapChart:
+        if (
+            self._chart_type is HeatmapChart
+            or self._chart_type is DrillableHeatmapChart
+        ):
             row_idx = event.series_index
             categories = node.all_categories
             if row_idx < len(categories):
