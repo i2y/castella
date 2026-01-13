@@ -6,6 +6,7 @@ from pyscript.ffi import create_proxy, to_js  # type: ignore
 
 from castella import core
 from castella.canvaskit_painter import Painter
+from castella.models.events import CursorType
 
 
 class Frame:
@@ -232,6 +233,34 @@ class Frame:
         self, text: str, callback: Callable[[Future], None]
     ) -> None:
         return navigator.clipboard.writeText(text).add_done_callback(callback)
+
+    def set_cursor(self, cursor_type: CursorType) -> None:
+        """Set the mouse cursor shape using CSS."""
+        css_cursor = _cursor_type_to_css(cursor_type)
+        document.body.style.cursor = css_cursor
+
+
+def _cursor_type_to_css(cursor_type: CursorType) -> str:
+    """Convert CursorType to CSS cursor value."""
+    match cursor_type:
+        case CursorType.ARROW:
+            return "default"
+        case CursorType.TEXT:
+            return "text"
+        case CursorType.POINTER:
+            return "pointer"
+        case CursorType.RESIZE_H:
+            return "ew-resize"
+        case CursorType.RESIZE_V:
+            return "ns-resize"
+        case CursorType.CROSSHAIR:
+            return "crosshair"
+        case CursorType.WAIT:
+            return "wait"
+        case CursorType.NOT_ALLOWED:
+            return "not-allowed"
+        case _:
+            return "default"
 
 
 def convert_to_key_code(code: int) -> core.KeyCode:

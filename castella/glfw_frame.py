@@ -13,6 +13,7 @@ import castella_skia
 from castella.frame.base import BaseFrame
 from castella.models.geometry import Point, Size
 from castella.models.events import (
+    CursorType,
     IMEPreeditEvent,
     InputCharEvent,
     InputKeyEvent,
@@ -91,6 +92,10 @@ class Frame(BaseFrame):
             self._ime_manager = MacOSIMEManager(window)
             self._ime_manager.set_preedit_handler(self._on_ime_preedit)
 
+        # Cursor cache to avoid recreating cursors on every set_cursor call
+        self._cursor_cache: dict[CursorType, int] = {}
+        self._current_cursor_type: CursorType = CursorType.ARROW
+
     def _update_surface_and_painter(self) -> None:
         """Create/recreate the Skia surface for the current window size."""
         from castella import rust_skia_painter as painter
@@ -161,6 +166,22 @@ class Frame(BaseFrame):
         """Set IME cursor rectangle for candidate window positioning."""
         if self._ime_manager:
             self._ime_manager.set_cursor_rect(x, y, w, h)
+
+    def set_cursor(self, cursor_type: CursorType) -> None:
+        """Set the mouse cursor shape."""
+        if cursor_type == self._current_cursor_type:
+            return
+
+        # Get or create the cursor
+        if cursor_type not in self._cursor_cache:
+            glfw_cursor_type = _cursor_type_to_glfw(cursor_type)
+            cursor = glfw.create_standard_cursor(glfw_cursor_type)
+            self._cursor_cache[cursor_type] = cursor
+        else:
+            cursor = self._cursor_cache[cursor_type]
+
+        glfw.set_cursor(self.window, cursor)
+        self._current_cursor_type = cursor_type
 
     def _input_key(
         self, window, key: int, scancode: int, action: int, mods: int
@@ -282,3 +303,22 @@ def _convert_to_key_action(glfw_key_action: int) -> KeyAction:
             return KeyAction.REPEAT
         case _:
             return KeyAction.UNKNOWN
+
+
+def _cursor_type_to_glfw(cursor_type: CursorType) -> int:
+    """Convert CursorType to GLFW cursor constant."""
+    match cursor_type:
+        case CursorType.ARROW:
+            return glfw.ARROW_CURSOR
+        case CursorType.TEXT:
+            return glfw.IBEAM_CURSOR
+        case CursorType.POINTER:
+            return glfw.HAND_CURSOR
+        case CursorType.RESIZE_H:
+            return glfw.HRESIZE_CURSOR
+        case CursorType.RESIZE_V:
+            return glfw.VRESIZE_CURSOR
+        case CursorType.CROSSHAIR:
+            return glfw.CROSSHAIR_CURSOR
+        case _:
+            return glfw.ARROW_CURSOR

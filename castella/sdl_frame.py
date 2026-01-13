@@ -13,6 +13,7 @@ import castella_skia
 from castella.frame.base import BaseFrame
 from castella.models.geometry import Point, Size
 from castella.models.events import (
+    CursorType,
     IMEPreeditEvent,
     InputCharEvent,
     InputKeyEvent,
@@ -111,6 +112,10 @@ class Frame(BaseFrame):
         # Register event filter for real-time resize updates during drag
         self._event_filter = self._create_event_filter()
         sdl.SDL_SetEventFilter(self._event_filter, None)
+
+        # Cursor cache to avoid recreating cursors on every set_cursor call
+        self._cursor_cache: dict[CursorType, c_void_p] = {}
+        self._current_cursor_type: CursorType = CursorType.ARROW
 
     def _create_event_filter(self):
         """Create event filter callback for handling resize during drag."""
@@ -291,6 +296,22 @@ class Frame(BaseFrame):
         self._ime_rect.h = h
         sdl.SDL_SetTextInputRect(byref(self._ime_rect))
 
+    def set_cursor(self, cursor_type: CursorType) -> None:
+        """Set the mouse cursor shape."""
+        if cursor_type == self._current_cursor_type:
+            return
+
+        # Get or create the cursor
+        if cursor_type not in self._cursor_cache:
+            sdl_cursor_type = _cursor_type_to_sdl(cursor_type)
+            cursor = sdl.SDL_CreateSystemCursor(sdl_cursor_type)
+            self._cursor_cache[cursor_type] = cursor
+        else:
+            cursor = self._cursor_cache[cursor_type]
+
+        sdl.SDL_SetCursor(cursor)
+        self._current_cursor_type = cursor_type
+
     # ========== Clipboard ==========
 
     def get_clipboard_text(self) -> str:
@@ -346,3 +367,26 @@ def _get_key_mods() -> int:
     if key_mods & (sdl.KMOD_LGUI | sdl.KMOD_RGUI):
         mods |= 0x0008  # SUPER/CMD
     return mods
+
+
+def _cursor_type_to_sdl(cursor_type: CursorType) -> int:
+    """Convert CursorType to SDL2 system cursor constant."""
+    match cursor_type:
+        case CursorType.ARROW:
+            return sdl.SDL_SYSTEM_CURSOR_ARROW
+        case CursorType.TEXT:
+            return sdl.SDL_SYSTEM_CURSOR_IBEAM
+        case CursorType.POINTER:
+            return sdl.SDL_SYSTEM_CURSOR_HAND
+        case CursorType.RESIZE_H:
+            return sdl.SDL_SYSTEM_CURSOR_SIZEWE
+        case CursorType.RESIZE_V:
+            return sdl.SDL_SYSTEM_CURSOR_SIZENS
+        case CursorType.CROSSHAIR:
+            return sdl.SDL_SYSTEM_CURSOR_CROSSHAIR
+        case CursorType.WAIT:
+            return sdl.SDL_SYSTEM_CURSOR_WAIT
+        case CursorType.NOT_ALLOWED:
+            return sdl.SDL_SYSTEM_CURSOR_NO
+        case _:
+            return sdl.SDL_SYSTEM_CURSOR_ARROW

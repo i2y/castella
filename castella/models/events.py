@@ -50,6 +50,19 @@ class KeyAction(Enum):
     UNKNOWN = auto()
 
 
+class CursorType(Enum):
+    """Mouse cursor types."""
+
+    ARROW = auto()  # Default arrow cursor
+    TEXT = auto()  # I-beam cursor for text input
+    POINTER = auto()  # Hand cursor for clickable elements
+    RESIZE_H = auto()  # Horizontal resize cursor (↔)
+    RESIZE_V = auto()  # Vertical resize cursor (↕)
+    CROSSHAIR = auto()  # Crosshair for selection
+    WAIT = auto()  # Wait/loading cursor
+    NOT_ALLOWED = auto()  # Forbidden/not-allowed cursor
+
+
 class MouseButton(str, Enum):
     """Mouse button identifiers."""
 

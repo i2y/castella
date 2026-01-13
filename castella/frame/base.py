@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable, cast
 
 from castella.models.geometry import Point, Rect, Size
 from castella.models.events import (
+    CursorType,
     IMEPreeditEvent,
     InputCharEvent,
     InputKeyEvent,
@@ -102,6 +103,16 @@ class BaseFrame(ABC):
             y: Y coordinate of the cursor
             w: Width of the cursor rectangle
             h: Height of the cursor rectangle
+        """
+        pass  # Default no-op, subclasses override
+
+    def set_cursor(self, cursor_type: CursorType) -> None:
+        """Set the mouse cursor shape.
+
+        Subclasses should override this to change the cursor appearance.
+
+        Args:
+            cursor_type: The type of cursor to display.
         """
         pass  # Default no-op, subclasses override
 

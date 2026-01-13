@@ -18,6 +18,7 @@ from castella.core import (
     Widget,
     WheelEvent,
 )
+from castella.models.events import CursorType
 from castella.models.geometry import Point, Rect, Size
 from castella.models.style import FillStyle, Font, SizePolicy, StrokeStyle, Style
 from castella.state.observers import ObservableBase
@@ -1177,6 +1178,17 @@ class DataTable(Widget):
         pos = ev.pos
         self._mouse_pos = pos
 
+        # Update cursor shape for column resize
+        from castella.core import App
+
+        app = App._instance
+        if self._is_in_header(pos.y) and self._is_on_column_border(pos.x) is not None:
+            if app and app._frame:
+                app._frame.set_cursor(CursorType.RESIZE_H)
+        else:
+            if app and app._frame:
+                app._frame.set_cursor(CursorType.ARROW)
+
         new_row = self._get_row_at_y(pos.y) if not self._is_in_header(pos.y) else -1
         new_col = self._get_column_at_x(pos.x) or -1
 
@@ -1201,6 +1213,13 @@ class DataTable(Widget):
 
     def mouse_out(self) -> None:
         """Handle mouse leaving the widget."""
+        # Reset cursor to default when leaving the widget
+        from castella.core import App
+
+        app = App._instance
+        if app and app._frame:
+            app._frame.set_cursor(CursorType.ARROW)
+
         needs_update = False
         if self._hovered_row != -1 or self._hovered_col != -1:
             self._hovered_row = -1
