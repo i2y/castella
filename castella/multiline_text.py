@@ -289,7 +289,6 @@ class MultilineText(Widget):
         p.style(self._rect_style)
         rect = Rect(origin=Point(x=0, y=0), size=self.get_size())
         p.fill_rect(rect)
-        p.stroke_rect(rect)
 
         # Cache lines for selection handling
         lines = list(self._get_lines(p))

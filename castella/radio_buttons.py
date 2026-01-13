@@ -46,7 +46,7 @@ class RadioButtons(StatefulComponent):
                     .on_click(self._create_select_callback(i))
                     .fixed_width(self._button_width),
                     # .fixed_size(self._style.font.size, self._.font.size),
-                    Text(label, align=TextAlign.LEFT).erase_border(),
+                    Text(label, align=TextAlign.LEFT),
                 )
             )
         return Column(*check_boxes)

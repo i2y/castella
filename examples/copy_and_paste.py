@@ -19,13 +19,13 @@ class CopyAndPaste(Component):
     def view(self):
         return Column(
             Row(
-                Text(self._text_1, font_size=80).erase_border(),
+                Text(self._text_1, font_size=80),
                 Button("Copy").on_click(
                     lambda _: App.get().set_clipboard_text(str(self._text_1))
                 ),
             ).spacing(8),
             Row(
-                Text(self._text_2, font_size=80).erase_border(),
+                Text(self._text_2, font_size=80),
                 Button("Paste").on_click(
                     lambda _: self._text_2.set(App.get().get_clipboard_text())
                 ),

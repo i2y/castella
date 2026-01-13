@@ -34,7 +34,8 @@ widget.fit_parent()               # Fill parent
 widget.bg_color("#ff0000")        # Background color
 widget.text_color("#ffffff")      # Text color
 widget.border_color("#000000")    # Border color
-widget.erase_border()             # Hide border
+widget.show_border()              # Show border (for Text which has no border by default)
+widget.erase_border()             # Hide border (for Button/Input which have border by default)
 ```
 
 ### Layering

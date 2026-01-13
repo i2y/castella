@@ -39,7 +39,7 @@ App(
     Column(
         Row(
             Spacer(),
-            Text("Lock", align=TextAlign.RIGHT).fixed_width(80).erase_border(),
+            Text("Lock", align=TextAlign.RIGHT).fixed_width(80),
             Switch(is_locked)
             .fixed_width(80)
             .on_change(lambda v: print("locked") if v else print("unlocked")),

@@ -6,13 +6,13 @@ App(
     Frame("Checkboxes", 480, 300),
     Column(
         Row(
-            Text("Foo", align=TextAlign.RIGHT).erase_border(),
+            Text("Foo", align=TextAlign.RIGHT),
             CheckBox().fixed_width(40),
         )
         .fixed_height(40)
         .spacing(10),
         Row(
-            Text("Bar", align=TextAlign.RIGHT).erase_border(),
+            Text("Bar", align=TextAlign.RIGHT),
             CheckBox().fixed_width(40),
         )
         .fixed_height(40)

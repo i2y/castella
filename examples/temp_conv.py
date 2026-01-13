@@ -46,7 +46,7 @@ class TempConv(Component):
 
 
 def text(s: str) -> Text:
-    return Text(s, font_size=80).fixed_width(100).erase_border()
+    return Text(s, font_size=80).fixed_width(100)
 
 
 def value(s: InputState, callback: Callable[[str], None]) -> Input:

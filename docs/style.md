@@ -246,9 +246,16 @@ Text("Custom").bg_color("#1a1a2e").text_color("#eee")
 # Set border color
 widget.border_color("#ff00ff")
 
-# Make border match background (effectively hides it)
+# Show border (useful for Text which has no border by default)
+widget.show_border()              # Use theme's default border color
+widget.show_border("#ff00ff")     # Use custom color
+
+# Hide border (useful for Button/Input which have border by default)
 widget.erase_border()
 ```
+
+**Note:** Text and Layout widgets (Column, Row, Box) have no border by default.
+Button and Input widgets have borders by default.
 
 ## Text Alignment
 

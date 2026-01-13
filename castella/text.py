@@ -64,7 +64,6 @@ class Text(Widget):
             p.style(self._rect_style)
             rect = Rect(origin=Point(x=0, y=0), size=size)
             p.fill_rect(rect)
-            p.stroke_rect(rect)
 
         width = size.width
         height = size.height

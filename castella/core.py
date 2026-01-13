@@ -375,6 +375,14 @@ class Widget(ABC):
             self._get_widget_style(Kind.NORMAL, AppearanceState.NORMAL).bg_color
         )
 
+    def show_border(self, color: str | None = None) -> Self:
+        """Show border with specified or theme default color."""
+        if color is None:
+            color = self._get_widget_style(
+                Kind.NORMAL, AppearanceState.NORMAL
+            ).border_color
+        return self.border_color(color)
+
     def _on_update_widget_styles(self) -> None:
         pass
 
