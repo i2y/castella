@@ -239,7 +239,7 @@ class Frame(BaseFrame):
                             key=_convert_to_key_code(event.key.key),
                             scancode=event.key.scancode,
                             action=KeyAction.PRESS,
-                            mods=event.key.mod,
+                            mods=_convert_sdl_mods_to_glfw(event.key.mod),
                         )
                     )
                 case sdl3.SDL_EVENT_TEXT_EDITING:
@@ -306,10 +306,9 @@ class Frame(BaseFrame):
     def get_clipboard_text(self) -> str:
         text = sdl3.SDL_GetClipboardText()
         if text:
-            result = text.decode("utf-8")
-            # SDL3: Must free clipboard text with SDL_free
-            sdl3.SDL_free(text)
-            return result
+            # SDL3 Python bindings return bytes, no need to call SDL_free
+            # (Python manages the memory automatically)
+            return text.decode("utf-8")
         return ""
 
     def set_clipboard_text(self, text: str) -> None:
@@ -365,6 +364,20 @@ def _get_key_mods() -> int:
     if key_mods & (sdl3.SDL_KMOD_LALT | sdl3.SDL_KMOD_RALT):
         mods |= 0x0004  # ALT
     if key_mods & (sdl3.SDL_KMOD_LGUI | sdl3.SDL_KMOD_RGUI):
+        mods |= 0x0008  # SUPER/CMD
+    return mods
+
+
+def _convert_sdl_mods_to_glfw(sdl_mods: int) -> int:
+    """Convert SDL3 event modifier state to GLFW-compatible format."""
+    mods = 0
+    if sdl_mods & (sdl3.SDL_KMOD_LSHIFT | sdl3.SDL_KMOD_RSHIFT):
+        mods |= 0x0001  # SHIFT
+    if sdl_mods & (sdl3.SDL_KMOD_LCTRL | sdl3.SDL_KMOD_RCTRL):
+        mods |= 0x0002  # CTRL
+    if sdl_mods & (sdl3.SDL_KMOD_LALT | sdl3.SDL_KMOD_RALT):
+        mods |= 0x0004  # ALT
+    if sdl_mods & (sdl3.SDL_KMOD_LGUI | sdl3.SDL_KMOD_RGUI):
         mods |= 0x0008  # SUPER/CMD
     return mods
 
