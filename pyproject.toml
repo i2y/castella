@@ -1,6 +1,6 @@
 [project]
 name = "castella"
-version = "0.13.8"
+version = "0.13.9"
 description = "Castella is a pure Python cross-platform UI framework"
 authors = [{ name = "Yasushi Itoh", email = "i2y@icloud.com" }]
 license = "MIT"
