@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from pygments import lex
 from pygments.lexers import get_lexer_by_name, guess_lexer, TextLexer
 from pygments.styles import get_style_by_name
-from pygments.util import ClassNotFound
 
 
 @dataclass
@@ -80,10 +79,16 @@ class CodeTextRenderer:
 
         for token_type, token_text in tokens:
             # Get style for this token type
-            style = self._style.style_for_token(token_type)
-            color = f"#{style['color']}" if style.get("color") else "#f8f8f2"
-            bold = style.get("bold", False) or False
-            italic = style.get("italic", False) or False
+            try:
+                style = self._style.style_for_token(token_type)
+                color = f"#{style['color']}" if style.get("color") else "#f8f8f2"
+                bold = style.get("bold", False) or False
+                italic = style.get("italic", False) or False
+            except (KeyError, Exception):
+                # Fallback for unknown token types
+                color = "#f8f8f2"
+                bold = False
+                italic = False
 
             # Split by newlines
             parts = token_text.split("\n")
@@ -119,12 +124,12 @@ class CodeTextRenderer:
         if language:
             try:
                 return get_lexer_by_name(language)
-            except ClassNotFound:
+            except Exception:
                 pass
 
         try:
             return guess_lexer(code)
-        except ClassNotFound:
+        except Exception:
             return TextLexer()
 
     def clear_cache(self) -> None:

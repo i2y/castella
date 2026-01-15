@@ -6,7 +6,6 @@ import numpy as np
 from pygments import highlight
 from pygments.formatters import ImageFormatter
 from pygments.lexers import get_lexer_by_name, guess_lexer, TextLexer
-from pygments.util import ClassNotFound
 
 try:
     from PIL import Image
@@ -78,12 +77,12 @@ class CodeHighlighter:
         if language:
             try:
                 return get_lexer_by_name(language)
-            except ClassNotFound:
+            except Exception:
                 pass
 
         try:
             return guess_lexer(code)
-        except ClassNotFound:
+        except Exception:
             return TextLexer()
 
     def clear_cache(self) -> None:
