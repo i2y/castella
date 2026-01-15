@@ -1323,11 +1323,11 @@ class DataTable(Widget):
         p.style(Style(fill=FillStyle(color=bg_color)))
         p.fill_rect(Rect(origin=Point(x=0, y=0), size=size))
 
-        # Draw header
-        self._render_header(p, state, theme)
-
-        # Draw rows (clipped to data area)
+        # Draw rows first (clipped to data area)
         self._render_rows(p, state, theme)
+
+        # Draw header after rows so it appears on top when scrolling
+        self._render_header(p, state, theme)
 
         # Draw scrollbar
         if self._needs_vertical_scrollbar():
@@ -1338,7 +1338,8 @@ class DataTable(Widget):
 
     def _render_header(self, p: Painter, state: DataTableState, theme) -> None:
         """Render the header row."""
-        width = self._get_viewport_width()
+        # Use full width for header (scrollbar is only in data area, not header)
+        width = self.get_width()
 
         # Header background (custom or theme)
         header_bg = self._header_bg_color or theme.colors.bg_secondary
@@ -1398,12 +1399,14 @@ class DataTable(Widget):
 
         # Clip to data area
         p.save()
-        p.clip(
-            Rect(
-                origin=Point(x=0, y=self._header_height),
-                size=Size(width=width, height=viewport_height),
-            )
+        # Add row_height margin to clip to handle boundary issues where last row
+        # would otherwise be clipped even when scroll is at max
+        clip_height = viewport_height + self._row_height
+        clip_rect = Rect(
+            origin=Point(x=0, y=self._header_height),
+            size=Size(width=width, height=clip_height),
         )
+        p.clip(clip_rect)
 
         font_size = 13
         text_color = theme.colors.text_primary
