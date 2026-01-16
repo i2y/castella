@@ -27,10 +27,10 @@ jobs:
           target: x86_64
           args: --release --out dist -i 3.11 3.12 3.13 3.14
           sccache: "true"
-          manylinux: "2_28"
+          manylinux: "2_34"
           working-directory: bindings/python
           before-script-linux: |
-            yum install -y freetype-devel fontconfig-devel ninja-build clang
+            dnf install -y freetype-devel fontconfig-devel ninja-build clang
 
       - name: Upload wheels
         uses: actions/upload-artifact@v6
@@ -58,11 +58,10 @@ jobs:
         with:
           target: aarch64
           args: --release --out dist -i 3.11 3.12 3.13 3.14
-          manylinux: auto
+          manylinux: "2_34"
           working-directory: bindings/python
-          container: quay.io/pypa/manylinux_2_28_aarch64
           before-script-linux: |
-            yum install -y freetype-devel fontconfig-devel ninja-build clang
+            dnf install -y freetype-devel fontconfig-devel ninja-build clang
 
       - name: Upload wheels
         uses: actions/upload-artifact@v6
