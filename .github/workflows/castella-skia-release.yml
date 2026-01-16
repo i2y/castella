@@ -38,25 +38,29 @@ jobs:
           name: wheels-linux-x86_64
           path: bindings/python/dist/*.whl
 
-  # Build wheels for Linux aarch64 (native arm64 runner)
+  # Build wheels for Linux aarch64 (native arm64 runner with aarch64 container)
   linux-aarch64:
     runs-on: ubuntu-24.04-arm
+    container:
+      image: quay.io/pypa/manylinux_2_34_aarch64
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          dnf install -y freetype-devel fontconfig-devel ninja-build clang gcc-c++
+
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Build wheels
-        uses: PyO3/maturin-action@v1
-        with:
-          target: aarch64
-          args: --release --out dist -i 3.11 3.12 3.13 3.14
-          manylinux: "2_34"
-          working-directory: bindings/python
-          before-script-linux: |
-            dnf install -y freetype-devel fontconfig-devel ninja-build clang gcc-c++
+        run: |
+          source $HOME/.cargo/env
+          pip install maturin
+          cd bindings/python
+          maturin build --release --out dist -i 3.11 3.12 3.13 3.14
 
       - name: Upload wheels
         uses: actions/upload-artifact@v6
