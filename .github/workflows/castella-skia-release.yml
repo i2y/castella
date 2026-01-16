@@ -30,7 +30,7 @@ jobs:
           manylinux: "2_34"
           working-directory: bindings/python
           before-script-linux: |
-            dnf install -y freetype-devel fontconfig-devel ninja-build clang
+            dnf install -y freetype-devel fontconfig-devel ninja-build clang gcc-c++
 
       - name: Upload wheels
         uses: actions/upload-artifact@v6
@@ -61,7 +61,7 @@ jobs:
           manylinux: "2_34"
           working-directory: bindings/python
           before-script-linux: |
-            dnf install -y freetype-devel fontconfig-devel ninja-build clang
+            dnf install -y freetype-devel fontconfig-devel ninja-build clang gcc-c++
 
       - name: Upload wheels
         uses: actions/upload-artifact@v6
