@@ -38,7 +38,7 @@ jobs:
           name: wheels-linux-x86_64
           path: bindings/python/dist/*.whl
 
-  # Build wheels for Linux aarch64 (native arm64 runner)
+  # Build wheels for Linux aarch64 (native arm64 runner, no Docker)
   linux-aarch64:
     runs-on: ubuntu-24.04-arm
     steps:
@@ -51,17 +51,18 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libfreetype6-dev libfontconfig1-dev ninja-build clang g++
+          sudo apt-get install -y libfreetype6-dev libfontconfig1-dev ninja-build clang g++ libstdc++-14-dev
 
       - name: Install Rust
         uses: dtolnay/rust-action@stable
 
+      - name: Install maturin
+        run: pip install maturin
+
       - name: Build wheels
-        uses: PyO3/maturin-action@v1
-        with:
-          args: --release --out dist -i 3.11 3.12 3.13 3.14
-          working-directory: bindings/python
-          manylinux: "off"
+        run: |
+          cd bindings/python
+          maturin build --release --out dist -i 3.11 3.12 3.13 3.14
 
       - name: Upload wheels
         uses: actions/upload-artifact@v6
