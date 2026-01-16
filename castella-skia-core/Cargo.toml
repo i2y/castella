@@ -1,6 +1,6 @@
 [package]
 name = "castella-skia-core"
-version = "0.1.0"
+version = "0.1.2"
 edition = "2024"
 description = "Core Skia rendering library for Castella UI framework"
 license = "MIT"
@@ -13,8 +13,12 @@ categories = ["graphics", "gui", "rendering"]
 name = "castella_skia_core"
 crate-type = ["rlib"]
 
-# Desktop: OpenGL backend (default)
-[target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
+# Desktop Linux: OpenGL backend with embedded FreeType for compatibility with older systems
+[target.'cfg(all(target_os = "linux", not(any(target_os = "ios", target_os = "android"))))'.dependencies]
+skia-safe = { version = "0.91", features = ["gl", "textlayout", "embed-freetype"] }
+
+# Desktop macOS/Windows: OpenGL backend (uses Core Text / DirectWrite, no FreeType needed)
+[target.'cfg(all(not(target_os = "linux"), not(any(target_os = "ios", target_os = "android"))))'.dependencies]
 skia-safe = { version = "0.91", features = ["gl", "textlayout"] }
 
 # iOS: Metal backend
