@@ -27,7 +27,7 @@ jobs:
           target: x86_64
           args: --release --out dist -i 3.11 3.12 3.13 3.14
           sccache: "true"
-          manylinux: auto
+          manylinux: "2_28"
           working-directory: bindings/python
           before-script-linux: |
             yum install -y freetype-devel fontconfig-devel
