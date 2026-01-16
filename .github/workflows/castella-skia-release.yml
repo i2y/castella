@@ -38,20 +38,15 @@ jobs:
           name: wheels-linux-x86_64
           path: bindings/python/dist/*.whl
 
-  # Build wheels for Linux aarch64 (using QEMU with native container)
+  # Build wheels for Linux aarch64 (native arm64 runner)
   linux-aarch64:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
 
       - name: Build wheels
         uses: PyO3/maturin-action@v1
