@@ -2,6 +2,17 @@
 
 All notable changes to Castella will be documented in this file.
 
+## [0.13.11] - 2025-01-17
+
+### Added
+- **Audio Playback** - AudioPlayer widget with SDL_mixer backend for MP3, OGG, WAV, FLAC support
+
+### Changed
+- **StatefulComponent Refactor** - Convert single-state Components to StatefulComponent for cleaner code
+
+### Fixed
+- Linux ARM64 CI/CD build workflow
+
 ## [0.9.0] - 2025-01-07
 
 ### Added
