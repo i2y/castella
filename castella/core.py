@@ -1644,6 +1644,16 @@ class Layout(Widget, ABC):
                 "Layout with CONTENT size policy cannot have an size expandable child widget"
             )
 
+        # If widget already has a parent, remove from old parent first
+        # This is important for frozen widgets that are reused across rebuilds
+        old_parent = w.get_parent()
+        if old_parent is not None and old_parent is not self:
+            if w in old_parent._children:
+                old_parent._children.remove(w)
+            # Also remove from old parent's render node
+            if hasattr(old_parent, "_layout_render_node"):
+                old_parent._layout_render_node.remove_child(w)
+
         self._children.append(w)
         w.parent(self)
         # Sync with render node for z-order caching
@@ -1651,8 +1661,11 @@ class Layout(Widget, ABC):
 
     def detach(self) -> None:
         super().detach()
-        for c in self.get_children():
-            c.detach()
+        # If frozen (e.g., AudioPlayer), don't detach children
+        # They will be reused when this widget is re-added to the tree
+        if self._enable_to_detach:
+            for c in self.get_children():
+                c.detach()
 
     def remove(self, w: Widget) -> None:
         self._children.remove(w)

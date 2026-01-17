@@ -70,6 +70,11 @@ agent = [
 mcp = [
     "mcp>=1.0.0",
 ]
+audio = [
+    "pysdl2-dll>=2.30.2",
+    "PySDL2>=0.9.16",
+    "pydantic>=2.7.4",
+]
 langgraph_studio = [
     "langgraph>=0.2.0",
     "langchain-core>=0.3.0",

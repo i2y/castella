@@ -157,7 +157,7 @@ class BaseFrame(ABC):
         """Process an update event - common implementation for all frames.
 
         This method:
-        1. Gets the target's position (or origin for App)
+        1. Gets the target's ABSOLUTE position (walking up parent chain)
         2. Saves painter state
         3. Translates to target position
         4. Clips if not App-level update
@@ -175,7 +175,8 @@ class BaseFrame(ABC):
             clipped_rect = None
         else:
             w: Widget = cast(Widget, ev.target)
-            pos = w.get_pos()
+            # Calculate absolute position by walking up the parent chain
+            pos = self._get_absolute_position(w)
             clipped_rect = Rect(origin=Point(x=0, y=0), size=w.get_size())
 
         painter = self.get_painter()
@@ -188,6 +189,20 @@ class BaseFrame(ABC):
             painter.flush()
         finally:
             painter.restore()
+
+    def _get_absolute_position(self, widget: Any) -> Point:
+        """Get the absolute screen position of a widget.
+
+        In Castella, widget positions are stored as absolute coordinates
+        (relative to window origin), so we just return the widget's position.
+
+        Args:
+            widget: The widget to get the absolute position for
+
+        Returns:
+            The absolute screen position as a Point
+        """
+        return widget.get_pos()
 
     # ========== Abstract Methods (Platform-Specific) ==========
 
