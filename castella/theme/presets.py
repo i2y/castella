@@ -390,3 +390,118 @@ TOKYO_NIGHT_LIGHT_THEME = Theme(
     spacing=TOKYO_NIGHT_SPACING,
     code_pygments_style="default",
 )
+
+
+# Lithium Theme - vibrant pink/magenta with dark purple backgrounds
+# Inspired by modern developer tools with bold accent colors
+
+# Lithium brand colors
+_LITHIUM_PINK = "#E92063"  # Primary accent (vibrant magenta)
+_LITHIUM_DARK = "#1D1E27"  # Dark background
+_LITHIUM_DARKER = "#14151C"  # Darker shade
+_LITHIUM_LIGHT_PINK = "#FF6B9D"  # Lighter pink for hover
+_LITHIUM_TEAL = "#00D4AA"  # Teal accent
+_LITHIUM_PURPLE = "#9D4EDD"  # Purple accent
+_LITHIUM_YELLOW = "#FFD43B"  # Warning yellow
+_LITHIUM_RED = "#FF6B6B"  # Error red
+_LITHIUM_GREEN = "#51CF66"  # Success green
+
+# Lithium Dark Palette
+LITHIUM_DARK_PALETTE = ColorPalette(
+    # Background colors
+    bg_canvas=_LITHIUM_DARKER,
+    bg_primary=_LITHIUM_DARK,
+    bg_secondary="#252631",  # Slightly lighter
+    bg_tertiary="#2D2E3A",  # Even lighter for contrast
+    bg_overlay=_LITHIUM_PINK,
+    bg_info="#1a2a3a",
+    bg_danger="#3a1a1a",
+    bg_success="#1a3a2a",
+    bg_warning="#3a3a1a",
+    bg_pushed="#3D3E4A",
+    bg_selected=_LITHIUM_PINK,
+    # Foreground/Text colors
+    fg="#FFFFFF",
+    text_primary="#FFFFFF",
+    text_info=_LITHIUM_TEAL,
+    text_danger=_LITHIUM_RED,
+    text_success=_LITHIUM_GREEN,
+    text_warning=_LITHIUM_YELLOW,
+    # Border colors
+    border_primary="#3D3E4A",  # Subtle border
+    border_secondary=_LITHIUM_PINK,
+    border_info=_LITHIUM_TEAL,
+    border_danger=_LITHIUM_RED,
+    border_success=_LITHIUM_GREEN,
+    border_warning=_LITHIUM_YELLOW,
+    border_focus=_LITHIUM_PINK,
+)
+
+# Lithium Light Palette
+LITHIUM_LIGHT_PALETTE = ColorPalette(
+    # Background colors
+    bg_canvas="#FFFFFF",
+    bg_primary="#FFFFFF",
+    bg_secondary="#F8F9FA",
+    bg_tertiary="#F1F3F4",
+    bg_overlay=_LITHIUM_PINK,
+    bg_info="#E8F4FD",
+    bg_danger="#FFEBEE",
+    bg_success="#E8F5E9",
+    bg_warning="#FFF8E1",
+    bg_pushed="#E0E0E0",
+    bg_selected="#FCE4EC",
+    # Foreground/Text colors
+    fg="#1D1E27",
+    text_primary="#1D1E27",
+    text_info="#0277BD",
+    text_danger="#C62828",
+    text_success="#2E7D32",
+    text_warning="#F57F17",
+    # Border colors
+    border_primary="#E0E0E0",
+    border_secondary=_LITHIUM_PINK,
+    border_info="#90CAF9",
+    border_danger="#FFCDD2",
+    border_success="#A5D6A7",
+    border_warning="#FFE082",
+    border_focus=_LITHIUM_PINK,
+)
+
+# Lithium typography
+LITHIUM_TYPOGRAPHY = Typography(
+    font_family="Inter, SF Pro Display, system-ui, sans-serif",
+    font_family_mono="JetBrains Mono, SF Mono, Consolas, monospace",
+    base_size=14,
+    scale_ratio=1.2,
+)
+
+# Lithium spacing
+LITHIUM_SPACING = Spacing(
+    padding_sm=4,
+    padding_md=8,
+    padding_lg=16,
+    margin_sm=4,
+    margin_md=8,
+    margin_lg=16,
+    border_radius=8,  # Rounded corners
+    border_width=1,
+)
+
+LITHIUM_DARK_THEME = Theme(
+    name="lithium-dark",
+    is_dark=True,
+    colors=LITHIUM_DARK_PALETTE,
+    typography=LITHIUM_TYPOGRAPHY,
+    spacing=LITHIUM_SPACING,
+    code_pygments_style="monokai",
+)
+
+LITHIUM_LIGHT_THEME = Theme(
+    name="lithium-light",
+    is_dark=False,
+    colors=LITHIUM_LIGHT_PALETTE,
+    typography=LITHIUM_TYPOGRAPHY,
+    spacing=LITHIUM_SPACING,
+    code_pygments_style="default",
+)

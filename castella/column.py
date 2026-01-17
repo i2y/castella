@@ -109,7 +109,7 @@ class Column(LinearLayout, Layout):
 
         orig_width = self.get_width()
         self._size = Size(
-            width=self._size.width - SCROLL_BAR_SIZE, height=self._size.height
+            width=max(0, self._size.width - SCROLL_BAR_SIZE), height=self._size.height
         )
         self._relocate_children_linear(p)
         self._redraw_children(p, completely)

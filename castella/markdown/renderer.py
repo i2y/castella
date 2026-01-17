@@ -875,8 +875,11 @@ class MarkdownRenderer:
 
         total_height = padding * 2
 
+        # Ensure width is positive to avoid issues in child calculations
+        effective_width = max(1.0, width - padding * 2)
+
         for node in ast.children:
-            total_height += self._estimate_node_height(p, node, width - padding * 2)
+            total_height += self._estimate_node_height(p, node, effective_width)
 
         return total_height
 
@@ -899,7 +902,9 @@ class MarkdownRenderer:
                 )
             )
             text_width = p.measure_text(text)
-            lines = max(1, int(text_width / width) + 1)
+            # Avoid division by zero when width is very small
+            safe_width = max(1.0, width)
+            lines = max(1, int(text_width / safe_width) + 1)
 
             return (
                 lines * self._theme.base_font_size * 1.5 + self._theme.paragraph_spacing
@@ -914,10 +919,9 @@ class MarkdownRenderer:
             return height
         elif isinstance(node, (ListItemNode, TaskItemNode)):
             height = 0.0
+            child_width = max(1.0, width - self._theme.list_indent)
             for child in node.children:
-                height += self._estimate_node_height(
-                    p, child, width - self._theme.list_indent
-                )
+                height += self._estimate_node_height(p, child, child_width)
             return height
         elif isinstance(node, TableNode):
             return (
@@ -932,15 +936,15 @@ class MarkdownRenderer:
             return 100 + self._theme.block_spacing
         elif isinstance(node, BlockquoteNode):
             height = 0.0
+            child_width = max(1.0, width - self._theme.blockquote_indent)
             for child in node.children:
-                height += self._estimate_node_height(
-                    p, child, width - self._theme.blockquote_indent
-                )
+                height += self._estimate_node_height(p, child, child_width)
             return height
         elif isinstance(node, AdmonitionNode):
             height = self._theme.base_font_size * 2  # Header
+            child_width = max(1.0, width - 48)
             for child in node.children:
-                height += self._estimate_node_height(p, child, width - 48)
+                height += self._estimate_node_height(p, child, child_width)
             return height + self._theme.block_spacing
         elif isinstance(node, DefinitionListNode):
             height = 0.0

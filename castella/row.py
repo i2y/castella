@@ -111,7 +111,7 @@ class Row(LinearLayout, Layout):
 
         orig_height = self.get_height()
         self._size = Size(
-            width=self._size.width, height=self._size.height - SCROLL_BAR_SIZE
+            width=self._size.width, height=max(0, self._size.height - SCROLL_BAR_SIZE)
         )
         self._relocate_children_linear(p)
         self._redraw_children(p, completely)

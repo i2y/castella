@@ -89,6 +89,9 @@ edda_workflow_manager = [
     "edda-framework[llamaindex]>=0.15.0",
     "llama-index-core>=0.12.0",
 ]
+pycode = [
+    "pydantic-ai[anthropic,openai,google]>=0.0.39",
+]
 ios = [
     "rubicon-objc>=0.4.9",
     "pydantic>=2.7.4",
