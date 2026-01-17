@@ -47,6 +47,7 @@ nav:
   - Widgets:
       - Built-in Widgets: widgets.md
       - Charts: chart.md
+      - Audio: audio.md
   - Platforms:
       - iOS: ios.md
       - castella-skia Backend: castella-skia.md

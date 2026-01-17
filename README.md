@@ -27,6 +27,7 @@ The primary final goal of Castella is to provide features for Python programmers
 - **Heatmap support** - Both chart (`HeatmapChart`) and table (`HeatmapConfig`) variants with Viridis, Plasma, Inferno, Magma colormaps.
 - ASCII charts for terminal environments (Bar, Pie, Line, Gauge).
 - **Animation system** - Smooth property animations with `ValueTween`, `AnimatedState`, and easing functions.
+- **Audio playback** - Cross-platform audio support with `AudioPlayer` widget and `AudioManager` API (MP3, OGG, WAV).
 - **ProgressBar widget** - Animated progress indicator with customizable colors.
 - **Widget lifecycle hooks** - `on_mount`/`on_unmount` for resource management (timers, subscriptions).
 - **State preservation** - `ListState.map_cached()` and `Component.cache()` preserve widget state across view rebuilds.
@@ -188,6 +189,37 @@ class AnimationDemo(Component):
 
 App(Frame("Animation", 400, 200), AnimationDemo()).run()
 ```
+
+## Audio Player Example
+
+Play audio files with the built-in `AudioPlayer` widget:
+
+```python
+from castella import App
+from castella.audio import AudioPlayer
+from castella.frame import Frame
+
+# Simple audio player with full controls
+player = AudioPlayer("music.mp3")
+player.on_ended(lambda: print("Playback finished!"))
+
+App(Frame("Audio Player", 500, 200), player).run()
+```
+
+Or use the low-level `AudioManager` API for custom audio handling:
+
+```python
+from castella.audio import AudioManager
+
+manager = AudioManager.get()
+handle, state = manager.load("sound.wav")
+
+manager.play(handle)
+manager.set_volume(handle, 0.5)  # 50% volume
+manager.seek(handle, 5000)      # Seek to 5 seconds
+```
+
+Installation: `uv add "castella[audio]"` (or included with `castella[sdl]`/`castella[sdl3]`)
 
 ## Agent Chat Example
 
