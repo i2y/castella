@@ -47,14 +47,13 @@ AnimationScheduler.get().add(
 `AnimatedState` is a state wrapper that automatically animates when values change.
 
 ```python
-from castella import AnimatedState, Component, Text, Button, Column
+from castella import AnimatedState, StatefulComponent, Text, Button, Column
 
-class Counter(Component):
+class Counter(StatefulComponent):
     def __init__(self):
-        super().__init__()
         # Values animate automatically when set
         self._value = AnimatedState(0, duration_ms=300)
-        self._value.attach(self)
+        super().__init__(self._value)
 
     def view(self):
         return Column(

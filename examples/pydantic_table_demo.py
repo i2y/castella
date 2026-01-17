@@ -13,7 +13,7 @@ from datetime import date
 from pydantic import BaseModel, Field
 
 from castella import App, Column, DataTable, DataTableState, Text
-from castella.core import Component, State, TextAlign
+from castella.core import State, StatefulComponent, TextAlign
 from castella.frame import Frame
 
 
@@ -39,12 +39,11 @@ employees = [
 ]
 
 
-class PydanticDemo(Component):
+class PydanticDemo(StatefulComponent):
     def __init__(self):
-        super().__init__()
         self._table_state = DataTableState.from_pydantic(employees)
         self._status = State("Hover header to see tooltip from Field.description")
-        self._status.attach(self)
+        super().__init__(self._status)
 
     def view(self):
         return Column(

@@ -9,22 +9,21 @@ Run with:
 
 
 from castella import App, Column, Text, Button, Box, Row, ScrollState
-from castella.core import ListState, Component
+from castella.core import ListState, StatefulComponent
 from castella.frame import Frame
 from castella.markdown import Markdown
 from castella.multiline_input import MultilineInput, MultilineInputState
 from castella.theme import ThemeManager
 
 
-class SimpleChatDemo(Component):
+class SimpleChatDemo(StatefulComponent):
     """Simple chat demo using basic Castella components."""
 
     def __init__(self):
-        super().__init__()
         self._messages = ListState([
             {"role": "system", "content": "Welcome! Try saying 'hello' or ask about 'weather'."},
         ])
-        self._messages.attach(self)
+        super().__init__(self._messages)
         self._input_state = MultilineInputState("")
         self._scroll_state = ScrollState()
         # Don't attach - manual scrolling works better without re-renders

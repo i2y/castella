@@ -153,15 +153,14 @@ manager.unload(handle)
 
 ```python
 from castella.audio import AudioManager, PlaybackState
-from castella import Component, Column, Text, Button
+from castella import StatefulComponent, Column, Text, Button
 
 
-class CustomPlayer(Component):
+class CustomPlayer(StatefulComponent):
     def __init__(self, audio_file: str):
-        super().__init__()
         manager = AudioManager.get()
         self._handle, self._state = manager.load(audio_file)
-        self._state.attach(self)  # Trigger view() on state change
+        super().__init__(self._state)  # Trigger view() on state change
 
     def view(self):
         return Column(

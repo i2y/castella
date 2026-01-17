@@ -13,7 +13,7 @@ from castella import (
     SortDirection,
     Text,
 )
-from castella.core import Component, SizePolicy, State
+from castella.core import SizePolicy, State, StatefulComponent
 from castella.frame import Frame
 
 
@@ -42,12 +42,10 @@ SAMPLE_DATA = [
 ]
 
 
-class TableDemo(Component):
+class TableDemo(StatefulComponent):
     """Demo component showcasing enhanced DataTable features."""
 
     def __init__(self):
-        super().__init__()
-
         # Create table state with column configs
         self._table_state = DataTableState(
             columns=[
@@ -66,7 +64,7 @@ class TableDemo(Component):
 
         # Status state - only this triggers view rebuild
         self._status = State("Ready")
-        self._status.attach(self)
+        super().__init__(self._status)
 
     def _on_filter_change(self, text: str) -> None:
         self._filter_text.set(text)

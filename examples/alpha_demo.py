@@ -1,17 +1,16 @@
 """Alpha channel demo - demonstrates color transparency."""
 
 from castella import App, Box, Button, Column, Row, Text
-from castella.core import Component, SizePolicy, State
+from castella.core import SizePolicy, State, StatefulComponent
 from castella.frame import Frame
 
 
-class AlphaDemo(Component):
+class AlphaDemo(StatefulComponent):
     """Demonstrates alpha channel with buttons and layouts."""
 
     def __init__(self):
-        super().__init__()
         self._alpha = State(128)
-        self._alpha.attach(self)
+        super().__init__(self._alpha)
 
     def view(self):
         alpha = self._alpha()

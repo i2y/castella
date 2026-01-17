@@ -11,7 +11,7 @@ Run with:
 """
 
 from castella import App, Column, Row, Text, Button, SizePolicy
-from castella.core import Component, State, Widget
+from castella.core import State, StatefulComponent, Widget
 from castella.frame import Frame
 from castella.chart import (
     DrillDownChart,
@@ -262,13 +262,12 @@ def create_stacked_sales_data() -> HierarchicalChartData:
     return data
 
 
-class DrillDownDemo(Component):
+class DrillDownDemo(StatefulComponent):
     """Demo with tabs for BarChart, PieChart, StackedBarChart, and HeatmapChart."""
 
     def __init__(self):
-        super().__init__()
         self._chart_type = State("bar")
-        self._chart_type.attach(self)
+        super().__init__(self._chart_type)
 
         # Create separate data for each chart type
         # (each needs its own DrillDownState)
