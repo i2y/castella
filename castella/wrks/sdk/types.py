@@ -88,6 +88,7 @@ class ChatMessage:
     is_streaming: bool = False  # True if content is still being streamed
     cost_usd: Optional[float] = None  # Cost for this message if applicable
     model_name: Optional[str] = None  # Model used for this message (assistant only)
+    thinking: Optional[str] = None  # Extended thinking content (Opus models)
 
     @property
     def is_user(self) -> bool:

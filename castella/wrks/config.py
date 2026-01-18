@@ -28,6 +28,10 @@ class WrksConfig:
     # - "opus": Claude Opus 4.5 (most capable - $5/$25 per MTok)
     model: Literal["haiku", "sonnet", "opus"] = "haiku"
 
+    # Extended thinking mode (only works with Opus)
+    # When enabled, Claude will show its thinking process
+    extended_thinking: bool = False
+
     # UI settings
     dark_mode: Optional[bool] = None  # None = use system detection
     font_size: int = 14
@@ -42,8 +46,9 @@ class WrksConfig:
         """Load configuration from environment variables.
 
         Environment variables:
-            WRKS_PERMISSION_MODE: default | acceptEdits | bypassPermissions
             WRKS_MODEL: haiku | sonnet | opus (default: haiku)
+            WRKS_EXTENDED_THINKING: true | false (default: false, Opus only)
+            WRKS_PERMISSION_MODE: default | acceptEdits | bypassPermissions
             CASTELLA_DARK_MODE: true | false
             CASTELLA_FONT_SIZE: font size (int)
             WRKS_WINDOW_WIDTH: window width (int)
@@ -55,6 +60,13 @@ class WrksConfig:
         model = os.environ.get("WRKS_MODEL", "haiku").lower()
         if model in ("haiku", "sonnet", "opus"):
             config.model = model  # type: ignore
+
+        # Extended thinking
+        extended_thinking = os.environ.get("WRKS_EXTENDED_THINKING", "").lower()
+        if extended_thinking in ("true", "1", "yes"):
+            config.extended_thinking = True
+        elif extended_thinking in ("false", "0", "no"):
+            config.extended_thinking = False
 
         # Permission mode
         permission_mode = os.environ.get("WRKS_PERMISSION_MODE", "default").lower()

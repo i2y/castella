@@ -38,7 +38,7 @@ from castella.wrks.storage.sessions import list_sessions
 from castella.wrks.ui.cost_display import CostDisplay
 from castella.wrks.ui.session_state import ActiveSession
 from castella.wrks.ui.tool_display import ToolCallView, ToolApprovalModal
-from castella.wrks.ui.diff_view import DiffView, is_diff_output
+from castella.wrks.ui.diff_view import DiffView
 
 # Maximum number of past messages to load when opening a session
 HISTORY_LIMIT = 20
@@ -408,6 +408,7 @@ class MainWindow(Component):
                 on_tool_result=lambda tool: self._on_tool_result(session, tool),
                 on_cost_update=lambda cost: self._on_cost_update(session, cost),
                 on_session_id=lambda sid: self._on_session_id(session, sid),
+                on_thinking=lambda text: self._on_thinking(session, text),
                 on_error=lambda err: self._on_error(session, err),
                 on_complete=lambda: self._on_complete(session),
                 resume_session=(
@@ -415,16 +416,21 @@ class MainWindow(Component):
                     if session.session_metadata else None
                 ),
                 model=config.model,
+                permission_mode=config.permission_mode,
+                extended_thinking=config.extended_thinking,
             )
         return session.client
 
     def _on_message_received(self, session: ActiveSession, message: ChatMessage) -> None:
         """Handle complete message from SDK."""
         session.streaming_text.set("")
+        # Set scroll to bottom BEFORE adding message (so re-render picks it up)
+        session.scroll_state.y = 999999
         session.messages.append(message)
 
     def _on_streaming_text(self, session: ActiveSession, text: str) -> None:
         """Handle streaming text chunk."""
+        session.scroll_state.y = 999999
         session.streaming_text.set(text)
 
     def _on_tool_use(self, session: ActiveSession, tool: ToolCall) -> None:
@@ -457,6 +463,10 @@ class MainWindow(Component):
         """Handle session ID notification."""
         session.session_id.set(session_id)
 
+    def _on_thinking(self, session: ActiveSession, thinking: str) -> None:
+        """Handle thinking content from SDK (Opus models with extended thinking)."""
+        session.current_thinking.set(thinking)
+
     def _on_error(self, session: ActiveSession, error: Exception) -> None:
         """Handle error from SDK."""
         session.messages.append(ChatMessage(
@@ -469,6 +479,14 @@ class MainWindow(Component):
         """Handle response completion."""
         session.is_loading.set(False)
         session.current_tools.set([])
+        session.current_thinking.set("")
+
+    def _stop_query(self, session: ActiveSession) -> None:
+        """Stop the currently running query."""
+        if session.client is not None:
+            session.client.stop()
+        session.is_loading.set(False)
+        session.current_thinking.set("")
 
     def _send_message(self) -> None:
         """Send the current input message."""
@@ -832,6 +850,11 @@ class MainWindow(Component):
         """Build the chat content for a session."""
         msg_widgets = self._build_messages(theme, session)
 
+        # Show current thinking (during streaming, for Opus)
+        thinking = session.current_thinking()
+        if thinking:
+            msg_widgets.append(self._build_thinking_indicator(thinking, theme))
+
         # Streaming message
         streaming = session.streaming_text()
         if streaming:
@@ -844,7 +867,7 @@ class MainWindow(Component):
             msg_widgets.append(tool_view)
 
         # Loading indicator
-        if session.is_loading() and not streaming and not session.current_tools:
+        if session.is_loading() and not streaming and not session.current_tools and not thinking:
             msg_widgets.append(
                 Text("Thinking...", font_size=12)
                 .text_color(theme.colors.border_secondary)
@@ -905,6 +928,10 @@ class MainWindow(Component):
             Row(*header_items).fixed_height(20).height_policy(SizePolicy.FIXED),
         ]
 
+        # Show thinking section for assistant messages with thinking content
+        if message.role == MessageRole.ASSISTANT and message.thinking:
+            content_widgets.append(self._build_thinking_section(message.thinking, theme))
+
         # Check if message contains diff output and render appropriately
         content = message.content
         diff_parts = _extract_diff_blocks(content)
@@ -949,10 +976,69 @@ class MainWindow(Component):
             .height_policy(SizePolicy.CONTENT)
         )
 
+    def _build_thinking_indicator(self, thinking: str, theme) -> Box:
+        """Build a thinking indicator for Opus extended thinking."""
+        # Truncate thinking content for display during streaming
+        display_text = thinking
+        if len(display_text) > 500:
+            display_text = "..." + display_text[-500:]
+
+        return (
+            Box(
+                Column(
+                    Text("Thinking", font_size=12)
+                    .text_color(theme.colors.text_warning)
+                    .fixed_height(20),
+                    Text(display_text, font_size=11)
+                    .text_color(theme.colors.border_secondary),
+                ).height_policy(SizePolicy.CONTENT)
+            )
+            .bg_color(theme.colors.bg_tertiary)
+            .height_policy(SizePolicy.CONTENT)
+        )
+
+    def _build_thinking_section(self, thinking: str, theme) -> Box:
+        """Build a collapsible thinking section for completed messages."""
+        # Truncate for display, show preview
+        preview = thinking[:200] + "..." if len(thinking) > 200 else thinking
+        preview = preview.replace("\n", " ")
+
+        return (
+            Box(
+                Column(
+                    Text("Thinking (click to expand)", font_size=11)
+                    .text_color(theme.colors.text_warning)
+                    .fixed_height(18),
+                    Text(preview, font_size=10)
+                    .text_color(theme.colors.border_secondary)
+                    .fixed_height(40),
+                ).height_policy(SizePolicy.CONTENT)
+            )
+            .bg_color(theme.colors.bg_tertiary)
+            .height_policy(SizePolicy.CONTENT)
+        )
+
     def _build_input_area(self, theme, session: ActiveSession) -> Row:
         """Build the input area for a session."""
         is_loading = session.is_loading()
-        send_label = "..." if is_loading else "Send"
+
+        if is_loading:
+            # Show stop button when loading
+            return (
+                Row(
+                    Spacer().fixed_width(8),
+                    Text("Thinking...", font_size=12)
+                    .text_color(theme.colors.text_info)
+                    .fixed_height(40),
+                    Spacer(),
+                    Button("Stop")
+                    .on_click(lambda _: self._stop_query(session))
+                    .fixed_size(70, 40),
+                    Spacer().fixed_width(8),
+                )
+                .bg_color(theme.colors.bg_secondary)
+                .fixed_height(66)
+            )
 
         return (
             Row(
@@ -961,7 +1047,7 @@ class MainWindow(Component):
                 .height(50)
                 .height_policy(SizePolicy.FIXED),
                 Spacer().fixed_width(8),
-                Button(send_label)
+                Button("Send")
                 .on_click(lambda _: self._send_message())
                 .fixed_size(70, 40),
                 Spacer().fixed_width(8),

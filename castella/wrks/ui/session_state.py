@@ -58,6 +58,7 @@ class ActiveSession:
     messages: ListState["ChatMessage"] = field(default_factory=lambda: ListState([]))
     streaming_text: State[str] = field(default_factory=lambda: State(""))
     is_loading: State[bool] = field(default_factory=lambda: State(False))
+    current_thinking: State[str] = field(default_factory=lambda: State(""))  # Opus thinking
 
     # Tool state
     current_tools: ListState["ToolCall"] = field(default_factory=lambda: ListState([]))
@@ -83,6 +84,7 @@ class ActiveSession:
         self.messages.attach(component)
         self.streaming_text.attach(component)
         self.is_loading.attach(component)
+        self.current_thinking.attach(component)
         self.current_tools.attach(component)
         self.pending_tool.attach(component)
         self.context_files.attach(component)
@@ -92,6 +94,7 @@ class ActiveSession:
         self.messages.detach(component)
         self.streaming_text.detach(component)
         self.is_loading.detach(component)
+        self.current_thinking.detach(component)
         self.current_tools.detach(component)
         self.pending_tool.detach(component)
         self.context_files.detach(component)
@@ -102,6 +105,7 @@ class ActiveSession:
         self.messages.set([])
         self.streaming_text.set("")
         self.is_loading.set(False)
+        self.current_thinking.set("")
         self.current_tools.set([])
         self.pending_tool.set(None)
         self.context_files.set([])

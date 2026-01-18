@@ -26,11 +26,14 @@ class WrksClient:
         on_tool_result: Optional[Callable[[ToolCall], None]] = None,
         on_cost_update: Optional[Callable[[float], None]] = None,
         on_session_id: Optional[Callable[[str], None]] = None,
+        on_thinking: Optional[Callable[[str], None]] = None,
         on_error: Optional[Callable[[Exception], None]] = None,
         on_complete: Optional[Callable[[], None]] = None,
         resume_session: Optional[str] = None,
         fork_session: bool = False,
         model: str = "haiku",
+        permission_mode: str = "default",
+        extended_thinking: bool = False,
     ):
         """Initialize the client.
 
@@ -42,20 +45,26 @@ class WrksClient:
             on_tool_result: Called when a tool completes
             on_cost_update: Called with updated cost
             on_session_id: Called with the session ID
+            on_thinking: Called when thinking content is received (Opus models)
             on_error: Called when an error occurs
             on_complete: Called when the response is complete
             resume_session: Session ID to resume
             fork_session: If True, fork the resumed session
             model: Model to use (haiku, sonnet, opus)
+            permission_mode: Tool permission mode (default, acceptEdits, bypassPermissions)
+            extended_thinking: Enable extended thinking mode (Opus only)
         """
         self._cwd = cwd
         self._model = model
+        self._permission_mode = permission_mode
+        self._extended_thinking = extended_thinking
         self._on_message = on_message
         self._on_streaming_text = on_streaming_text
         self._on_tool_use = on_tool_use
         self._on_tool_result = on_tool_result
         self._on_cost_update = on_cost_update
         self._on_session_id = on_session_id
+        self._on_thinking = on_thinking
         self._on_error = on_error
         self._on_complete = on_complete
         self._resume_session = resume_session
@@ -66,6 +75,10 @@ class WrksClient:
         self._is_running = False
         self._current_thread: Optional[threading.Thread] = None
 
+        # SDK client reference for interrupt()
+        self._client: Optional[Any] = None
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
+
         # For tool approval
         self._pending_tool: Optional[ToolCall] = None
         self._tool_approval_event: Optional[asyncio.Event] = None
@@ -73,6 +86,9 @@ class WrksClient:
 
         # Accumulated tool calls for the current response
         self._current_tool_calls: list[ToolCall] = []
+
+        # Accumulated thinking for the current response
+        self._current_thinking: str = ""
 
     @property
     def session_id(self) -> Optional[str]:
@@ -101,10 +117,12 @@ class WrksClient:
             return
 
         self._is_running = True
+        self._current_thinking = ""  # Reset thinking for new query
 
         def run_async():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
+            self._loop = loop  # Store loop reference for interrupt()
             try:
                 loop.run_until_complete(self._async_query(prompt))
             except Exception as e:
@@ -112,6 +130,8 @@ class WrksClient:
                     self._on_error(e)
             finally:
                 self._is_running = False
+                self._loop = None
+                self._client = None
                 loop.close()
                 if self._on_complete:
                     self._on_complete()
@@ -136,6 +156,11 @@ class WrksClient:
                 PermissionResultAllow,
                 PermissionResultDeny,
             )
+            # ThinkingBlock is only available for extended thinking models (Opus)
+            try:
+                from claude_agent_sdk import ThinkingBlock
+            except ImportError:
+                ThinkingBlock = None  # type: ignore
         except ImportError:
             raise ImportError(
                 "claude-agent-sdk is required. Install with: uv sync --extra wrks"
@@ -175,10 +200,14 @@ class WrksClient:
             cwd=str(self._cwd),
             include_partial_messages=True,
             can_use_tool=can_use_tool,
-            permission_mode="default",
+            permission_mode=self._permission_mode,
             model=self._model,
             env=dict(os.environ),  # Pass current environment to subprocess
         )
+
+        # Enable extended thinking if configured (Opus only)
+        if self._extended_thinking:
+            options.extended_thinking = True
 
         if self._resume_session:
             options.resume = self._resume_session
@@ -189,6 +218,7 @@ class WrksClient:
         self._current_tool_calls = []  # Reset for new query
 
         async with ClaudeSDKClient(options) as client:
+            self._client = client  # Store client reference for interrupt()
             await client.query(prompt)
 
             async for message in client.receive_response():
@@ -201,6 +231,13 @@ class WrksClient:
                                 current_text = new_text
                                 if self._on_streaming_text:
                                     self._on_streaming_text(current_text)
+
+                        elif ThinkingBlock is not None and isinstance(block, ThinkingBlock):
+                            # Extended thinking content (Opus models)
+                            if hasattr(block, "thinking"):
+                                self._current_thinking = block.thinking
+                                if self._on_thinking:
+                                    self._on_thinking(block.thinking)
 
                         elif isinstance(block, ToolUseBlock):
                             # Tool is being used (after approval)
@@ -248,7 +285,7 @@ class WrksClient:
                         if self._on_cost_update:
                             self._on_cost_update(self._total_cost)
 
-                    # Create final message with tool calls
+                    # Create final message with tool calls and thinking
                     if current_text and self._on_message:
                         final_message = ChatMessage(
                             role=MessageRole.ASSISTANT,
@@ -256,6 +293,7 @@ class WrksClient:
                             is_streaming=False,
                             cost_usd=message.total_cost_usd,
                             tool_calls=list(self._current_tool_calls),
+                            thinking=self._current_thinking if self._current_thinking else None,
                         )
                         self._on_message(final_message)
 
@@ -272,10 +310,22 @@ class WrksClient:
             self._tool_approval_event.set()
 
     def stop(self) -> None:
-        """Stop the current query."""
-        # The SDK doesn't have a direct cancel mechanism
-        # Setting is_running to False will prevent further processing
-        self._is_running = False
-        # Also trigger any waiting approval to unblock
+        """Stop the current query.
+
+        This calls the SDK's interrupt() method to gracefully stop the query.
+        """
+        # Trigger any waiting approval to unblock
         if self._tool_approval_event:
             self._tool_approval_event.set()
+
+        # Use SDK interrupt() if client is available
+        if self._client is not None and self._loop is not None:
+            try:
+                # Schedule interrupt() in the async loop
+                asyncio.run_coroutine_threadsafe(
+                    self._client.interrupt(), self._loop
+                )
+            except Exception:
+                pass  # Ignore errors during interrupt
+
+        self._is_running = False
