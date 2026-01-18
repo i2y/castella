@@ -77,11 +77,28 @@ def parse_session_file(path: Path) -> SessionMetadata:
                     # Extract model from assistant messages or result
                     if "model" in data and model is None:
                         model = data["model"]
+                    # Model might be in message.model for assistant messages
+                    if model is None:
+                        msg = data.get("message", {})
+                        if isinstance(msg, dict) and "model" in msg:
+                            model = msg["model"]
 
-                    # Try to get summary from first user message
+                    # Check for summary record (Claude Code stores this at the start)
+                    if data.get("type") == "summary" and "summary" in data:
+                        summary = _truncate_summary(data["summary"])
+                        continue
+
+                    # Try to get summary from first user message (fallback)
                     if summary == "New session":
+                        # Check for user message in Claude Code format
+                        if data.get("type") == "user":
+                            msg = data.get("message", {})
+                            if isinstance(msg, dict):
+                                content = msg.get("content", "")
+                                if isinstance(content, str) and content:
+                                    summary = _truncate_summary(content)
                         # Check for user message in various formats
-                        if data.get("type") == "human":
+                        elif data.get("type") == "human":
                             content = data.get("message", {})
                             if isinstance(content, dict):
                                 text_content = content.get("content", "")
