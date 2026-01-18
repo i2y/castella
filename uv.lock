@@ -498,6 +498,7 @@ tui = [
 ]
 wrks = [
     { name = "claude-agent-sdk" },
+    { name = "python-dotenv" },
 ]
 
 [package.dev-dependencies]
@@ -577,6 +578,7 @@ requires-dist = [
     { name = "pysdl2-dll", marker = "extra == 'sdl'", specifier = ">=2.30.2" },
     { name = "pysdl3", marker = "extra == 'sdl3'", specifier = ">=0.9.10b0" },
     { name = "python-a2a", marker = "extra == 'agent'", specifier = ">=0.5.0" },
+    { name = "python-dotenv", marker = "extra == 'wrks'", specifier = ">=1.0.0" },
     { name = "rubicon-objc", marker = "extra == 'ios'", specifier = ">=0.4.9" },
     { name = "windows-curses", marker = "sys_platform == 'win32' and extra == 'tui'", specifier = ">=2.3.3" },
 ]

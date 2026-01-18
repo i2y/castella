@@ -29,6 +29,7 @@ class WrksClient:
         on_complete: Optional[Callable[[], None]] = None,
         resume_session: Optional[str] = None,
         fork_session: bool = False,
+        model: str = "haiku",
     ):
         """Initialize the client.
 
@@ -44,8 +45,10 @@ class WrksClient:
             on_complete: Called when the response is complete
             resume_session: Session ID to resume
             fork_session: If True, fork the resumed session
+            model: Model to use (haiku, sonnet, opus)
         """
         self._cwd = cwd
+        self._model = model
         self._on_message = on_message
         self._on_streaming_text = on_streaming_text
         self._on_tool_use = on_tool_use
@@ -168,6 +171,7 @@ class WrksClient:
             include_partial_messages=True,
             can_use_tool=can_use_tool,
             permission_mode="default",
+            model=self._model,
         )
 
         if self._resume_session:

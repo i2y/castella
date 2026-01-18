@@ -25,6 +25,7 @@ from castella.markdown import Markdown
 from castella.multiline_input import MultilineInput
 from castella.theme import ThemeManager
 
+from castella.wrks.config import get_config
 from castella.wrks.sdk import WrksClient, ChatMessage, MessageRole, ToolCall, ToolStatus
 from castella.wrks.storage import (
     Project,
@@ -288,6 +289,7 @@ class MainWindow(Component):
             if session.project is None:
                 raise RuntimeError("No project for session")
 
+            config = get_config()
             session.client = WrksClient(
                 cwd=session.project.path,
                 on_message=lambda msg: self._on_message_received(session, msg),
@@ -302,6 +304,7 @@ class MainWindow(Component):
                     session.session_metadata.session_id
                     if session.session_metadata else None
                 ),
+                model=config.model,
             )
         return session.client
 

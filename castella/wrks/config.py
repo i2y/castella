@@ -4,6 +4,13 @@ import os
 from dataclasses import dataclass
 from typing import Literal, Optional
 
+# Load .env file if python-dotenv is available
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 
 @dataclass
 class WrksConfig:
@@ -14,6 +21,12 @@ class WrksConfig:
     # - "acceptEdits": Auto-accept file edits
     # - "bypassPermissions": Auto-accept all tools (dangerous)
     permission_mode: Literal["default", "acceptEdits", "bypassPermissions"] = "default"
+
+    # Model settings
+    # - "haiku": Claude Haiku 4.5 (fast, cheap - $1/$5 per MTok)
+    # - "sonnet": Claude Sonnet 4.5 (balanced - $3/$15 per MTok)
+    # - "opus": Claude Opus 4.5 (most capable - $5/$25 per MTok)
+    model: Literal["haiku", "sonnet", "opus"] = "haiku"
 
     # UI settings
     dark_mode: Optional[bool] = None  # None = use system detection
@@ -30,12 +43,18 @@ class WrksConfig:
 
         Environment variables:
             WRKS_PERMISSION_MODE: default | acceptEdits | bypassPermissions
+            WRKS_MODEL: haiku | sonnet | opus (default: haiku)
             CASTELLA_DARK_MODE: true | false
             CASTELLA_FONT_SIZE: font size (int)
             WRKS_WINDOW_WIDTH: window width (int)
             WRKS_WINDOW_HEIGHT: window height (int)
         """
         config = cls()
+
+        # Model
+        model = os.environ.get("WRKS_MODEL", "haiku").lower()
+        if model in ("haiku", "sonnet", "opus"):
+            config.model = model  # type: ignore
 
         # Permission mode
         permission_mode = os.environ.get("WRKS_PERMISSION_MODE", "default").lower()
