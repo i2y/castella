@@ -152,6 +152,61 @@ def _truncate_summary(text: str, max_length: int = 80) -> str:
     return truncated + "..."
 
 
+def simplify_context_in_message(content: str) -> str:
+    """Simplify context file content in a user message.
+
+    Converts full context content like:
+        **Context files:**
+        `file.py`:
+        ```
+        <full content>
+        ```
+        **User request:**
+        actual message
+
+    To a simplified form:
+        [Context: `file.py`]
+
+        actual message
+
+    Args:
+        content: The message content to simplify
+
+    Returns:
+        Simplified message content
+    """
+    import re
+
+    # Check if the message starts with context files pattern
+    if not content.startswith("**Context files:**"):
+        return content
+
+    # Find the "**User request:**" marker
+    user_request_marker = "**User request:**"
+    marker_pos = content.find(user_request_marker)
+
+    if marker_pos == -1:
+        return content
+
+    # Extract the context section
+    context_section = content[:marker_pos]
+
+    # Extract file names from the context section
+    # Pattern matches: `filename`:
+    file_pattern = re.compile(r'`([^`]+)`:\s*\n```')
+    file_names = file_pattern.findall(context_section)
+
+    if not file_names:
+        return content
+
+    # Extract the actual user request (after the marker)
+    user_request = content[marker_pos + len(user_request_marker):].strip()
+
+    # Build simplified message
+    file_list = ", ".join(f"`{name}`" for name in file_names)
+    return f"[Context: {file_list}]\n\n{user_request}"
+
+
 @dataclass
 class ParsedMessage:
     """A parsed message from session history."""
@@ -210,6 +265,9 @@ def load_session_messages(session_path: Path, limit: int = 100) -> list[ParsedMe
 
                     # Handle content as string or list of blocks
                     if isinstance(content, str) and content:
+                        # Simplify context files in user messages
+                        if role == "user":
+                            content = simplify_context_in_message(content)
                         messages.append(ParsedMessage(
                             role=role,
                             content=content,
@@ -255,9 +313,13 @@ def load_session_messages(session_path: Path, limit: int = 100) -> list[ParsedMe
                             continue
 
                         if text_parts:
+                            text_content = "\n".join(text_parts)
+                            # Simplify context files in user messages
+                            if role == "user":
+                                text_content = simplify_context_in_message(text_content)
                             messages.append(ParsedMessage(
                                 role=role,
-                                content="\n".join(text_parts),
+                                content=text_content,
                                 timestamp=timestamp,
                                 model_name=model_name,
                             ))

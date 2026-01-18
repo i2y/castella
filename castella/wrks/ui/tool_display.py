@@ -71,7 +71,6 @@ class ToolCallView(Component):
             Spacer().fixed_width(8),
         ).fixed_height(48).height_policy(SizePolicy.FIXED)
 
-        # Build column items
         column_items: list[Widget] = [header_row]
 
         # Show result if available
@@ -83,17 +82,41 @@ class ToolCallView(Component):
                 diff_view.height_policy(SizePolicy.CONTENT)
                 column_items.append(diff_view)
             else:
-                # Regular text result (truncated)
-                if len(result_text) > 2000:
-                    result_text = result_text[:2000] + "\n... (truncated)"
+                # Regular text result with line numbers
+                lines = result_text.split("\n")
+                max_lines = 150
+                if len(lines) > max_lines:
+                    lines = lines[:max_lines]
+                    lines.append("... (truncated)")
+
+                line_widgets: list[Widget] = []
+                for i, line in enumerate(lines):
+                    line_num = str(i + 1).rjust(4)
+                    line_widgets.append(
+                        Row(
+                            Text(line_num, font_size=10)
+                            .text_color(theme.colors.border_secondary)
+                            .fixed_width(36)
+                            .fixed_height(18)
+                            .height_policy(SizePolicy.FIXED),
+                            Text(line if line else " ", font_size=11)
+                            .text_color(theme.colors.text_primary)
+                            .fixed_height(18)
+                            .height_policy(SizePolicy.FIXED),
+                        )
+                        .bg_color(theme.colors.bg_tertiary)
+                        .fixed_height(18)
+                        .height_policy(SizePolicy.FIXED)
+                    )
                 column_items.append(
-                    Text(result_text, font_size=11)
-                    .text_color(theme.colors.text_primary)
-                    .bg_color(theme.colors.bg_tertiary)
-                    .height_policy(SizePolicy.CONTENT)
+                    Column(*line_widgets).height_policy(SizePolicy.CONTENT)
                 )
 
-        return Column(*column_items).height_policy(SizePolicy.CONTENT).bg_color(theme.colors.bg_secondary)
+        return (
+            Column(*column_items)
+            .height_policy(SizePolicy.CONTENT)
+            .bg_color(theme.colors.bg_secondary)
+        )
 
 
 class ToolApprovalModal(Component):

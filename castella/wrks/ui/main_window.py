@@ -44,7 +44,7 @@ from castella.wrks.ui.diff_view import DiffView
 HISTORY_LIMIT = 20
 
 # Scroll position value to scroll to bottom (large value that exceeds content height)
-SCROLL_TO_BOTTOM = 999999
+SCROLL_TO_BOTTOM = 9999999
 
 
 def _shorten_model_name(model: str) -> str:
@@ -227,12 +227,15 @@ class MainWindow(Component):
         """Handle project selection in sidebar."""
         self._selected_project.set(project)
 
-        # Initialize FileTree
-        self._file_tree_state = FileTreeState(
-            root_path=str(project.path),
-            show_hidden=False,
-            dirs_first=True,
-        )
+        # Initialize FileTree only if project path exists
+        if project.path.exists():
+            self._file_tree_state = FileTreeState(
+                root_path=str(project.path),
+                show_hidden=False,
+                dirs_first=True,
+            )
+        else:
+            self._file_tree_state = None
 
         # Load sessions
         sessions_path = self._project_manager.get_sessions_path(project)
@@ -482,6 +485,8 @@ class MainWindow(Component):
                 break
         session.scroll_state.y = SCROLL_TO_BOTTOM
         session.current_tools.set(tools)
+        # Set again after state change in case content height increased
+        session.scroll_state.y = SCROLL_TO_BOTTOM
 
     def _on_cost_update(self, session: ActiveSession, cost: float) -> None:
         """Handle cost update."""
@@ -503,21 +508,23 @@ class MainWindow(Component):
 
     def _on_error(self, session: ActiveSession, error: Exception) -> None:
         """Handle error from SDK."""
+        # Set scroll BEFORE state changes
         session.scroll_state.y = SCROLL_TO_BOTTOM
         session.messages.append(ChatMessage(
             role=MessageRole.SYSTEM,
             content=f"**Error:** {str(error)}",
         ))
-        session.is_loading.set(False)
+        # Set scroll again before is_loading change triggers re-render
         session.scroll_state.y = SCROLL_TO_BOTTOM
+        session.is_loading.set(False)
 
     def _on_complete(self, session: ActiveSession) -> None:
         """Handle response completion."""
+        # Set scroll BEFORE state changes so the re-render uses correct scroll position
+        session.scroll_state.y = SCROLL_TO_BOTTOM
         session.is_loading.set(False)
         session.current_tools.set([])
         session.current_thinking.set("")
-        # Final scroll to bottom after all content is rendered
-        session.scroll_state.y = SCROLL_TO_BOTTOM
 
     def _stop_query(self, session: ActiveSession) -> None:
         """Stop the currently running query."""
@@ -893,9 +900,7 @@ class MainWindow(Component):
 
         # Show current tools (during streaming or while tools are running)
         for tool in session.current_tools:
-            tool_view = ToolCallView(tool)
-            tool_view.height_policy(SizePolicy.CONTENT)
-            msg_widgets.append(tool_view)
+            msg_widgets.append(ToolCallView(tool).height_policy(SizePolicy.CONTENT))
 
         # Loading indicator
         if session.is_loading() and not streaming and not session.current_tools and not thinking:
@@ -980,9 +985,7 @@ class MainWindow(Component):
 
         if message.role == MessageRole.ASSISTANT:
             for tool in message.tool_calls:
-                tool_view = ToolCallView(tool)
-                tool_view.height_policy(SizePolicy.CONTENT)
-                content_widgets.append(tool_view)
+                content_widgets.append(ToolCallView(tool).height_policy(SizePolicy.CONTENT))
 
         return (
             Box(
