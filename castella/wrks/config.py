@@ -26,11 +26,12 @@ class WrksConfig:
     # - "haiku": Claude Haiku 4.5 (fast, cheap - $1/$5 per MTok)
     # - "sonnet": Claude Sonnet 4.5 (balanced - $3/$15 per MTok)
     # - "opus": Claude Opus 4.5 (most capable - $5/$25 per MTok)
-    model: Literal["haiku", "sonnet", "opus"] = "haiku"
+    # Default: opus (production), can override with WRKS_MODEL=haiku for dev
+    model: Literal["haiku", "sonnet", "opus"] = "opus"
 
     # Extended thinking mode (only works with Opus)
     # When enabled, Claude will show its thinking process
-    extended_thinking: bool = False
+    extended_thinking: bool = True
 
     # UI settings
     dark_mode: Optional[bool] = None  # None = use system detection

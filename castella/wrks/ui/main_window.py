@@ -43,6 +43,9 @@ from castella.wrks.ui.diff_view import DiffView
 # Maximum number of past messages to load when opening a session
 HISTORY_LIMIT = 20
 
+# Scroll position value to scroll to bottom (large value that exceeds content height)
+SCROLL_TO_BOTTOM = 999999
+
 
 def _shorten_model_name(model: str) -> str:
     """Shorten model name for display.
@@ -263,6 +266,12 @@ class MainWindow(Component):
             project=project,
             session_metadata=session_metadata,
         )
+
+        # Initialize model settings from config
+        config = get_config()
+        new_session.selected_model.set(config.model)
+        new_session.selected_thinking.set(config.extended_thinking)
+
         new_session.attach_states(self)
 
         # Set session ID if resuming
@@ -287,8 +296,9 @@ class MainWindow(Component):
                     content=msg.content,
                     model_name=msg.model_name,
                 ))
-            # Scroll to bottom after loading past messages
-            new_session.scroll_state.y = 999999
+
+        # Set scroll to bottom before switching (so re-render picks it up)
+        new_session.scroll_state.y = SCROLL_TO_BOTTOM
 
         # Add to active sessions and switch to it
         self._active_sessions.append(new_session)
@@ -394,11 +404,25 @@ class MainWindow(Component):
     # SDK Client methods
 
     def _get_client(self, session: ActiveSession) -> WrksClient:
-        """Get or create the SDK client for a session."""
-        if session.client is None:
-            if session.project is None:
-                raise RuntimeError("No project for session")
+        """Get or create the SDK client for a session.
 
+        Recreates the client if model or thinking settings have changed.
+        """
+        if session.project is None:
+            raise RuntimeError("No project for session")
+
+        # Get current UI selections
+        selected_model = session.selected_model()
+        selected_thinking = session.selected_thinking()
+
+        # Check if we need to recreate the client (settings changed)
+        if session.client is not None:
+            if (session.client_model != selected_model or
+                session.client_thinking != selected_thinking):
+                # Settings changed, need new client
+                session.client = None
+
+        if session.client is None:
             config = get_config()
             session.client = WrksClient(
                 cwd=session.project.path,
@@ -415,22 +439,29 @@ class MainWindow(Component):
                     session.session_metadata.session_id
                     if session.session_metadata else None
                 ),
-                model=config.model,
+                model=selected_model,
                 permission_mode=config.permission_mode,
-                extended_thinking=config.extended_thinking,
+                extended_thinking=selected_thinking,
             )
+            # Track what settings this client was created with
+            session.client_model = selected_model
+            session.client_thinking = selected_thinking
+
         return session.client
 
     def _on_message_received(self, session: ActiveSession, message: ChatMessage) -> None:
         """Handle complete message from SDK."""
         session.streaming_text.set("")
-        # Set scroll to bottom BEFORE adding message (so re-render picks it up)
-        session.scroll_state.y = 999999
+        # Set scroll BEFORE adding message, then add message triggers re-render
+        session.scroll_state.y = SCROLL_TO_BOTTOM
         session.messages.append(message)
+        # Also set after in case content size changed
+        session.scroll_state.y = SCROLL_TO_BOTTOM
 
     def _on_streaming_text(self, session: ActiveSession, text: str) -> None:
         """Handle streaming text chunk."""
-        session.scroll_state.y = 999999
+        # Set scroll BEFORE updating text
+        session.scroll_state.y = SCROLL_TO_BOTTOM
         session.streaming_text.set(text)
 
     def _on_tool_use(self, session: ActiveSession, tool: ToolCall) -> None:
@@ -439,6 +470,7 @@ class MainWindow(Component):
             session.pending_tool.set(tool)
             self._approval_modal_state.open()
         else:
+            session.scroll_state.y = SCROLL_TO_BOTTOM
             session.current_tools.append(tool)
 
     def _on_tool_result(self, session: ActiveSession, tool: ToolCall) -> None:
@@ -448,6 +480,7 @@ class MainWindow(Component):
             if t.id == tool.id:
                 tools[i] = tool
                 break
+        session.scroll_state.y = SCROLL_TO_BOTTOM
         session.current_tools.set(tools)
 
     def _on_cost_update(self, session: ActiveSession, cost: float) -> None:
@@ -465,21 +498,26 @@ class MainWindow(Component):
 
     def _on_thinking(self, session: ActiveSession, thinking: str) -> None:
         """Handle thinking content from SDK (Opus models with extended thinking)."""
+        session.scroll_state.y = SCROLL_TO_BOTTOM
         session.current_thinking.set(thinking)
 
     def _on_error(self, session: ActiveSession, error: Exception) -> None:
         """Handle error from SDK."""
+        session.scroll_state.y = SCROLL_TO_BOTTOM
         session.messages.append(ChatMessage(
             role=MessageRole.SYSTEM,
             content=f"**Error:** {str(error)}",
         ))
         session.is_loading.set(False)
+        session.scroll_state.y = SCROLL_TO_BOTTOM
 
     def _on_complete(self, session: ActiveSession) -> None:
         """Handle response completion."""
         session.is_loading.set(False)
         session.current_tools.set([])
         session.current_thinking.set("")
+        # Final scroll to bottom after all content is rendered
+        session.scroll_state.y = SCROLL_TO_BOTTOM
 
     def _stop_query(self, session: ActiveSession) -> None:
         """Stop the currently running query."""
@@ -527,7 +565,7 @@ class MainWindow(Component):
         # Clear input and set loading
         session.input_state.set("")
         session.is_loading.set(True)
-        session.scroll_state.y = 999999
+        session.scroll_state.y = SCROLL_TO_BOTTOM
 
         # Send to SDK
         client = self._get_client(session)
@@ -598,9 +636,6 @@ class MainWindow(Component):
 
     def _build_header(self, theme) -> Row:
         """Build the header bar."""
-        config = get_config()
-        model_label = f"Model: {config.model}"
-
         return (
             Row(
                 Button("=").on_click(lambda _: self._toggle_sidebar()).fixed_size(36, 32),
@@ -608,10 +643,6 @@ class MainWindow(Component):
                 Text("wrks", font_size=16)
                 .text_color(theme.colors.text_primary)
                 .fixed_height(24),
-                Spacer().fixed_width(16),
-                Text(model_label, font_size=12)
-                .text_color(theme.colors.border_secondary)
-                .fixed_height(20),
                 Spacer(),
                 Text("Total:", font_size=12)
                 .text_color(theme.colors.border_secondary)
@@ -1018,40 +1049,83 @@ class MainWindow(Component):
             .height_policy(SizePolicy.CONTENT)
         )
 
-    def _build_input_area(self, theme, session: ActiveSession) -> Row:
-        """Build the input area for a session."""
+    def _build_input_area(self, theme, session: ActiveSession) -> Column:
+        """Build the input area for a session with model selector."""
         is_loading = session.is_loading()
 
         if is_loading:
             # Show stop button when loading
             return (
-                Row(
-                    Spacer().fixed_width(8),
-                    Text("Thinking...", font_size=12)
-                    .text_color(theme.colors.text_info)
-                    .fixed_height(40),
-                    Spacer(),
-                    Button("Stop")
-                    .on_click(lambda _: self._stop_query(session))
-                    .fixed_size(70, 40),
-                    Spacer().fixed_width(8),
+                Column(
+                    Row(
+                        Spacer().fixed_width(8),
+                        Text("Thinking...", font_size=12)
+                        .text_color(theme.colors.text_info)
+                        .fixed_height(40),
+                        Spacer(),
+                        Button("Stop")
+                        .on_click(lambda _: self._stop_query(session))
+                        .fixed_size(70, 40),
+                        Spacer().fixed_width(8),
+                    ).fixed_height(50),
                 )
                 .bg_color(theme.colors.bg_secondary)
-                .fixed_height(66)
+                .fixed_height(80)
             )
 
+        # Build model selector buttons
+        selected_model = session.selected_model()
+        selected_thinking = session.selected_thinking()
+
+        def make_model_btn(model: str, label: str) -> Button:
+            is_selected = selected_model == model
+            btn = Button(label).on_click(
+                lambda _, m=model: session.selected_model.set(m)
+            ).fixed_size(60, 28)
+            if is_selected:
+                btn = btn.bg_color(theme.colors.text_info).text_color(theme.colors.bg_primary)
+            else:
+                btn = btn.bg_color(theme.colors.bg_tertiary).text_color(theme.colors.text_primary)
+            return btn
+
+        # Thinking toggle button
+        thinking_label = "🧠"
+        thinking_btn = Button(thinking_label).on_click(
+            lambda _: session.selected_thinking.set(not selected_thinking)
+        ).fixed_size(36, 28)
+        if selected_thinking:
+            thinking_btn = thinking_btn.bg_color(theme.colors.text_warning).text_color(theme.colors.bg_primary)
+        else:
+            thinking_btn = thinking_btn.bg_color(theme.colors.bg_tertiary).text_color(theme.colors.text_primary)
+
+        # Options row
+        options_row = Row(
+            Spacer().fixed_width(8),
+            make_model_btn("haiku", "haiku"),
+            Spacer().fixed_width(4),
+            make_model_btn("sonnet", "sonnet"),
+            Spacer().fixed_width(4),
+            make_model_btn("opus", "opus"),
+            Spacer().fixed_width(12),
+            thinking_btn,
+            Spacer(),
+            Button("Send")
+            .on_click(lambda _: self._send_message())
+            .fixed_size(70, 28),
+            Spacer().fixed_width(8),
+        ).fixed_height(32)
+
+        # Input row
+        input_row = Row(
+            Spacer().fixed_width(8),
+            MultilineInput(session.input_state, font_size=14, wrap=True)
+            .height(40)
+            .height_policy(SizePolicy.FIXED),
+            Spacer().fixed_width(8),
+        ).fixed_height(48)
+
         return (
-            Row(
-                Spacer().fixed_width(8),
-                MultilineInput(session.input_state, font_size=14, wrap=True)
-                .height(50)
-                .height_policy(SizePolicy.FIXED),
-                Spacer().fixed_width(8),
-                Button("Send")
-                .on_click(lambda _: self._send_message())
-                .fixed_size(70, 40),
-                Spacer().fixed_width(8),
-            )
+            Column(input_row, options_row)
             .bg_color(theme.colors.bg_secondary)
-            .fixed_height(66)
+            .fixed_height(80)
         )

@@ -79,6 +79,14 @@ class ActiveSession:
     # Session ID from SDK
     session_id: State[Optional[str]] = field(default_factory=lambda: State(None))
 
+    # Per-message settings (UI selection, initialized from config)
+    selected_model: State[str] = field(default_factory=lambda: State("opus"))
+    selected_thinking: State[bool] = field(default_factory=lambda: State(True))
+
+    # Track what model the current client was created with
+    client_model: Optional[str] = None
+    client_thinking: Optional[bool] = None
+
     def attach_states(self, component) -> None:
         """Attach all reactive states to a component."""
         self.messages.attach(component)
@@ -88,6 +96,8 @@ class ActiveSession:
         self.current_tools.attach(component)
         self.pending_tool.attach(component)
         self.context_files.attach(component)
+        self.selected_model.attach(component)
+        self.selected_thinking.attach(component)
 
     def detach_states(self, component) -> None:
         """Detach all reactive states from a component."""
@@ -98,10 +108,14 @@ class ActiveSession:
         self.current_tools.detach(component)
         self.pending_tool.detach(component)
         self.context_files.detach(component)
+        self.selected_model.detach(component)
+        self.selected_thinking.detach(component)
 
     def reset(self) -> None:
         """Reset the session state for a new conversation."""
         self.client = None
+        self.client_model = None
+        self.client_thinking = None
         self.messages.set([])
         self.streaming_text.set("")
         self.is_loading.set(False)
@@ -113,3 +127,5 @@ class ActiveSession:
         self.session_id.set(None)
         self.input_state.set("")
         self.scroll_state.y = 0
+        # Note: selected_model and selected_thinking are not reset
+        # to preserve user's preference across messages
