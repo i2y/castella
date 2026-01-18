@@ -152,6 +152,92 @@ def _truncate_summary(text: str, max_length: int = 80) -> str:
     return truncated + "..."
 
 
+@dataclass
+class ParsedMessage:
+    """A parsed message from session history."""
+
+    role: str  # "user" or "assistant"
+    content: str
+    timestamp: Optional[str] = None
+
+
+def load_session_messages(session_path: Path, limit: int = 100) -> list[ParsedMessage]:
+    """Load message history from a session JSONL file.
+
+    Args:
+        session_path: Path to the session JSONL file
+        limit: Maximum number of messages to load
+
+    Returns:
+        List of ParsedMessage objects in chronological order
+    """
+    messages: list[ParsedMessage] = []
+
+    if not session_path.exists():
+        return messages
+
+    try:
+        with open(session_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if len(messages) >= limit:
+                    break
+
+                line = line.strip()
+                if not line:
+                    continue
+
+                try:
+                    data = json.loads(line)
+
+                    # Skip non-message records
+                    msg_type = data.get("type")
+                    if msg_type not in ("user", "assistant"):
+                        continue
+
+                    msg = data.get("message", {})
+                    if not isinstance(msg, dict):
+                        continue
+
+                    role = msg.get("role")
+                    if role not in ("user", "assistant"):
+                        continue
+
+                    content = msg.get("content", "")
+                    timestamp = data.get("timestamp")
+
+                    # Handle content as string or list of blocks
+                    if isinstance(content, str) and content:
+                        messages.append(ParsedMessage(
+                            role=role,
+                            content=content,
+                            timestamp=timestamp,
+                        ))
+                    elif isinstance(content, list):
+                        # Extract text from content blocks
+                        text_parts = []
+                        for block in content:
+                            if isinstance(block, dict):
+                                if block.get("type") == "text":
+                                    text_parts.append(block.get("text", ""))
+                                elif block.get("type") == "tool_use":
+                                    tool_name = block.get("name", "unknown")
+                                    text_parts.append(f"[Tool: {tool_name}]")
+                        if text_parts:
+                            messages.append(ParsedMessage(
+                                role=role,
+                                content="\n".join(text_parts),
+                                timestamp=timestamp,
+                            ))
+
+                except json.JSONDecodeError:
+                    continue
+
+    except Exception:
+        pass
+
+    return messages
+
+
 def list_sessions(project_path: Path) -> list[SessionMetadata]:
     """List all sessions in a project directory.
 

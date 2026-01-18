@@ -32,6 +32,7 @@ from castella.wrks.storage import (
     ProjectManager,
     SessionMetadata,
     MetadataStore,
+    load_session_messages,
 )
 from castella.wrks.storage.sessions import list_sessions
 from castella.wrks.ui.cost_display import CostDisplay
@@ -179,6 +180,16 @@ class MainWindow(Component):
             role=MessageRole.SYSTEM,
             content=self._get_welcome_message(project, session_metadata),
         ))
+
+        # Load past messages if resuming a session
+        if session_metadata and session_metadata.file_path.exists():
+            past_messages = load_session_messages(session_metadata.file_path)
+            for msg in past_messages:
+                role = MessageRole.USER if msg.role == "user" else MessageRole.ASSISTANT
+                new_session.messages.append(ChatMessage(
+                    role=role,
+                    content=msg.content,
+                ))
 
         # Add to active sessions and switch to it
         self._active_sessions.append(new_session)
