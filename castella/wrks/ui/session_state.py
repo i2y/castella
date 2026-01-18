@@ -55,16 +55,16 @@ class ActiveSession:
     client: Optional["WrksClient"] = None
 
     # Message state
-    messages: ListState["ChatMessage"] = field(default_factory=ListState)
+    messages: ListState["ChatMessage"] = field(default_factory=lambda: ListState([]))
     streaming_text: State[str] = field(default_factory=lambda: State(""))
     is_loading: State[bool] = field(default_factory=lambda: State(False))
 
     # Tool state
-    current_tools: ListState["ToolCall"] = field(default_factory=ListState)
+    current_tools: ListState["ToolCall"] = field(default_factory=lambda: ListState([]))
     pending_tool: State[Optional["ToolCall"]] = field(default_factory=lambda: State(None))
 
     # Context files
-    context_files: ListState[dict[str, Any]] = field(default_factory=ListState)
+    context_files: ListState[dict[str, Any]] = field(default_factory=lambda: ListState([]))
 
     # Input state (don't attach to component)
     input_state: MultilineInputState = field(default_factory=lambda: MultilineInputState(""))
