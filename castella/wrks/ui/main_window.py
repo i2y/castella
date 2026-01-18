@@ -114,7 +114,9 @@ class MainWindow(Component):
         """Load projects initially without triggering notification."""
         favorites = self._metadata_store.get_favorites()
         projects = self._project_manager.list_projects(favorites=favorites)
-        self._projects._list = projects
+        # Use list methods directly to avoid notify (no observers attached yet)
+        self._projects.clear()
+        list.extend(self._projects, projects)
 
     def _refresh_projects(self) -> None:
         """Refresh the project list."""
