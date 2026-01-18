@@ -18,6 +18,7 @@ from castella.core import Component
 from castella.theme import ThemeManager
 
 from castella.wrks.sdk.types import ToolCall, ToolStatus
+from castella.wrks.ui.diff_view import DiffView, is_diff_output
 
 
 class ToolCallView(Component):
@@ -56,18 +57,43 @@ class ToolCallView(Component):
             "WebSearch": "S",
         }.get(tool.name, "?")
 
-        return Row(
+        # Header row with tool name and status
+        header_row = Row(
             Spacer().fixed_width(8),
             Text(icon, font_size=11).text_color(theme.colors.text_primary).bg_color(theme.colors.bg_tertiary).fixed_size(32, 24),
             Spacer().fixed_width(8),
             Column(
-                Text(tool.display_name, font_size=12).text_color(theme.colors.text_primary),
-                Text(tool.display_args, font_size=11).text_color(theme.colors.border_secondary) if tool.display_args else Spacer().fixed_height(1),
-            ),
-            Spacer(),
+                Text(tool.display_name, font_size=12).text_color(theme.colors.text_primary).fixed_height(20).height_policy(SizePolicy.FIXED),
+                Text(tool.display_args, font_size=11).text_color(theme.colors.border_secondary).fixed_height(16).height_policy(SizePolicy.FIXED) if tool.display_args else Spacer().fixed_height(1),
+            ).height_policy(SizePolicy.CONTENT),
+            Spacer().fixed_width(8),
             Text(status_text, font_size=11).text_color(status_color).bg_color(theme.colors.bg_tertiary).fixed_size(80, 24),
             Spacer().fixed_width(8),
-        ).height(48).height_policy(SizePolicy.FIXED).bg_color(theme.colors.bg_secondary)
+        ).fixed_height(48).height_policy(SizePolicy.FIXED)
+
+        # Build column items
+        column_items: list[Widget] = [header_row]
+
+        # Show result if available
+        if tool.result and tool.status == ToolStatus.COMPLETED:
+            result_text = tool.result
+            # Check if result is diff output
+            if is_diff_output(result_text):
+                diff_view = DiffView(result_text, max_lines=100)
+                diff_view.height_policy(SizePolicy.CONTENT)
+                column_items.append(diff_view)
+            else:
+                # Regular text result (truncated)
+                if len(result_text) > 2000:
+                    result_text = result_text[:2000] + "\n... (truncated)"
+                column_items.append(
+                    Text(result_text, font_size=11)
+                    .text_color(theme.colors.text_primary)
+                    .bg_color(theme.colors.bg_tertiary)
+                    .height_policy(SizePolicy.CONTENT)
+                )
+
+        return Column(*column_items).height_policy(SizePolicy.CONTENT).bg_color(theme.colors.bg_secondary)
 
 
 class ToolApprovalModal(Component):

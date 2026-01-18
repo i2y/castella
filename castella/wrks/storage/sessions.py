@@ -159,6 +159,7 @@ class ParsedMessage:
     role: str  # "user" or "assistant"
     content: str
     timestamp: Optional[str] = None
+    model_name: Optional[str] = None  # Model used (for assistant messages)
 
 
 def load_session_messages(session_path: Path, limit: int = 100) -> list[ParsedMessage]:
@@ -166,10 +167,10 @@ def load_session_messages(session_path: Path, limit: int = 100) -> list[ParsedMe
 
     Args:
         session_path: Path to the session JSONL file
-        limit: Maximum number of messages to load
+        limit: Maximum number of most recent messages to load
 
     Returns:
-        List of ParsedMessage objects in chronological order
+        List of ParsedMessage objects in chronological order (most recent N)
     """
     messages: list[ParsedMessage] = []
 
@@ -179,9 +180,6 @@ def load_session_messages(session_path: Path, limit: int = 100) -> list[ParsedMe
     try:
         with open(session_path, "r", encoding="utf-8") as f:
             for line in f:
-                if len(messages) >= limit:
-                    break
-
                 line = line.strip()
                 if not line:
                     continue
@@ -205,16 +203,23 @@ def load_session_messages(session_path: Path, limit: int = 100) -> list[ParsedMe
                     content = msg.get("content", "")
                     timestamp = data.get("timestamp")
 
+                    # Extract model name for assistant messages
+                    model_name: Optional[str] = None
+                    if role == "assistant":
+                        model_name = msg.get("model")
+
                     # Handle content as string or list of blocks
                     if isinstance(content, str) and content:
                         messages.append(ParsedMessage(
                             role=role,
                             content=content,
                             timestamp=timestamp,
+                            model_name=model_name,
                         ))
                     elif isinstance(content, list):
                         # Extract text from content blocks
                         text_parts = []
+                        tool_results = []
                         for block in content:
                             if isinstance(block, dict):
                                 if block.get("type") == "text":
@@ -222,11 +227,39 @@ def load_session_messages(session_path: Path, limit: int = 100) -> list[ParsedMe
                                 elif block.get("type") == "tool_use":
                                     tool_name = block.get("name", "unknown")
                                     text_parts.append(f"[Tool: {tool_name}]")
+                                elif block.get("type") == "tool_result":
+                                    # Collect tool results
+                                    result_content = block.get("content", "")
+                                    if isinstance(result_content, str) and result_content:
+                                        tool_results.append(result_content)
+                                    elif isinstance(result_content, list):
+                                        for sub_block in result_content:
+                                            if isinstance(sub_block, dict) and sub_block.get("type") == "text":
+                                                tool_results.append(sub_block.get("text", ""))
+
+                        # If this is a user message with only tool_results, append to previous assistant message
+                        if role == "user" and tool_results and not text_parts:
+                            if messages and messages[-1].role == "assistant":
+                                # Append tool results to previous assistant message
+                                result_text = "\n".join(tool_results)
+                                if len(result_text) > 5000:
+                                    result_text = result_text[:5000] + "\n... (truncated)"
+                                # Use ```` (4 backticks) to avoid issues with nested code blocks
+                                messages[-1] = ParsedMessage(
+                                    role=messages[-1].role,
+                                    content=messages[-1].content + f"\n\n**Result:**\n````\n{result_text}\n````",
+                                    timestamp=messages[-1].timestamp,
+                                    model_name=messages[-1].model_name,
+                                )
+                            # Skip creating a new "user" message for tool results
+                            continue
+
                         if text_parts:
                             messages.append(ParsedMessage(
                                 role=role,
                                 content="\n".join(text_parts),
                                 timestamp=timestamp,
+                                model_name=model_name,
                             ))
 
                 except json.JSONDecodeError:
@@ -235,6 +268,9 @@ def load_session_messages(session_path: Path, limit: int = 100) -> list[ParsedMe
     except Exception:
         pass
 
+    # Return only the most recent N messages
+    if limit > 0 and len(messages) > limit:
+        return messages[-limit:]
     return messages
 
 

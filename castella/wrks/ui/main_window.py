@@ -38,6 +38,100 @@ from castella.wrks.storage.sessions import list_sessions
 from castella.wrks.ui.cost_display import CostDisplay
 from castella.wrks.ui.session_state import ActiveSession
 from castella.wrks.ui.tool_display import ToolCallView, ToolApprovalModal
+from castella.wrks.ui.diff_view import DiffView, is_diff_output
+
+# Maximum number of past messages to load when opening a session
+HISTORY_LIMIT = 20
+
+
+def _shorten_model_name(model: str) -> str:
+    """Shorten model name for display.
+
+    Examples:
+        claude-opus-4-5-20251101 -> opus-4.5
+        claude-sonnet-4-5-20251101 -> sonnet-4.5
+        claude-3-5-haiku-20241022 -> haiku-3.5
+    """
+    if "opus-4" in model:
+        return "opus-4.5"
+    elif "sonnet-4" in model:
+        return "sonnet-4.5"
+    elif "haiku" in model:
+        return "haiku-3.5"
+    elif "opus" in model:
+        return "opus"
+    elif "sonnet" in model:
+        return "sonnet"
+    return model
+
+
+def _extract_diff_blocks(content: str) -> list[tuple[str, str]]:
+    """Extract diff blocks from message content.
+
+    Returns list of tuples: ("text", content) or ("diff", diff_content)
+    Returns empty list if no diff blocks found.
+    """
+    import re
+
+    # Look for diff blocks in code fences (```diff or ````diff or just raw diff)
+    parts: list[tuple[str, str]] = []
+
+    # Pattern to match code blocks with 3 or 4 backticks
+    code_block_pattern = re.compile(r'(`{3,4})(\w*)\n(.*?)\1', re.DOTALL)
+
+    last_end = 0
+    found_diff = False
+
+    for match in code_block_pattern.finditer(content):
+        # Add text before this code block
+        text_before = content[last_end:match.start()]
+        if text_before.strip():
+            parts.append(("text", text_before))
+
+        lang = match.group(2).lower()
+        code_content = match.group(3)
+
+        # Check if it's a diff block or looks like diff
+        if lang == "diff" or (not lang and _looks_like_diff(code_content)):
+            parts.append(("diff", code_content))
+            found_diff = True
+        else:
+            # Keep as text (will be rendered by Markdown)
+            parts.append(("text", match.group(0)))
+
+        last_end = match.end()
+
+    # Add remaining text
+    if last_end < len(content):
+        remaining = content[last_end:]
+        # Check if remaining content looks like raw diff
+        if _looks_like_diff(remaining):
+            parts.append(("diff", remaining))
+            found_diff = True
+        elif remaining.strip():
+            parts.append(("text", remaining))
+
+    return parts if found_diff else []
+
+
+def _looks_like_diff(text: str) -> bool:
+    """Check if text looks like diff output."""
+    lines = text.strip().split("\n")[:15]
+    if not lines:
+        return False
+
+    diff_indicators = 0
+    for line in lines:
+        if line.startswith("diff --git"):
+            return True
+        if line.startswith("--- ") or line.startswith("+++ "):
+            diff_indicators += 1
+        if line.startswith("@@") and "@@" in line[2:]:
+            diff_indicators += 1
+        if line.startswith("+") or line.startswith("-"):
+            diff_indicators += 0.5
+
+    return diff_indicators >= 3
 
 
 class MainWindow(Component):
@@ -181,15 +275,20 @@ class MainWindow(Component):
             content=self._get_welcome_message(project, session_metadata),
         ))
 
-        # Load past messages if resuming a session
+        # Load past messages if resuming a session (limit to most recent N)
         if session_metadata and session_metadata.file_path.exists():
-            past_messages = load_session_messages(session_metadata.file_path)
+            past_messages = load_session_messages(
+                session_metadata.file_path, limit=HISTORY_LIMIT
+            )
             for msg in past_messages:
                 role = MessageRole.USER if msg.role == "user" else MessageRole.ASSISTANT
                 new_session.messages.append(ChatMessage(
                     role=role,
                     content=msg.content,
+                    model_name=msg.model_name,
                 ))
+            # Scroll to bottom after loading past messages
+            new_session.scroll_state.y = 999999
 
         # Add to active sessions and switch to it
         self._active_sessions.append(new_session)
@@ -481,6 +580,9 @@ class MainWindow(Component):
 
     def _build_header(self, theme) -> Row:
         """Build the header bar."""
+        config = get_config()
+        model_label = f"Model: {config.model}"
+
         return (
             Row(
                 Button("=").on_click(lambda _: self._toggle_sidebar()).fixed_size(36, 32),
@@ -488,6 +590,10 @@ class MainWindow(Component):
                 Text("wrks", font_size=16)
                 .text_color(theme.colors.text_primary)
                 .fixed_height(24),
+                Spacer().fixed_width(16),
+                Text(model_label, font_size=12)
+                .text_color(theme.colors.border_secondary)
+                .fixed_height(20),
                 Spacer(),
                 Text("Total:", font_size=12)
                 .text_color(theme.colors.border_secondary)
@@ -685,7 +791,7 @@ class MainWindow(Component):
 
             # Tab button with close
             tab_bg = theme.colors.bg_primary if is_active else theme.colors.bg_tertiary
-            tab_text_color = theme.colors.text_primary if is_active else theme.colors.border_secondary
+            tab_text_color = theme.colors.text_primary  # Always use primary for visibility
 
             tab = (
                 Row(
@@ -696,7 +802,7 @@ class MainWindow(Component):
                     .fixed_height(28)
                     .fit_content_width(),
                     Button("x")
-                    .text_color(theme.colors.border_secondary)
+                    .text_color(theme.colors.text_primary)
                     .on_click(lambda _, sid=session.id: self._close_session_tab(sid))
                     .fixed_size(20, 28),
                 )
@@ -711,7 +817,7 @@ class MainWindow(Component):
         if project:
             tabs.append(
                 Button("+")
-                .text_color(theme.colors.border_secondary)
+                .text_color(theme.colors.text_primary)
                 .on_click(lambda _: self._open_session_tab(project))
                 .fixed_size(32, 28)
             )
@@ -730,11 +836,15 @@ class MainWindow(Component):
         streaming = session.streaming_text()
         if streaming:
             msg_widgets.append(self._build_streaming_message(streaming, theme))
-            for tool in session.current_tools:
-                msg_widgets.append(ToolCallView(tool))
+
+        # Show current tools (during streaming or while tools are running)
+        for tool in session.current_tools:
+            tool_view = ToolCallView(tool)
+            tool_view.height_policy(SizePolicy.CONTENT)
+            msg_widgets.append(tool_view)
 
         # Loading indicator
-        if session.is_loading() and not streaming:
+        if session.is_loading() and not streaming and not session.current_tools:
             msg_widgets.append(
                 Text("Thinking...", font_size=12)
                 .text_color(theme.colors.border_secondary)
@@ -774,16 +884,47 @@ class MainWindow(Component):
             role_label = "System"
             role_color = theme.colors.text_warning
 
-        content_widgets: list[Widget] = [
+        # Build header row with role label and model name (for assistant)
+        header_items: list[Widget] = [
             Text(role_label, font_size=12)
             .text_color(role_color)
-            .fixed_height(20),
-            Markdown(message.content, base_font_size=14),
+            .fit_content(),
         ]
+
+        # Add model name for assistant messages
+        if message.role == MessageRole.ASSISTANT and message.model_name:
+            short_model = _shorten_model_name(message.model_name)
+            header_items.append(Spacer().fixed_width(8))
+            header_items.append(
+                Text(short_model, font_size=11)
+                .text_color(theme.colors.text_info)
+                .fit_content()
+            )
+
+        content_widgets: list[Widget] = [
+            Row(*header_items).fixed_height(20).height_policy(SizePolicy.FIXED),
+        ]
+
+        # Check if message contains diff output and render appropriately
+        content = message.content
+        diff_parts = _extract_diff_blocks(content)
+
+        if diff_parts:
+            for part_type, part_content in diff_parts:
+                if part_type == "diff":
+                    diff_view = DiffView(part_content)
+                    diff_view.height_policy(SizePolicy.CONTENT)
+                    content_widgets.append(diff_view)
+                elif part_content.strip():
+                    content_widgets.append(Markdown(part_content, base_font_size=14))
+        else:
+            content_widgets.append(Markdown(content, base_font_size=14))
 
         if message.role == MessageRole.ASSISTANT:
             for tool in message.tool_calls:
-                content_widgets.append(ToolCallView(tool))
+                tool_view = ToolCallView(tool)
+                tool_view.height_policy(SizePolicy.CONTENT)
+                content_widgets.append(tool_view)
 
         return (
             Box(

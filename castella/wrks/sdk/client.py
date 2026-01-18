@@ -71,6 +71,9 @@ class WrksClient:
         self._tool_approval_event: Optional[asyncio.Event] = None
         self._tool_approved: bool = False
 
+        # Accumulated tool calls for the current response
+        self._current_tool_calls: list[ToolCall] = []
+
     @property
     def session_id(self) -> Optional[str]:
         """Get the current session ID."""
@@ -123,6 +126,7 @@ class WrksClient:
                 ClaudeSDKClient,
                 ClaudeAgentOptions,
                 AssistantMessage,
+                UserMessage,
                 TextBlock,
                 ToolUseBlock,
                 ToolResultBlock,
@@ -182,6 +186,7 @@ class WrksClient:
                 options.fork_session = True
 
         current_text = ""
+        self._current_tool_calls = []  # Reset for new query
 
         async with ClaudeSDKClient(options) as client:
             await client.query(prompt)
@@ -205,16 +210,32 @@ class WrksClient:
                                 arguments=block.input,
                                 status=ToolStatus.RUNNING,
                             )
+                            # Track this tool call
+                            self._current_tool_calls.append(tool_call)
                             if self._on_tool_use:
                                 self._on_tool_use(tool_call)
 
                         elif isinstance(block, ToolResultBlock):
-                            # Tool completed
-                            if self._pending_tool and self._pending_tool.name:
-                                self._pending_tool.result = str(block.content)
-                                self._pending_tool.status = ToolStatus.COMPLETED
-                                if self._on_tool_result:
-                                    self._on_tool_result(self._pending_tool)
+                            # Tool completed - update the tracked tool call
+                            for tc in self._current_tool_calls:
+                                if tc.id == block.tool_use_id:
+                                    tc.result = str(block.content)
+                                    tc.status = ToolStatus.COMPLETED
+                                    if self._on_tool_result:
+                                        self._on_tool_result(tc)
+                                    break
+
+                elif isinstance(message, UserMessage):
+                    # UserMessage contains ToolResultBlock
+                    for block in message.content:
+                        if isinstance(block, ToolResultBlock):
+                            for tc in self._current_tool_calls:
+                                if tc.id == block.tool_use_id:
+                                    tc.result = str(block.content)
+                                    tc.status = ToolStatus.COMPLETED
+                                    if self._on_tool_result:
+                                        self._on_tool_result(tc)
+                                    break
 
                 elif isinstance(message, ResultMessage):
                     # Final result
@@ -227,13 +248,14 @@ class WrksClient:
                         if self._on_cost_update:
                             self._on_cost_update(self._total_cost)
 
-                    # Create final message
+                    # Create final message with tool calls
                     if current_text and self._on_message:
                         final_message = ChatMessage(
                             role=MessageRole.ASSISTANT,
                             content=current_text,
                             is_streaming=False,
                             cost_usd=message.total_cost_usd,
+                            tool_calls=list(self._current_tool_calls),
                         )
                         self._on_message(final_message)
 
