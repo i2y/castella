@@ -92,10 +92,17 @@ edda_workflow_manager = [
 pycode = [
     "pydantic-ai[anthropic,openai,google]>=0.0.39",
 ]
+wrks = [
+    "claude-agent-sdk>=0.1.19",
+]
 ios = [
     "rubicon-objc>=0.4.9",
     "pydantic>=2.7.4",
 ]
+
+[project.scripts]
+wrks = "castella.wrks.app:cli"
+
 [project.urls]
 homepage = "https://github.com/i2y/castella"
 repository = "https://github.com/i2y/castella"

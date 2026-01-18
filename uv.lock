@@ -496,6 +496,9 @@ tui = [
     { name = "pyperclip" },
     { name = "windows-curses", marker = "sys_platform == 'win32'" },
 ]
+wrks = [
+    { name = "claude-agent-sdk" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -527,6 +530,7 @@ requires-dist = [
     { name = "castella-skia", marker = "extra == 'glfw'", specifier = ">=0.1.2" },
     { name = "castella-skia", marker = "extra == 'sdl'", specifier = ">=0.1.2" },
     { name = "castella-skia", marker = "extra == 'sdl3'", specifier = ">=0.1.2" },
+    { name = "claude-agent-sdk", marker = "extra == 'wrks'", specifier = ">=0.1.19" },
     { name = "darkdetect", marker = "extra == 'glfw'", specifier = ">=0.8" },
     { name = "darkdetect", marker = "extra == 'sdl'", specifier = ">=0.8" },
     { name = "darkdetect", marker = "extra == 'sdl3'", specifier = ">=0.8" },
@@ -576,7 +580,7 @@ requires-dist = [
     { name = "rubicon-objc", marker = "extra == 'ios'", specifier = ">=0.4.9" },
     { name = "windows-curses", marker = "sys_platform == 'win32' and extra == 'tui'", specifier = ">=2.3.3" },
 ]
-provides-extras = ["glfw", "sdl", "sdl3", "tui", "agent", "mcp", "audio", "langgraph-studio", "llamaindex-studio", "pydantic-graph-studio", "edda-workflow-manager", "pycode", "ios"]
+provides-extras = ["glfw", "sdl", "sdl3", "tui", "agent", "mcp", "audio", "langgraph-studio", "llamaindex-studio", "pydantic-graph-studio", "edda-workflow-manager", "pycode", "wrks", "ios"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -786,6 +790,22 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/4b/51/8ade005e5ca5b0d80fb4aff72a3775b325bdc3d27408c8113811a7cbe640/charset_normalizer-3.4.4-cp314-cp314-win_amd64.whl", hash = "sha256:8a6562c3700cce886c5be75ade4a5db4214fda19fede41d9792d100288d8f94c", size = 107104, upload-time = "2025-10-14T04:41:51.051Z" },
     { url = "https://files.pythonhosted.org/packages/da/5f/6b8f83a55bb8278772c5ae54a577f3099025f9ade59d0136ac24a0df4bde/charset_normalizer-3.4.4-cp314-cp314-win_arm64.whl", hash = "sha256:de00632ca48df9daf77a2c65a484531649261ec9f25489917f09e455cb09ddb2", size = 100743, upload-time = "2025-10-14T04:41:52.122Z" },
     { url = "https://files.pythonhosted.org/packages/0a/4c/925909008ed5a988ccbb72dcc897407e5d6d3bd72410d69e051fc0c14647/charset_normalizer-3.4.4-py3-none-any.whl", hash = "sha256:7a32c560861a02ff789ad905a2fe94e3f840803362c84fecf1851cb4cf3dc37f", size = 53402, upload-time = "2025-10-14T04:42:31.76Z" },
+]
+
+[[package]]
+name = "claude-agent-sdk"
+version = "0.1.20"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "mcp" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/41/78/be7848b0a148269e07c3248967b4c382624967b15e9cc00351f5f7374583/claude_agent_sdk-0.1.20.tar.gz", hash = "sha256:bc3cb24f2dc8c7dc7362f52764051b20dbfcc16ec3e3d39787c4946d7ced3848", size = 56178, upload-time = "2026-01-16T21:20:11.864Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4b/e6/b34b8358a31cfc9c65df014d038036dbc86bd5f45ff6befc98e2cdb3407a/claude_agent_sdk-0.1.20-py3-none-macosx_11_0_arm64.whl", hash = "sha256:3ff7ab0930fd34fd533fa6216af698df71e7c3a4fcbd2f29eb9d0cd7b51fdfa5", size = 54068867, upload-time = "2026-01-16T21:19:55.29Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/dc/08606e7a7377ca841ff6a961b0db930d13a98656b30176860c28d3407bcf/claude_agent_sdk-0.1.20-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:7756d35e6b5774270e880403513a347a9a4a504bfa28fd6a51cb0ed724a7851e", size = 68266982, upload-time = "2026-01-16T21:20:00.365Z" },
+    { url = "https://files.pythonhosted.org/packages/00/e3/d8de4f94a1c670ea4c4a933a272b291b85bd6471ac7a28875ef8ae768185/claude_agent_sdk-0.1.20-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:82dfb7d4f6494c9a977b5593773b91c507bcdd76437f289e2b8f8a91ae5f95c1", size = 69980411, upload-time = "2026-01-16T21:20:04.71Z" },
+    { url = "https://files.pythonhosted.org/packages/3f/9f/af71db6b54e9de08e37c10e0a4d5ea7482227b15a63ee9f97b1599cd3ffc/claude_agent_sdk-0.1.20-py3-none-win_amd64.whl", hash = "sha256:7a5675b1c0bf489a5c82c79f6ad47c3915a50da66e1329dcb0d08332a04889d3", size = 72183062, upload-time = "2026-01-16T21:20:09.069Z" },
 ]
 
 [[package]]
