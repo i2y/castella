@@ -1,6 +1,7 @@
 """WrksClient - Threading wrapper for Claude Agent SDK."""
 
 import asyncio
+import os
 import threading
 import uuid
 from pathlib import Path
@@ -172,6 +173,7 @@ class WrksClient:
             can_use_tool=can_use_tool,
             permission_mode="default",
             model=self._model,
+            env=dict(os.environ),  # Pass current environment to subprocess
         )
 
         if self._resume_session:
