@@ -47,7 +47,19 @@ class Column(LinearLayout, Layout):
         *children: Widget,
         scrollable: bool = False,
         scroll_state: "ScrollState | None" = None,
+        pin_to_bottom: bool = False,
+        on_user_scroll: "callable | None" = None,
     ):
+        """Create a vertical layout container.
+
+        Args:
+            children: Child widgets to arrange vertically.
+            scrollable: Whether the column should scroll when content exceeds height.
+            scroll_state: Optional external scroll state for persistence across rebuilds.
+            pin_to_bottom: If True, always scroll to bottom on redraw.
+                Useful for chat UIs. Automatically disabled when user scrolls manually.
+            on_user_scroll: Optional callback called when user scrolls manually.
+        """
         Layout.__init__(
             self,
             state=None,
@@ -57,7 +69,7 @@ class Column(LinearLayout, Layout):
             width_policy=SizePolicy.EXPANDING,
             height_policy=SizePolicy.EXPANDING,
         )
-        self._init_linear_layout(scrollable, scroll_state)
+        self._init_linear_layout(scrollable, scroll_state, pin_to_bottom, on_user_scroll)
         for c in children:
             self.add(c)
 
@@ -104,7 +116,12 @@ class Column(LinearLayout, Layout):
                 )
             )
 
-        self._correct_scroll_offset()
+        # Apply pin_to_bottom logic: always scroll to bottom on redraw
+        if self._pin_to_bottom:
+            max_scroll = content_height - self.get_height()
+            self._scroll_offset = max(0, max_scroll)
+        else:
+            self._correct_scroll_offset()
         p.translate(Point(x=0, y=-self._scroll_offset))
 
         orig_width = self.get_width()

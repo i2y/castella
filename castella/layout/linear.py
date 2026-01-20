@@ -49,8 +49,18 @@ class LinearLayout:
         self,
         scrollable: bool = False,
         scroll_state: "ScrollState | None" = None,
+        pin_to_bottom: bool = False,
+        on_user_scroll: "callable | None" = None,
     ) -> None:
-        """Initialize linear layout state. Call from __init__."""
+        """Initialize linear layout state. Call from __init__.
+
+        Args:
+            scrollable: Whether the layout is scrollable.
+            scroll_state: Optional external scroll state for persistence.
+            pin_to_bottom: If True, always scroll to bottom on redraw.
+                Automatically disabled when user scrolls manually.
+            on_user_scroll: Optional callback called when user scrolls manually.
+        """
         self._spacer = None
         self._spacing = 0
         self._scroll_state = scroll_state
@@ -66,6 +76,8 @@ class LinearLayout:
         self._scroll_box: Rect | None = None
         self._under_dragging = False
         self._last_drag_pos: Point | None = None
+        self._pin_to_bottom = pin_to_bottom
+        self._on_user_scroll = on_user_scroll
 
     @property
     def _scroll_offset(self) -> int:
@@ -238,6 +250,20 @@ class LinearLayout:
         """Check if this layout is scrollable."""
         return self._scrollable
 
+    def set_pin_to_bottom(self, value: bool) -> Self:
+        """Set pin_to_bottom state programmatically.
+
+        Useful for implementing a 'scroll to bottom' button in chat UIs.
+
+        Args:
+            value: True to pin to bottom, False to unpin.
+
+        Returns:
+            Self for method chaining.
+        """
+        self._pin_to_bottom = value
+        return self
+
     def has_scrollbar(self, is_direction_x: bool) -> bool:
         """Check if scroll bar is visible for given direction."""
         if self._scroll_box is None:
@@ -262,6 +288,9 @@ class LinearLayout:
         self._last_drag_pos = ev.pos
 
         if self._under_dragging and last_pos is not None:
+            # Disable pin_to_bottom when user scrolls manually
+            self._pin_to_bottom = False
+
             if self._is_horizontal:
                 delta = ev.pos.x - last_pos.x
             else:
@@ -272,12 +301,23 @@ class LinearLayout:
             scroll_delta = int(delta * (content_size / viewport_size))
             self._scroll(scroll_delta)
 
+            # Call user scroll callback
+            if self._on_user_scroll is not None:
+                self._on_user_scroll()
+
     def _handle_scroll_wheel(self: "Layout", ev: "WheelEvent") -> None:
         """Handle mouse wheel for scrolling."""
+        # Disable pin_to_bottom when user scrolls manually
+        self._pin_to_bottom = False
+
         if self._is_horizontal:
             self._scroll(int(ev.x_offset))
         else:
             self._scroll(int(ev.y_offset))
+
+        # Call user scroll callback
+        if self._on_user_scroll is not None:
+            self._on_user_scroll()
 
     # ========== Content Area ==========
 
