@@ -2,6 +2,13 @@
 
 All notable changes to Castella will be documented in this file.
 
+## [0.14.0] - 2026-01-20
+
+### Added
+- **Column pin_to_bottom** - Keep scroll position at bottom when content changes (useful for chat UIs)
+- **Column on_user_scroll** - Callback when user scrolls manually
+- **LinearLayout set_pin_to_bottom()** - Programmatic control for pin_to_bottom state
+
 ## [0.13.11] - 2025-01-17
 
 ### Added
