@@ -62,7 +62,15 @@ class Frame(BaseFrame):
 
         self._gl_context = None
 
-        sdl.SDL_Init(sdl.SDL_INIT_EVENTS | sdl.SDL_INIT_VIDEO)
+        if sdl.SDL_Init(sdl.SDL_INIT_EVENTS | sdl.SDL_INIT_VIDEO) != 0:
+            raise RuntimeError(f"SDL_Init failed: {sdl.SDL_GetError().decode()}")
+
+        # Load OpenGL library (required on Linux before creating GL context)
+        if sdl.SDL_GL_LoadLibrary(None) != 0:
+            raise RuntimeError(
+                f"SDL_GL_LoadLibrary failed: {sdl.SDL_GetError().decode()}"
+            )
+
         self._rgba_masks = _rgba_masks()
 
         # Set up OpenGL attributes for GPU mode
@@ -91,12 +99,24 @@ class Frame(BaseFrame):
             int(height),
             window_flags,
         )
+        if not window:
+            raise RuntimeError(
+                f"SDL_CreateWindow failed: {sdl.SDL_GetError().decode()}"
+            )
 
         self._window = window
 
         # Create OpenGL context
         self._gl_context = sdl.SDL_GL_CreateContext(window)
-        sdl.SDL_GL_MakeCurrent(window, self._gl_context)
+        if not self._gl_context:
+            raise RuntimeError(
+                f"SDL_GL_CreateContext failed: {sdl.SDL_GetError().decode()}"
+            )
+
+        if sdl.SDL_GL_MakeCurrent(window, self._gl_context) != 0:
+            raise RuntimeError(
+                f"SDL_GL_MakeCurrent failed: {sdl.SDL_GetError().decode()}"
+            )
 
         # Enable IME text input
         sdl.SDL_StartTextInput()

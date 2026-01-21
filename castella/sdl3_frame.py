@@ -45,7 +45,14 @@ class Frame(BaseFrame):
 
         self._gl_context = None
 
-        sdl3.SDL_Init(sdl3.SDL_INIT_EVENTS | sdl3.SDL_INIT_VIDEO)
+        if not sdl3.SDL_Init(sdl3.SDL_INIT_EVENTS | sdl3.SDL_INIT_VIDEO):
+            raise RuntimeError(f"SDL_Init failed: {sdl3.SDL_GetError().decode()}")
+
+        # Load OpenGL library (required on Linux before creating GL context)
+        if not sdl3.SDL_GL_LoadLibrary(None):
+            raise RuntimeError(
+                f"SDL_GL_LoadLibrary failed: {sdl3.SDL_GetError().decode()}"
+            )
 
         # Set up OpenGL attributes for GPU mode
         # Request OpenGL 3.2 Core Profile (required for Skia on macOS)
@@ -73,12 +80,24 @@ class Frame(BaseFrame):
             int(height),
             window_flags,
         )
+        if not window:
+            raise RuntimeError(
+                f"SDL_CreateWindow failed: {sdl3.SDL_GetError().decode()}"
+            )
 
         self._window = window
 
         # Create OpenGL context
         self._gl_context = sdl3.SDL_GL_CreateContext(window)
-        sdl3.SDL_GL_MakeCurrent(window, self._gl_context)
+        if not self._gl_context:
+            raise RuntimeError(
+                f"SDL_GL_CreateContext failed: {sdl3.SDL_GetError().decode()}"
+            )
+
+        if not sdl3.SDL_GL_MakeCurrent(window, self._gl_context):
+            raise RuntimeError(
+                f"SDL_GL_MakeCurrent failed: {sdl3.SDL_GetError().decode()}"
+            )
 
         # Enable IME text input
         sdl3.SDL_StartTextInput(window)
