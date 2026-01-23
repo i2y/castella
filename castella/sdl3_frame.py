@@ -118,6 +118,18 @@ class Frame(BaseFrame):
                 f"SDL_GL_MakeCurrent failed: {sdl3.SDL_GetError().decode()}"
             )
 
+        # Load libGL with RTLD_GLOBAL on Linux so Skia can find GL functions via dlsym.
+        # This is required because SDL_GL_LoadLibrary doesn't expose symbols globally,
+        # unlike PyOpenGL which GLFW uses. Fixes "Failed to create OpenGL interface"
+        # error on WSL2 and other Linux environments.
+        if platform.system() == "Linux":
+            import ctypes
+            from ctypes.util import find_library
+
+            libgl_name = find_library("GL")
+            if libgl_name:
+                ctypes.CDLL(libgl_name, mode=ctypes.RTLD_GLOBAL)
+
         # Enable IME text input
         sdl3.SDL_StartTextInput(window)
 
