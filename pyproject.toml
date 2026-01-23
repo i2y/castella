@@ -20,7 +20,7 @@ requires-python = ">= 3.11"
 
 [project.optional-dependencies]
 glfw = [
-    "castella-skia>=0.1.2",
+    "castella-skia>=0.1.3",
     "glfw>=2.7.0",
     "PyOpenGL>=3.1.7",
     "darkdetect>=0.8",
@@ -32,7 +32,7 @@ glfw = [
     "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
 ]
 sdl = [
-    "castella-skia>=0.1.2",
+    "castella-skia>=0.1.3",
     "pysdl2-dll>=2.30.2",
     "PySDL2>=0.9.16",
     "PyOpenGL>=3.1.7",
@@ -44,7 +44,7 @@ sdl = [
     "matplotlib>=3.9.0",
 ]
 sdl3 = [
-    "castella-skia>=0.1.2",
+    "castella-skia>=0.1.3",
     "PySDL3>=0.9.10b0",
     "PyOpenGL>=3.1.7",
     "darkdetect>=0.8",
