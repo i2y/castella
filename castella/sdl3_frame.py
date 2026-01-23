@@ -2,9 +2,28 @@
 
 from __future__ import annotations
 
+import os
 import platform
 from ctypes import byref, c_int
 from typing import TYPE_CHECKING, Final
+
+
+def _check_macos_dependencies() -> None:
+    """Check for required macOS dependencies before importing SDL3."""
+    if platform.system() != "Darwin":
+        return
+
+    # PySDL3's bundled SDL3_ttf has a hard-coded dependency on Homebrew's harfbuzz
+    harfbuzz_path = "/opt/homebrew/opt/harfbuzz/lib/libharfbuzz.0.dylib"
+    if not os.path.exists(harfbuzz_path):
+        raise RuntimeError(
+            "SDL3 on macOS requires HarfBuzz library.\n"
+            "Please install it with: brew install harfbuzz\n"
+            "Or use SDL2 backend instead: uv sync --extra sdl"
+        )
+
+
+_check_macos_dependencies()
 
 import sdl3
 
