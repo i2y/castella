@@ -2,6 +2,10 @@
 """Debug script for WSL2 OpenGL/Skia issues."""
 
 import sys
+import faulthandler
+
+# Enable faulthandler to print stack trace on segfault
+faulthandler.enable()
 
 print("=== WSL2 OpenGL Debug ===")
 print(f"Python: {sys.version}")
@@ -93,22 +97,28 @@ except Exception as e:
     print(f"    FAILED: {e}")
 
 # Step 11: Create Skia surface
-print("\n[11] Creating Skia Surface from GL context...")
+print("\n[11] Creating Skia Surface from GL context...", flush=True)
 try:
+    print("    Calling from_gl_context...", flush=True)
     surface = castella_skia.Surface.from_gl_context(400, 300, 0, 8, 0)
-    print(f"    OK (size={surface.width()}x{surface.height()})")
+    print("    Surface object created", flush=True)
+    w = surface.width()
+    print(f"    width={w}", flush=True)
+    h = surface.height()
+    print(f"    height={h}", flush=True)
+    print(f"    OK (size={w}x{h})", flush=True)
 except Exception as e:
-    print(f"    FAILED: {e}")
+    print(f"    FAILED: {e}", flush=True)
     sdl3.SDL_Quit()
     sys.exit(1)
 
 # Step 11.5: Immediately test flush
-print("\n[11.5] Testing immediate flush_and_submit...")
+print("\n[11.5] Testing immediate flush_and_submit...", flush=True)
 try:
     surface.flush_and_submit()
-    print("    OK")
+    print("    OK", flush=True)
 except Exception as e:
-    print(f"    FAILED: {e}")
+    print(f"    FAILED: {e}", flush=True)
 
 # Step 12: Test drawing
 print("\n[12] Testing Skia drawing...")
