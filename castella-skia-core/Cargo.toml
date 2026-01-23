@@ -16,6 +16,7 @@ crate-type = ["rlib"]
 # Desktop Linux: OpenGL backend with embedded FreeType for compatibility with older systems
 [target.'cfg(all(target_os = "linux", not(any(target_os = "ios", target_os = "android"))))'.dependencies]
 skia-safe = { version = "0.91", features = ["gl", "textlayout", "embed-freetype"] }
+libc = "0.2"
 
 # Desktop macOS/Windows: OpenGL backend (uses Core Text / DirectWrite, no FreeType needed)
 [target.'cfg(all(not(target_os = "linux"), not(any(target_os = "ios", target_os = "android"))))'.dependencies]

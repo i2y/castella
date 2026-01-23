@@ -25,6 +25,51 @@ thread_local! {
     static GL_CONTEXT: RefCell<Option<gpu::DirectContext>> = const { RefCell::new(None) };
 }
 
+/// Load OpenGL function by name using glXGetProcAddress (Linux/WSL2).
+/// This is needed because Skia's Interface::new_native() may fail on WSL2
+/// where GL symbols aren't exposed via standard dlsym.
+#[cfg(target_os = "linux")]
+fn load_gl_function(name: &str) -> *const std::ffi::c_void {
+    use std::ffi::CString;
+    use std::sync::OnceLock;
+
+    // Type for glXGetProcAddress/glXGetProcAddressARB
+    type GlXGetProcAddressFn = unsafe extern "C" fn(*const u8) -> *const std::ffi::c_void;
+
+    static GLX_GET_PROC_ADDRESS: OnceLock<Option<GlXGetProcAddressFn>> = OnceLock::new();
+
+    let get_proc_address = GLX_GET_PROC_ADDRESS.get_or_init(|| {
+        // Load libGL dynamically
+        let lib = unsafe { libc::dlopen(b"libGL.so.1\0".as_ptr() as *const _, libc::RTLD_LAZY | libc::RTLD_GLOBAL) };
+        if lib.is_null() {
+            return None;
+        }
+
+        // Try glXGetProcAddressARB first (more widely available), then glXGetProcAddress
+        let proc_addr = unsafe {
+            let addr = libc::dlsym(lib, b"glXGetProcAddressARB\0".as_ptr() as *const _);
+            if !addr.is_null() {
+                addr
+            } else {
+                libc::dlsym(lib, b"glXGetProcAddress\0".as_ptr() as *const _)
+            }
+        };
+
+        if proc_addr.is_null() {
+            None
+        } else {
+            Some(unsafe { std::mem::transmute(proc_addr) })
+        }
+    });
+
+    if let Some(glx_get_proc_address) = get_proc_address {
+        let c_name = CString::new(name).unwrap();
+        unsafe { glx_get_proc_address(c_name.as_ptr() as *const u8) }
+    } else {
+        std::ptr::null()
+    }
+}
+
 // Thread-local Metal DirectContext cache for iOS
 #[cfg(target_os = "ios")]
 thread_local! {
@@ -166,7 +211,22 @@ impl Surface {
             ctx
         } else {
             // Create GPU context from current OpenGL context
+            // Try new_native() first, fall back to custom loader for WSL2/Linux compatibility
             let interface = gpu::gl::Interface::new_native()
+                .or_else(|| {
+                    // On Linux (especially WSL2), new_native() may fail because Skia
+                    // can't find GL functions via dlsym. Use glXGetProcAddress instead.
+                    #[cfg(target_os = "linux")]
+                    {
+                        gpu::gl::Interface::new_load_with(|name| {
+                            load_gl_function(name)
+                        })
+                    }
+                    #[cfg(not(target_os = "linux"))]
+                    {
+                        None
+                    }
+                })
                 .ok_or(Error::OpenGLInterfaceError)?;
 
             gpu::direct_contexts::make_gl(interface, None)
