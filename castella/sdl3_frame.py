@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import platform
-from ctypes import byref, c_int, c_void_p, cast, POINTER
+from ctypes import byref, c_int
 from typing import TYPE_CHECKING, Final
 
 
@@ -25,13 +25,13 @@ def _check_macos_dependencies() -> None:
 
 _check_macos_dependencies()
 
-import sdl3
+import sdl3  # noqa: E402
 
-import castella_skia
+import castella_skia  # noqa: E402
 
-from castella.frame.base import BaseFrame
-from castella.models.geometry import Point, Size
-from castella.models.events import (
+from castella.frame.base import BaseFrame  # noqa: E402
+from castella.models.geometry import Point, Size  # noqa: E402
+from castella.models.events import (  # noqa: E402
     CursorType,
     IMEPreeditEvent,
     InputCharEvent,
