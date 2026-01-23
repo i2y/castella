@@ -1,10 +1,10 @@
-"""SDL3-based frame implementation."""
+"""SDL3-based frame implementation with software rendering fallback."""
 
 from __future__ import annotations
 
 import os
 import platform
-from ctypes import byref, c_int
+from ctypes import byref, c_int, c_void_p, cast, POINTER
 from typing import TYPE_CHECKING, Final
 
 
@@ -52,8 +52,32 @@ if platform.system() == "Windows":
     user32.SetProcessDPIAware()
 
 
+def _should_use_raster_mode() -> bool:
+    """Check if we should use software (raster) rendering instead of OpenGL."""
+    # Environment variable override
+    if os.environ.get("CASTELLA_USE_RASTER", "").lower() in ("1", "true", "yes"):
+        return True
+    return False
+
+
+def _is_software_renderer() -> bool:
+    """Check if the current OpenGL renderer is software-based (llvmpipe, swrast, etc.)."""
+    try:
+        from OpenGL import GL
+        renderer = GL.glGetString(GL.GL_RENDERER)
+        if renderer:
+            renderer_str = renderer.decode() if isinstance(renderer, bytes) else str(renderer)
+            renderer_lower = renderer_str.lower()
+            # Software renderers to detect
+            if any(sw in renderer_lower for sw in ["llvmpipe", "swrast", "softpipe", "software"]):
+                return True
+    except Exception:
+        pass
+    return False
+
+
 class Frame(BaseFrame):
-    """SDL3 window frame with Skia rendering."""
+    """SDL3 window frame with Skia rendering (GPU or software fallback)."""
 
     UPDATE_EVENT_TYPE: Final = sdl3.SDL_RegisterEvents(1)
 
@@ -63,10 +87,45 @@ class Frame(BaseFrame):
         super().__init__(title, width, height)
 
         self._gl_context = None
+        self._use_raster = _should_use_raster_mode()
+        self._renderer = None  # SDL_Renderer for raster mode
+        self._texture = None   # SDL_Texture for raster mode
 
         if not sdl3.SDL_Init(sdl3.SDL_INIT_EVENTS | sdl3.SDL_INIT_VIDEO):
             raise RuntimeError(f"SDL_Init failed: {sdl3.SDL_GetError().decode()}")
 
+        if self._use_raster:
+            self._init_raster_mode(title, width, height)
+        else:
+            try:
+                self._init_gl_mode(title, width, height)
+            except Exception as e:
+                # Fall back to raster mode if GL fails
+                print(f"OpenGL initialization failed ({e}), falling back to software rendering")
+                self._use_raster = True
+                self._init_raster_mode(title, width, height)
+
+        # Enable IME text input
+        sdl3.SDL_StartTextInput(self._window)
+
+        # IME cursor rect for candidate window positioning
+        self._ime_rect = sdl3.SDL_Rect(0, 0, 1, 20)
+
+        # HiDPI scale factor (updated in _update_surface_and_painter)
+        self._hidpi_scale = 1.0
+
+        self._update_surface_and_painter()
+
+        # Register event filter for real-time resize updates during drag
+        self._event_filter = self._create_event_filter()
+        sdl3.SDL_SetEventFilter(self._event_filter, None)
+
+        # Cursor cache to avoid recreating cursors on every set_cursor call
+        self._cursor_cache: dict[CursorType, object] = {}
+        self._current_cursor_type: CursorType = CursorType.ARROW
+
+    def _init_gl_mode(self, title: str, width: float, height: float) -> None:
+        """Initialize OpenGL mode."""
         # Load OpenGL library (required on Linux before creating GL context)
         if not sdl3.SDL_GL_LoadLibrary(None):
             raise RuntimeError(
@@ -109,19 +168,18 @@ class Frame(BaseFrame):
         # Create OpenGL context
         self._gl_context = sdl3.SDL_GL_CreateContext(window)
         if not self._gl_context:
+            sdl3.SDL_DestroyWindow(window)
             raise RuntimeError(
                 f"SDL_GL_CreateContext failed: {sdl3.SDL_GetError().decode()}"
             )
 
         if not sdl3.SDL_GL_MakeCurrent(window, self._gl_context):
+            sdl3.SDL_DestroyWindow(window)
             raise RuntimeError(
                 f"SDL_GL_MakeCurrent failed: {sdl3.SDL_GetError().decode()}"
             )
 
         # Load libGL with RTLD_GLOBAL on Linux so Skia can find GL functions via dlsym.
-        # This is required because SDL_GL_LoadLibrary doesn't expose symbols globally,
-        # unlike PyOpenGL which GLFW uses. Fixes "Failed to create OpenGL interface"
-        # error on WSL2 and other Linux environments.
         if platform.system() == "Linux":
             import ctypes
             from ctypes.util import find_library
@@ -130,24 +188,41 @@ class Frame(BaseFrame):
             if libgl_name:
                 ctypes.CDLL(libgl_name, mode=ctypes.RTLD_GLOBAL)
 
-        # Enable IME text input
-        sdl3.SDL_StartTextInput(window)
+        # Check for software renderer and switch to raster mode if detected
+        if _is_software_renderer():
+            print("Software OpenGL renderer detected (llvmpipe), switching to raster mode")
+            sdl3.SDL_DestroyWindow(window)
+            self._gl_context = None
+            raise RuntimeError("Software renderer detected")
 
-        # IME cursor rect for candidate window positioning
-        self._ime_rect = sdl3.SDL_Rect(0, 0, 1, 20)
+    def _init_raster_mode(self, title: str, width: float, height: float) -> None:
+        """Initialize software rendering mode using SDL_Renderer."""
+        # Create window without OpenGL flag
+        window_flags = (
+            sdl3.SDL_WINDOW_RESIZABLE
+            | sdl3.SDL_WINDOW_HIGH_PIXEL_DENSITY
+        )
 
-        # HiDPI scale factor (updated in _update_surface_and_painter)
-        self._hidpi_scale = 1.0
+        window = sdl3.SDL_CreateWindow(
+            bytes(title, "utf8"),
+            int(width),
+            int(height),
+            window_flags,
+        )
+        if not window:
+            raise RuntimeError(
+                f"SDL_CreateWindow failed: {sdl3.SDL_GetError().decode()}"
+            )
 
-        self._update_surface_and_painter()
+        self._window = window
 
-        # Register event filter for real-time resize updates during drag
-        self._event_filter = self._create_event_filter()
-        sdl3.SDL_SetEventFilter(self._event_filter, None)
-
-        # Cursor cache to avoid recreating cursors on every set_cursor call
-        self._cursor_cache: dict[CursorType, object] = {}
-        self._current_cursor_type: CursorType = CursorType.ARROW
+        # Create SDL renderer for displaying textures
+        self._renderer = sdl3.SDL_CreateRenderer(window, None)
+        if not self._renderer:
+            sdl3.SDL_DestroyWindow(window)
+            raise RuntimeError(
+                f"SDL_CreateRenderer failed: {sdl3.SDL_GetError().decode()}"
+            )
 
     def _create_event_filter(self):
         """Create event filter callback for handling resize during drag."""
@@ -178,6 +253,13 @@ class Frame(BaseFrame):
         logical_width = self._size.width if self._size.width > 0 else width
         self._hidpi_scale = width / logical_width if logical_width > 0 else 1.0
 
+        if self._use_raster:
+            self._update_raster_surface(width, height, painter)
+        else:
+            self._update_gl_surface(width, height, painter)
+
+    def _update_gl_surface(self, width: int, height: int, painter) -> None:
+        """Update OpenGL-based Skia surface."""
         if hasattr(self, "_surface") and self._surface is not None:
             # Resize existing surface (faster, avoids recreating context)
             self._surface.resize(
@@ -195,6 +277,27 @@ class Frame(BaseFrame):
             )
             self._painter = painter.Painter(self, self._surface)
 
+    def _update_raster_surface(self, width: int, height: int, painter) -> None:
+        """Update software (raster) Skia surface."""
+        # Create new raster surface
+        self._surface = castella_skia.Surface.new_raster(width, height)
+        self._painter = painter.Painter(self, self._surface)
+
+        # Create/recreate SDL texture for displaying the raster surface
+        if self._texture:
+            sdl3.SDL_DestroyTexture(self._texture)
+
+        # SDL_PIXELFORMAT_RGBA8888 for RGBA data
+        self._texture = sdl3.SDL_CreateTexture(
+            self._renderer,
+            sdl3.SDL_PIXELFORMAT_RGBA8888,
+            sdl3.SDL_TEXTUREACCESS_STREAMING,
+            width,
+            height,
+        )
+        self._texture_width = width
+        self._texture_height = height
+
     def _signal_main_thread(self) -> None:
         """Signal main thread via SDL custom event."""
         sdl_event = sdl3.SDL_Event()
@@ -210,17 +313,55 @@ class Frame(BaseFrame):
         return self._size
 
     def flush(self) -> None:
-        # GPU mode: flush Skia and OpenGL (single buffer, like GLFW)
+        if self._use_raster:
+            self._flush_raster()
+        else:
+            self._flush_gl()
+
+    def _flush_gl(self) -> None:
+        """Flush for OpenGL mode."""
         self._surface.flush_and_submit()
         from OpenGL import GL
-
         GL.glFlush()
 
-    def clear(self) -> None:
-        # Clear with OpenGL for GPU mode (same as GLFW)
-        from OpenGL import GL
+    def _flush_raster(self) -> None:
+        """Flush for raster mode - copy pixels to SDL texture and present."""
+        self._surface.flush_and_submit()
 
-        GL.glClear(GL.GL_COLOR_BUFFER_BIT)
+        # Get pixel data from Skia surface
+        try:
+            rgba_data = self._surface.get_rgba_data()
+        except Exception as e:
+            print(f"Failed to get RGBA data: {e}")
+            return
+
+        # Update SDL texture with pixel data
+        import ctypes
+        pixels_ptr = (ctypes.c_uint8 * len(rgba_data)).from_buffer_copy(rgba_data)
+        pitch = self._texture_width * 4
+
+        # SDL3: SDL_UpdateTexture
+        rect = sdl3.SDL_Rect(0, 0, self._texture_width, self._texture_height)
+        sdl3.SDL_UpdateTexture(
+            self._texture,
+            byref(rect),
+            ctypes.cast(pixels_ptr, ctypes.c_void_p),
+            pitch,
+        )
+
+        # Clear and present
+        sdl3.SDL_RenderClear(self._renderer)
+        sdl3.SDL_RenderTexture(self._renderer, self._texture, None, None)
+        sdl3.SDL_RenderPresent(self._renderer)
+
+    def clear(self) -> None:
+        if self._use_raster:
+            # For raster mode, clearing is handled by Skia
+            pass
+        else:
+            # Clear with OpenGL for GPU mode (same as GLFW)
+            from OpenGL import GL
+            GL.glClear(GL.GL_COLOR_BUFFER_BIT)
 
     def run(self) -> None:
         self._ensure_main_thread()
