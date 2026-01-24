@@ -346,7 +346,7 @@ wheels = [
 
 [[package]]
 name = "castella"
-version = "0.14.3"
+version = "0.15.0"
 source = { editable = "." }
 
 [package.optional-dependencies]
@@ -452,9 +452,9 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "castella-skia", marker = "extra == 'glfw'", specifier = ">=0.1.3" },
-    { name = "castella-skia", marker = "extra == 'sdl'", specifier = ">=0.1.3" },
-    { name = "castella-skia", marker = "extra == 'sdl3'", specifier = ">=0.1.3" },
+    { name = "castella-skia", marker = "extra == 'glfw'", specifier = ">=0.1.4" },
+    { name = "castella-skia", marker = "extra == 'sdl'", specifier = ">=0.1.4" },
+    { name = "castella-skia", marker = "extra == 'sdl3'", specifier = ">=0.1.4" },
     { name = "darkdetect", marker = "extra == 'glfw'", specifier = ">=0.8" },
     { name = "darkdetect", marker = "extra == 'sdl'", specifier = ">=0.8" },
     { name = "darkdetect", marker = "extra == 'sdl3'", specifier = ">=0.8" },
@@ -532,26 +532,26 @@ dev = [
 
 [[package]]
 name = "castella-skia"
-version = "0.1.3"
+version = "0.1.4"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/16/2b/372546e0c7197f919d2dd44757a331c1cf42e8dd143ebd1ccb054ad4f0fc/castella_skia-0.1.3.tar.gz", hash = "sha256:bb1422c2aabc6416562dbcfecc5aa31b828b80027156829d887bfd53232fa5f2", size = 25113, upload-time = "2026-01-23T12:03:45.955Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/03/7f/3d4324c6f657de7738b01649377915817aa8fb586c755608f7790ba6d03d/castella_skia-0.1.4.tar.gz", hash = "sha256:8952ebb260c9fec9a4ee56b6f348da5df7a6b6ea5fc7606d7c07a901aef7b550", size = 25821, upload-time = "2026-01-24T00:53:10.615Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/36/b0/532767a961a5a91ebbd321c44ae824b615a5d1f77710ff30bfabdff4acd7/castella_skia-0.1.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:6c7f996b991e3aa8b185426025368e8e79afcb9e365345f3003701e679854b53", size = 8252547, upload-time = "2026-01-23T12:03:13.389Z" },
-    { url = "https://files.pythonhosted.org/packages/1a/75/3a300d641dc07c990cf339a8cff32411b7796b036cfe5332948d386bc3a1/castella_skia-0.1.3-cp311-cp311-manylinux_2_34_x86_64.whl", hash = "sha256:b99a8d1380cf8eeb305b8fb7780b20a6a6639ccaa460b2739473e8a6d2959379", size = 11371855, upload-time = "2026-01-23T12:03:15.026Z" },
-    { url = "https://files.pythonhosted.org/packages/64/26/4309355b6c619dea0715879a2c570e2c4ea0d468e6404370b41999e5f77c/castella_skia-0.1.3-cp311-cp311-manylinux_2_39_aarch64.whl", hash = "sha256:0ea92d19e07656962146c14616ac59c3d529a66985c4d82488dc00fd1806a878", size = 10036457, upload-time = "2026-01-23T12:03:17.507Z" },
-    { url = "https://files.pythonhosted.org/packages/be/c6/fc2e9a28932481417a9effd81676f7e56d1c07d3c909264b056896be3f61/castella_skia-0.1.3-cp311-cp311-win_amd64.whl", hash = "sha256:e7f292d80047e1f48eefb4a77fdbb1c43c1d9d319e788c9f21299960478088c6", size = 8300602, upload-time = "2026-01-23T12:03:19.757Z" },
-    { url = "https://files.pythonhosted.org/packages/2b/26/43eb1c22c24688224c8d4755713a6f113d6b69fcda727564713046ba3daa/castella_skia-0.1.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:678324629f9507be0cf1cc3101d69f06cff54ef7d5f8014dffddfd5012c23db0", size = 8253255, upload-time = "2026-01-23T12:03:21.621Z" },
-    { url = "https://files.pythonhosted.org/packages/23/b4/b47b3bd23ada30f07ca90546ab2c9a78d6544deea035436cfcb2d89d34d8/castella_skia-0.1.3-cp312-cp312-manylinux_2_34_x86_64.whl", hash = "sha256:bce2179a512b732ec8bb3355877534168b0d8de2970add95b62baaf751917d46", size = 11370965, upload-time = "2026-01-23T12:03:23.476Z" },
-    { url = "https://files.pythonhosted.org/packages/83/6c/d22871e54e745794b70638b91f480b9a0b8fb5dfb3096b1f320ac8d0b7e9/castella_skia-0.1.3-cp312-cp312-manylinux_2_39_aarch64.whl", hash = "sha256:d6f052cd67136c7da9c71b23b2910981c12b495a1755417a042754c30b25e6ae", size = 10032065, upload-time = "2026-01-23T12:03:25.496Z" },
-    { url = "https://files.pythonhosted.org/packages/cb/72/db4228d907f5094fe2cec2a12da47467a3ac6f80ea45e915bfaf46a2dcc3/castella_skia-0.1.3-cp312-cp312-win_amd64.whl", hash = "sha256:fc9799d631d722e690a466c464f1604e9fdaf627758652f315bb1df437efa9f0", size = 8303251, upload-time = "2026-01-23T12:03:27.573Z" },
-    { url = "https://files.pythonhosted.org/packages/23/08/ac853176d6bade1838c7567fe5fda1d534d7ed158c4c5ba6b4b5bf5140e1/castella_skia-0.1.3-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:31faed20a1936c052b428ad724fef566781372f5363ed68ed1c15914775367b6", size = 8253072, upload-time = "2026-01-23T12:03:30.428Z" },
-    { url = "https://files.pythonhosted.org/packages/34/54/099734395df0a1564f40b64428b2aa38a4a51bfcb9a6fdb4c755adc7472a/castella_skia-0.1.3-cp313-cp313-manylinux_2_34_x86_64.whl", hash = "sha256:6d294c7f0f962cc4bc08aac28475335b23407be0325fed86a67572b668fe41e9", size = 11370131, upload-time = "2026-01-23T12:03:32.002Z" },
-    { url = "https://files.pythonhosted.org/packages/3b/a1/2f7d31cc367ce3aebc42282d91a57076a6150f4140bd591e137ab1f9e072/castella_skia-0.1.3-cp313-cp313-manylinux_2_39_aarch64.whl", hash = "sha256:ac7f6971844bd90a6b3b3d0433df5249abc82e217bd3bf8009e2a82ab57f01f3", size = 10031773, upload-time = "2026-01-23T12:03:33.948Z" },
-    { url = "https://files.pythonhosted.org/packages/05/2f/124a31c03bbbfbe7e61f72dadbd3790c33d8acca3d25d5e0d12cdaaa5252/castella_skia-0.1.3-cp313-cp313-win_amd64.whl", hash = "sha256:150ecbf57179d4a2291422801b0db4302bb898f460049cd2ed442544cbd353dd", size = 8302750, upload-time = "2026-01-23T12:03:35.975Z" },
-    { url = "https://files.pythonhosted.org/packages/e5/89/5c1a7a93bd86636eb38b6bbae809c77945e4c15861d7206da303dc44e74f/castella_skia-0.1.3-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:af2aa9c17996b499aff70a19c6a7a2b955c2a3870815e2cf62312e4655d4d12f", size = 8250975, upload-time = "2026-01-23T12:03:37.419Z" },
-    { url = "https://files.pythonhosted.org/packages/2d/74/58f0d15b036ba02a72ae08501bb73dae149be768fec5da1e7835ecb7586d/castella_skia-0.1.3-cp314-cp314-manylinux_2_34_x86_64.whl", hash = "sha256:2cfcff6aff689744246db97689713cb878cfeb6277143976ad25b99ba6aa4b51", size = 11370329, upload-time = "2026-01-23T12:03:39.642Z" },
-    { url = "https://files.pythonhosted.org/packages/63/1f/cfce0d31071ebf16201f413e3bea68477e0226cf769d282a329ae1013cee/castella_skia-0.1.3-cp314-cp314-manylinux_2_39_aarch64.whl", hash = "sha256:07961f0f439153a7fb09eb124f080a5095484a261f6ab453e21b146d092cd871", size = 10031451, upload-time = "2026-01-23T12:03:42.084Z" },
-    { url = "https://files.pythonhosted.org/packages/68/a9/d55f23fdd76dc97d94b9b898b1618032ffa44f0a92b1b13afcd10c043c7b/castella_skia-0.1.3-cp314-cp314-win_amd64.whl", hash = "sha256:72f5ea12f30283e6cbf5935575bb15684fa9508b9e549a9ddf32470c5f74a107", size = 8300170, upload-time = "2026-01-23T12:03:44.448Z" },
+    { url = "https://files.pythonhosted.org/packages/f8/c4/43639b0d04ca0f7efd2309dfdb75e177d6e400345dc4a2299ab6f8cd03e5/castella_skia-0.1.4-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:f36371fb83f544a21d5f435c025023873f64f14683afe43d1edeeffd21d138a6", size = 8252531, upload-time = "2026-01-24T00:52:34.78Z" },
+    { url = "https://files.pythonhosted.org/packages/92/73/3930408c55f686b25d1221087c2a871aa2ef3e92a912431f74ae3342d397/castella_skia-0.1.4-cp311-cp311-manylinux_2_34_x86_64.whl", hash = "sha256:a60d8c6938809b2527dc3052af583d7346d4d1491a6759322b5201dd6b8df6fd", size = 11390689, upload-time = "2026-01-24T00:52:37.295Z" },
+    { url = "https://files.pythonhosted.org/packages/41/c9/a16e92de83b44230db20b0e142e58dd458fb8fcbf9e3ad32a238513a695c/castella_skia-0.1.4-cp311-cp311-manylinux_2_39_aarch64.whl", hash = "sha256:44fed346ca85b444cad51346d54044790c37e93bd2e51fde0bab27ad8415486f", size = 10053770, upload-time = "2026-01-24T00:52:39.935Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/e2/6716422cf959ea11194fcf3979867da4736c02024f122c70faea6d7305ad/castella_skia-0.1.4-cp311-cp311-win_amd64.whl", hash = "sha256:aa0525f9107ac735188bc04102c723a5b1ceea2f0cba110356deab3dbc6c3267", size = 8300622, upload-time = "2026-01-24T00:52:42.677Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/7a/f49abe28495bb9f451050be5e8e7b4c69dccc4fbb0ef9f3ce7829eb2ebda/castella_skia-0.1.4-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:e5dccd103b760a57b4c3f07f80fe86479ba0b2560adc74b67c1a9deb47279e97", size = 8253219, upload-time = "2026-01-24T00:52:44.793Z" },
+    { url = "https://files.pythonhosted.org/packages/30/78/bf3e9c454baf1fab11620050e433abd32549d21447a4c16df74dd04b1bca/castella_skia-0.1.4-cp312-cp312-manylinux_2_34_x86_64.whl", hash = "sha256:a2c45e9ee7a88d0dff0a2773cb09df270de8ab5e348ef3b8af1f0d06158cb540", size = 11388921, upload-time = "2026-01-24T00:52:47.496Z" },
+    { url = "https://files.pythonhosted.org/packages/a6/fc/09e4819b9fc43fbde19a07f32e5fcef8059f7d9d661e6b91a26780d10532/castella_skia-0.1.4-cp312-cp312-manylinux_2_39_aarch64.whl", hash = "sha256:f08d53966e86746080c99069840b83a0ee663ace111bd2169fd20e48fc32bdd1", size = 10051677, upload-time = "2026-01-24T00:52:49.64Z" },
+    { url = "https://files.pythonhosted.org/packages/d9/b4/c7b5d95bed2c6a0077ee18b044868d1f95b4a22fe491e07d63af0ce226aa/castella_skia-0.1.4-cp312-cp312-win_amd64.whl", hash = "sha256:55845e66c76352045b3a932aceff8fa8176c0019018b53d8e9697ae7ac700ef9", size = 8303289, upload-time = "2026-01-24T00:52:51.449Z" },
+    { url = "https://files.pythonhosted.org/packages/02/7c/01d984f0f087a7f068f0db6c98d068d45811bce13ca4ff5ca9ab3f7747df/castella_skia-0.1.4-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:9cf449e9f613a64349327bce4d882ede19710385a6ca32a27f7e10df93093dec", size = 8253005, upload-time = "2026-01-24T00:52:53.291Z" },
+    { url = "https://files.pythonhosted.org/packages/1f/83/6f183650734bf2a348d85f74a1077bf455ce28e7b0a5412bf0ce4671e5f5/castella_skia-0.1.4-cp313-cp313-manylinux_2_34_x86_64.whl", hash = "sha256:2db25fa0c3b4e9de79b4cf82a657e8d3b9721591b86011059e23c4a1020eb579", size = 11387759, upload-time = "2026-01-24T00:52:55.489Z" },
+    { url = "https://files.pythonhosted.org/packages/e6/e8/b4bac327dcdcb2ee9180496036a345dd275a419478c4414192d5e83fd181/castella_skia-0.1.4-cp313-cp313-manylinux_2_39_aarch64.whl", hash = "sha256:8549df7338c235b42b5ba0661eadee74367cee1c9d621467e0d12c3c218238ea", size = 10051426, upload-time = "2026-01-24T00:52:57.382Z" },
+    { url = "https://files.pythonhosted.org/packages/44/80/21d68cba0d4a13467cba94e2f1e1e94d4e0a252dae64f5a40fcf6ed9d7a6/castella_skia-0.1.4-cp313-cp313-win_amd64.whl", hash = "sha256:02fb19a2794be99b24b59fe4c9fbf4a4e9e9c00760d6c4e65b87043e4dfc957a", size = 8302567, upload-time = "2026-01-24T00:52:59.726Z" },
+    { url = "https://files.pythonhosted.org/packages/97/ec/a0ccb6558bc2ae95016c5a263b09f049cda69cbb204992e467d6c0fde1cf/castella_skia-0.1.4-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:c0aff47c2a3215cbeac01bca4ae60b7561bc4ab6fd14a39d9f49cf1f58149fa0", size = 8250973, upload-time = "2026-01-24T00:53:01.832Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/4a/b38c8e9f3a710910a007caa85e521e1612ce5cb13792af9f3feb884bab2c/castella_skia-0.1.4-cp314-cp314-manylinux_2_34_x86_64.whl", hash = "sha256:855582eee39241b3f2cf9ee91aa97dedddd16ac4aa37a625a8dd7064f7619ad3", size = 11388188, upload-time = "2026-01-24T00:53:03.517Z" },
+    { url = "https://files.pythonhosted.org/packages/60/a1/55b6e853406d725f8dc78aaf6b8eab0bf0f12e1e356532b0e40d6d11bf38/castella_skia-0.1.4-cp314-cp314-manylinux_2_39_aarch64.whl", hash = "sha256:e4dbe0288876cfabe672b76c164966ec066b2a3346047cfc750d396843cf9de9", size = 10051360, upload-time = "2026-01-24T00:53:05.544Z" },
+    { url = "https://files.pythonhosted.org/packages/01/9b/ad49ceec0450e75c95999436891e04b360202af5d4e5382699a50b94b46c/castella_skia-0.1.4-cp314-cp314-win_amd64.whl", hash = "sha256:74e9ee48e2f2891525565d71a1b75a8c596378b4e53656fffd072e1bf98f32ff", size = 8300048, upload-time = "2026-01-24T00:53:08.505Z" },
 ]
 
 [[package]]

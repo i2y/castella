@@ -2,6 +2,12 @@
 
 All notable changes to Castella will be documented in this file.
 
+## [0.15.0] - 2026-01-24
+
+### Added
+- **DiffView** - Component for displaying unified diff output with syntax highlighting and line numbers
+- **Coral Theme** - Warm coral accent theme with earthy tones (dark/light variants)
+
 ## [0.14.5] - 2026-01-24
 
 ### Fixed
