@@ -2,6 +2,14 @@
 
 All notable changes to Castella will be documented in this file.
 
+## [0.14.5] - 2026-01-24
+
+### Fixed
+- **Raster Mode Colors** - Fixed incorrect color rendering in software raster mode (RGBA/ABGR byte order)
+
+### Changed
+- **castella-skia** - Updated dependency to v0.1.4
+
 ## [0.14.4] - 2026-01-24
 
 ### Added
