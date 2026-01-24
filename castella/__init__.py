@@ -89,3 +89,12 @@ except ImportError:
 # Build batching support
 from castella.build_owner import BuildOwner as BuildOwner
 from castella.build_owner import batch_updates as batch_updates
+
+# Diff viewer
+from castella.diff_view import (
+    DiffView as DiffView,
+    DiffHunk as DiffHunk,
+    FileDiff as FileDiff,
+    parse_diff as parse_diff,
+    is_diff_output as is_diff_output,
+)
