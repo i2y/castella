@@ -287,10 +287,10 @@ class Frame(BaseFrame):
         if self._texture:
             sdl3.SDL_DestroyTexture(self._texture)
 
-        # SDL_PIXELFORMAT_RGBA8888 for RGBA data
+        # SDL_PIXELFORMAT_ABGR8888 matches Skia's RGBA byte order on little-endian systems
         self._texture = sdl3.SDL_CreateTexture(
             self._renderer,
-            sdl3.SDL_PIXELFORMAT_RGBA8888,
+            sdl3.SDL_PIXELFORMAT_ABGR8888,
             sdl3.SDL_TEXTUREACCESS_STREAMING,
             width,
             height,
