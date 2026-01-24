@@ -2,6 +2,17 @@
 
 All notable changes to Castella will be documented in this file.
 
+## [0.14.4] - 2026-01-24
+
+### Added
+- **Software Rendering Fallback** - SDL3 frame now supports software rendering mode for WSL2 and environments without GPU acceleration
+- **CASTELLA_USE_RASTER** - Environment variable to force software rendering mode
+- **Auto-detect llvmpipe** - Automatically switch to raster mode when software OpenGL renderer is detected
+
+### Fixed
+- **Linux OpenGL** - Use glXGetProcAddress fallback in castella-skia-core for better compatibility on Linux/WSL2
+- **WSL2 Support** - Fixed "Failed to create OpenGL interface" error on WSL2 with llvmpipe
+
 ## [0.14.0] - 2026-01-20
 
 ### Added
