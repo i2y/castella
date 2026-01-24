@@ -56,6 +56,12 @@ from .core import (
 )
 from .manager import ThemeManager, ThemeObserver
 from .presets import (
+    CORAL_DARK_PALETTE,
+    CORAL_DARK_THEME,
+    CORAL_LIGHT_PALETTE,
+    CORAL_LIGHT_THEME,
+    CORAL_SPACING,
+    CORAL_TYPOGRAPHY,
     CUPERTINO_DARK_PALETTE,
     CUPERTINO_DARK_THEME,
     CUPERTINO_LIGHT_PALETTE,
@@ -130,6 +136,12 @@ __all__ = [
     "LITHIUM_LIGHT_PALETTE",
     "LITHIUM_SPACING",
     "LITHIUM_TYPOGRAPHY",
+    "CORAL_DARK_THEME",
+    "CORAL_LIGHT_THEME",
+    "CORAL_DARK_PALETTE",
+    "CORAL_LIGHT_PALETTE",
+    "CORAL_SPACING",
+    "CORAL_TYPOGRAPHY",
     # Style generators
     "generate_widget_style",
     "generate_widget_styles_for_kind",

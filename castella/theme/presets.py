@@ -505,3 +505,110 @@ LITHIUM_LIGHT_THEME = Theme(
     spacing=LITHIUM_SPACING,
     code_pygments_style="default",
 )
+
+
+# Coral Theme - warm coral accent with natural, earthy tones
+# A professional theme with warm colors and soft corners
+
+# Coral Dark Palette
+CORAL_DARK_PALETTE = ColorPalette(
+    # Background colors - warm dark tones
+    bg_canvas="#141413",  # Main background (warm dark)
+    bg_primary="#141413",  # Primary content background
+    bg_secondary="#1e1d1c",  # Slightly elevated surfaces (cards, sidebar)
+    bg_tertiary="#2a2928",  # Buttons, elevated elements
+    bg_overlay="#3a3837",  # Hover states
+    bg_info="#1a2530",  # Info background (blue tint on dark)
+    bg_danger="#2d1a18",  # Danger background (red tint)
+    bg_success="#1a251c",  # Success background (green tint)
+    bg_warning="#2d2618",  # Warning background (amber tint)
+    bg_pushed="#4a4847",  # Pressed/active state
+    bg_selected="#d97757",  # Selection highlight (Coral)
+    # Foreground/Text colors - warm off-white
+    fg="#faf9f5",  # Primary text (off-white)
+    text_primary="#faf9f5",  # Primary text
+    text_info="#6a9bcc",  # Info text (soft blue)
+    text_danger="#e07163",  # Danger text (lighter coral for readability)
+    text_success="#9ab87d",  # Success text (sage green)
+    text_warning="#ddb84a",  # Warning text (amber)
+    # Border colors - warm grays
+    border_primary="#4a4847",  # Primary borders (subtle)
+    border_secondary="#d97757",  # Secondary/accent borders (coral)
+    border_info="#6a9bcc",  # Info border (blue)
+    border_danger="#c44536",  # Danger border (terracotta)
+    border_success="#788c5d",  # Success border (green)
+    border_warning="#c9a227",  # Warning border (amber)
+    border_focus="#d97757",  # Focus ring (Coral)
+)
+
+# Coral Light Palette
+CORAL_LIGHT_PALETTE = ColorPalette(
+    # Background colors - warm cream tones
+    bg_canvas="#faf9f5",  # Main background (off-white)
+    bg_primary="#faf9f5",  # Primary content background
+    bg_secondary="#f0efe8",  # Secondary surfaces
+    bg_tertiary="#e8e6dc",  # Buttons, cards
+    bg_overlay="#d8d6cc",  # Hover states
+    bg_info="#e8f0f6",  # Info background
+    bg_danger="#f6e8e6",  # Danger background
+    bg_success="#e8f0e8",  # Success background
+    bg_warning="#f6f0e6",  # Warning background
+    bg_pushed="#c8c6bc",  # Pressed state
+    bg_selected="#d97757",  # Selection (Coral)
+    # Foreground/Text colors - dark warm tones
+    fg="#141413",  # Primary text (warm dark)
+    text_primary="#141413",  # Primary text
+    text_info="#4a7ba8",  # Info text (darker blue for contrast)
+    text_danger="#a33528",  # Danger text (darker red)
+    text_success="#5a6c47",  # Success text (darker green)
+    text_warning="#9a7a1a",  # Warning text (darker amber)
+    # Border colors - warm grays
+    border_primary="#b0aea5",  # Primary borders (mid gray)
+    border_secondary="#d97757",  # Secondary/accent borders (coral)
+    border_info="#6a9bcc",  # Info border
+    border_danger="#c44536",  # Danger border
+    border_success="#788c5d",  # Success border
+    border_warning="#c9a227",  # Warning border
+    border_focus="#d97757",  # Focus ring (coral)
+)
+
+# Coral Typography
+# Uses Inter as primary - clean, modern, excellent readability
+# Falls back to system fonts for broad compatibility
+CORAL_TYPOGRAPHY = Typography(
+    font_family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+    font_family_mono="'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, monospace",
+    base_size=14,
+    scale_ratio=1.2,
+)
+
+# Coral Spacing
+# Subtle rounded corners provide a softer, warmer feel
+CORAL_SPACING = Spacing(
+    padding_sm=4,
+    padding_md=8,
+    padding_lg=16,
+    margin_sm=4,
+    margin_md=8,
+    margin_lg=16,
+    border_radius=6,
+    border_width=1.0,
+)
+
+CORAL_DARK_THEME = Theme(
+    name="coral-dark",
+    is_dark=True,
+    colors=CORAL_DARK_PALETTE,
+    typography=CORAL_TYPOGRAPHY,
+    spacing=CORAL_SPACING,
+    code_pygments_style="monokai",
+)
+
+CORAL_LIGHT_THEME = Theme(
+    name="coral-light",
+    is_dark=False,
+    colors=CORAL_LIGHT_PALETTE,
+    typography=CORAL_TYPOGRAPHY,
+    spacing=CORAL_SPACING,
+    code_pygments_style="default",
+)
