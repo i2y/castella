@@ -338,6 +338,37 @@ class Box(Layout):
                 self.update(True)
             return self
 
+    def _redraw_children(self, p: Painter, completely: bool) -> None:
+        """Override to skip children outside visible viewport."""
+        visible_height = self._size.height
+        visible_width = self._size.width
+        scroll_y = self._scroll_y
+        scroll_x = self._scroll_x
+        self_pos = self.get_pos()
+
+        for c in self._layout_render_node.iter_paint_order():
+            # Viewport culling: skip children outside visible area
+            child_pos = c.get_pos()
+            child_size = c.get_size()
+
+            # Calculate child's position relative to scroll
+            rel_y = child_pos.y - self_pos.y - scroll_y
+            rel_x = child_pos.x - self_pos.x - scroll_x
+
+            # Skip if entirely outside viewport
+            if rel_y + child_size.height < 0 or rel_y > visible_height:
+                continue
+            if rel_x + child_size.width < 0 or rel_x > visible_width:
+                continue
+
+            if completely or c.is_dirty():
+                p.save()
+                p.translate((child_pos - self_pos))
+                p.clip(Rect(origin=Point(x=0, y=0), size=child_size))
+                c.redraw(p, completely)
+                p.restore()
+                c.dirty(False)
+
     def measure(self, p: Painter) -> Size:
         if len(self._children) == 0:
             return Size(width=0, height=0)

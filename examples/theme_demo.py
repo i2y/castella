@@ -23,6 +23,8 @@ from castella.theme import (
     ThemeManager,
     DARK_THEME,
     LIGHT_THEME,
+    CORAL_DARK_THEME,
+    CORAL_LIGHT_THEME,
     Theme,
     ColorPalette,
     Typography,
@@ -51,6 +53,7 @@ CYBERPUNK_PALETTE = ColorPalette(
     text_warning="#ffff00",
     border_primary="#00ff41",
     border_secondary="#00d4ff",
+    border_focus="#00ffff",
     border_info="#00d4ff",
     border_danger="#ff0055",
     border_success="#00ff41",
@@ -87,6 +90,7 @@ OCEAN_PALETTE = ColorPalette(
     text_warning="#ffd60a",
     border_primary="#778da9",
     border_secondary="#48cae4",
+    border_focus="#48cae4",
     border_info="#48cae4",
     border_danger="#f72585",
     border_success="#80ed99",
@@ -138,6 +142,12 @@ class ThemeDemo(Component):
     def _apply_ocean(self, _):
         self._set_theme(OCEAN_THEME)
 
+    def _apply_coral_dark(self, _):
+        self._set_theme(CORAL_DARK_THEME)
+
+    def _apply_coral_light(self, _):
+        self._set_theme(CORAL_LIGHT_THEME)
+
     def _apply_custom(self, _):
         """Create and apply a custom derived theme."""
         custom = DARK_THEME.derive(
@@ -181,6 +191,12 @@ class ThemeDemo(Component):
                 Button("Cyberpunk").on_click(self._apply_cyberpunk),
                 Button("Ocean").on_click(self._apply_ocean),
                 Button("Custom Derived").on_click(self._apply_custom),
+            ).fixed_height(50),
+
+            # Theme buttons row 3
+            Row(
+                Button("Coral Dark").on_click(self._apply_coral_dark),
+                Button("Coral Light").on_click(self._apply_coral_light),
             ).fixed_height(50),
 
             # Divider

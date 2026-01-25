@@ -1,4 +1,4 @@
-from typing import Callable, Self, cast
+from typing import Any, Callable, Self, cast
 
 from castella.core import (
     AppearanceState,
@@ -546,11 +546,15 @@ class MultilineInput(Widget):
         self._last_display_lines = display_lines
 
         # Build character position cache for accurate click detection
+        # Optimized: measure each character width individually instead of O(n²) substring measurement
         self._char_positions_cache = []
         for _, text, _ in display_lines:
             positions = [0.0]  # Position before first character
-            for i in range(len(text)):
-                positions.append(p.measure_text(text[: i + 1]))
+            cumulative = 0.0
+            for char in text:
+                char_width = p.measure_text(char)
+                cumulative += char_width
+                positions.append(cumulative)
             self._char_positions_cache.append(positions)
 
         # Auto-scroll to keep cursor visible when editing (but not if user manually scrolled)
@@ -707,6 +711,23 @@ class MultilineInput(Widget):
         """Return the tab order (lower = earlier in tab sequence)."""
         return self._tab_index
 
+    def on_notify(self, event: Any = None) -> None:
+        """Override to avoid full parent tree redraw on state changes.
+
+        For MultilineInput, state changes (like preedit clear) should only
+        trigger a repaint of this widget, not a full update that redraws
+        the entire scrollable parent.
+        """
+        self._repaint()
+
+    def _repaint(self) -> None:
+        """Trigger a repaint of just this widget without full parent tree redraw."""
+        from castella.core import App
+        self.dirty(True)
+        app = App.get()
+        if app is not None:
+            app.post_update(self, False)
+
     def input_char(self, ev: InputCharEvent) -> None:
         state = cast(MultilineInputState, self._state)
         # Clear any preedit when text is committed
@@ -718,8 +739,8 @@ class MultilineInput(Widget):
         state.insert(ev.char)
         state._manual_scroll = False  # Reset manual scroll on input
         self._callback(state.raw_value())
-        # Request redraw without triggering component re-render
-        self.update(True)
+        # Repaint only - no layout recalculation needed for single char input
+        self._repaint()
 
     def ime_preedit(self, ev: IMEPreeditEvent) -> None:
         """Handle IME preedit (composition) event."""
@@ -766,7 +787,7 @@ class MultilineInput(Widget):
         # Handle Cmd+A / Ctrl+A (Select All)
         if ev.is_cmd_or_ctrl and ev.key is KeyCode.A:
             state.select_all()
-            self.update(True)
+            self._repaint()  # Selection change only, no layout change
             return
 
         # Clear selection on navigation keys
@@ -783,25 +804,33 @@ class MultilineInput(Widget):
         if ev.key is KeyCode.BACKSPACE:
             state.delete_prev()
             self._callback(state.raw_value())
+            # Content change may affect layout (line count may change)
+            self.update(True)
         elif ev.key is KeyCode.DELETE:
             state.delete_next()
             self._callback(state.raw_value())
+            # Content change may affect layout (line count may change)
+            self.update(True)
         elif ev.key is KeyCode.LEFT:
             state.move_left()
+            self._repaint()  # Cursor move only, no layout change
         elif ev.key is KeyCode.RIGHT:
             state.move_right()
+            self._repaint()  # Cursor move only, no layout change
         elif ev.key is KeyCode.UP:
             state.move_up()
+            self._repaint()  # Cursor move only, no layout change
         elif ev.key is KeyCode.DOWN:
             state.move_down()
+            self._repaint()  # Cursor move only, no layout change
         elif ev.key is KeyCode.ENTER:
             # Delete selection before inserting newline
             if state.has_selection():
                 state.delete_selection()
             state.insert_newline()
             self._callback(state.raw_value())
-        # Request redraw without triggering component re-render
-        self.update(True)
+            # Line count changes, need full layout update
+            self.update(True)
 
     def _handle_copy(self) -> None:
         """Copy selected text to clipboard."""
