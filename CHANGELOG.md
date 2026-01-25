@@ -2,12 +2,16 @@
 
 All notable changes to Castella will be documented in this file.
 
-## [0.15.1] - 2026-01-25
+## [0.15.2] - 2026-01-25
 
 ### Performance
 - **MultilineInput** - Override `on_notify` to avoid full parent tree redraw, use `_repaint()` for cursor moves and character input
 - **MultilineInput** - Optimize character position cache from O(n²) to O(n)
 - **Box** - Add viewport culling to skip rendering children outside the visible area
+
+## [0.15.1] - 2026-01-25 (Yanked)
+
+**Note:** This release was published with incorrect changelog. Use v0.15.2 instead.
 
 ## [0.15.0] - 2026-01-24
 
