@@ -308,6 +308,133 @@ class MarkdownRenderer:
 
         self._cursor_y += font_size * 1.5
 
+    def _render_text_chunk(
+        self,
+        p: Painter,
+        text: str,
+        x: float,
+        segment: "TextSegment",
+        line_height: float,
+    ) -> float:
+        """Render a text chunk with strikethrough and link support.
+
+        Returns the width of the rendered text.
+        """
+        text_width = p.measure_text(text)
+
+        p.fill_text(
+            text,
+            Point(x=x, y=self._cursor_y + self._theme.base_font_size),
+            None,
+        )
+
+        if segment.strikethrough:
+            strike_y = self._cursor_y + self._theme.base_font_size * 0.4
+            p.fill_rect(
+                Rect(
+                    origin=Point(x=x, y=strike_y),
+                    size=Size(width=text_width, height=1),
+                )
+            )
+
+        if segment.href:
+            self._link_regions.append(
+                ClickRegion(
+                    rect=Rect(
+                        origin=Point(x=x, y=self._cursor_y),
+                        size=Size(width=text_width, height=line_height),
+                    ),
+                    href=segment.href,
+                )
+            )
+            # Draw underline if hovered
+            if self._hovered_href == segment.href:
+                underline_y = self._cursor_y + self._theme.base_font_size + 2
+                underline_style = Style(fill=FillStyle(color=self._theme.link_color))
+                p.style(underline_style)
+                p.fill_rect(
+                    Rect(
+                        origin=Point(x=x, y=underline_y),
+                        size=Size(width=text_width, height=2),
+                    )
+                )
+                # Restore text style after drawing underline
+                p.style(
+                    Style(
+                        fill=FillStyle(color=segment.get_color(self._theme)),
+                        font=segment.get_font(self._theme),
+                    )
+                )
+
+        return text_width
+
+    def _render_text_with_char_wrap(
+        self,
+        p: Painter,
+        text: str,
+        x: float,
+        start_x: float,
+        available_width: float,
+        segment: "TextSegment",
+        line_height: float,
+    ) -> float:
+        """Render text with character-level wrapping when needed.
+
+        Args:
+            p: Painter instance
+            text: Text to render
+            x: Current x position
+            start_x: Line start x position (for wrapping)
+            available_width: Available width for text
+            segment: TextSegment with styling info
+            line_height: Height of each line
+
+        Returns:
+            Final x position after rendering
+        """
+        remaining = text
+
+        while remaining:
+            space_left = self._cursor_x + available_width - x
+
+            # If remaining text fits, render it and we're done
+            if p.measure_text(remaining) <= space_left:
+                chunk_width = self._render_text_chunk(
+                    p, remaining, x, segment, line_height
+                )
+                return x + chunk_width
+
+            # Find how many characters fit in the remaining space
+            break_idx = 0
+            for i in range(1, len(remaining) + 1):
+                if p.measure_text(remaining[:i]) > space_left:
+                    # At line start, force at least 1 char to prevent infinite loop
+                    break_idx = max(1, i - 1) if x == start_x else i - 1
+                    break
+            else:
+                # All characters fit (shouldn't reach here, but handle gracefully)
+                break_idx = len(remaining)
+
+            if break_idx == 0:
+                # No space left on this line, wrap first
+                self._cursor_y += line_height
+                x = start_x
+                continue
+
+            # Render the chunk that fits
+            chunk = remaining[:break_idx]
+            chunk_width = self._render_text_chunk(p, chunk, x, segment, line_height)
+            remaining = remaining[break_idx:]
+
+            if remaining:
+                # Wrap to next line
+                self._cursor_y += line_height
+                x = start_x
+            else:
+                x += chunk_width
+
+        return x
+
     def _render_paragraph(self, p: Painter, node: ParagraphNode, width: float) -> None:
         """Render a paragraph with word wrapping."""
         segments = self._collect_segments(node.children, RenderContext())
@@ -384,6 +511,7 @@ class MarkdownRenderer:
             )
             p.style(style)
 
+            start_x = self._cursor_x + self._list_depth * self._theme.list_indent
             words = segment.text.split(" ")
             for i, word in enumerate(words):
                 if i > 0:
@@ -391,55 +519,33 @@ class MarkdownRenderer:
 
                 word_width = p.measure_text(word)
 
-                if (
-                    x + word_width > self._cursor_x + available_width
-                    and x > self._cursor_x + self._list_depth * self._theme.list_indent
-                ):
+                # Check if word exceeds available width (CJK or long word)
+                if word_width > available_width:
+                    # Use character-level wrapping for oversized words
+                    if x > start_x:
+                        self._cursor_y += line_height
+                        x = start_x
+                        word = word.lstrip()
+                    x = self._render_text_with_char_wrap(
+                        p, word, x, start_x, available_width, segment, line_height
+                    )
+                elif x + word_width > self._cursor_x + available_width:
+                    # Word fits but not on current line - wrap
                     self._cursor_y += line_height
-                    x = self._cursor_x + self._list_depth * self._theme.list_indent
+                    x = start_x
                     word = word.lstrip()
                     word_width = p.measure_text(word)
 
-                p.fill_text(
-                    word,
-                    Point(x=x, y=self._cursor_y + self._theme.base_font_size),
-                    None,
-                )
-
-                if segment.strikethrough:
-                    strike_y = self._cursor_y + self._theme.base_font_size * 0.4
-                    p.fill_rect(
-                        Rect(
-                            origin=Point(x=x, y=strike_y),
-                            size=Size(width=word_width, height=1),
+                    # After wrapping, check if word still exceeds available width
+                    if word_width > available_width:
+                        x = self._render_text_with_char_wrap(
+                            p, word, x, start_x, available_width, segment, line_height
                         )
-                    )
-
-                if segment.href:
-                    self._link_regions.append(
-                        ClickRegion(
-                            rect=Rect(
-                                origin=Point(x=x, y=self._cursor_y),
-                                size=Size(width=word_width, height=line_height),
-                            ),
-                            href=segment.href,
-                        )
-                    )
-                    # Draw underline if hovered
-                    if self._hovered_href == segment.href:
-                        underline_y = self._cursor_y + self._theme.base_font_size + 2
-                        underline_style = Style(
-                            fill=FillStyle(color=self._theme.link_color)
-                        )
-                        p.style(underline_style)
-                        p.fill_rect(
-                            Rect(
-                                origin=Point(x=x, y=underline_y),
-                                size=Size(width=word_width, height=2),
-                            )
-                        )
-
-                x += word_width
+                    else:
+                        x += self._render_text_chunk(p, word, x, segment, line_height)
+                else:
+                    # Word fits on current line
+                    x += self._render_text_chunk(p, word, x, segment, line_height)
 
         self._cursor_y += line_height + self._theme.paragraph_spacing
 

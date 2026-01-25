@@ -75,6 +75,22 @@ Block math:
 
 Visit [Castella on GitHub](https://github.com/i2y/castella) for more info.
 
+## 日本語テキスト (Japanese Text)
+
+日本語のテキストも正しく折り返されます。これは長い文章のテストです。Castellaは日本語、中国語、韓国語などのCJK言語をサポートしています。
+
+**太字テキスト**や*斜体テキスト*、~~取り消し線~~も使えます。
+
+リンクもサポート: [Castella GitHub](https://github.com/i2y/castella)
+
+### 日本語リスト
+- 最初の項目
+- 二番目の項目
+- 三番目の項目
+
+> これは日本語の引用ブロックです。
+> 複数行にわたることができます。
+
 ---
 
 *End of demo*
@@ -91,7 +107,8 @@ def main():
         Column(
             Markdown(DEMO_MARKDOWN, base_font_size=14, on_link_click=on_link)
             .width_policy(SizePolicy.EXPANDING)
-            .height_policy(SizePolicy.EXPANDING),
+            .height_policy(SizePolicy.CONTENT),
+            scrollable=True,
         ),
     )
     app.run()
