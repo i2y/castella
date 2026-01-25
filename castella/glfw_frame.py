@@ -61,7 +61,7 @@ class Frame(BaseFrame):
         glfw.window_hint(glfw.STENCIL_BITS, 8)
         glfw.window_hint(glfw.DOUBLEBUFFER, glfw.FALSE)
         if platform.system() == "Darwin":
-            glfw.window_hint(glfw.COCOA_RETINA_FRAMEBUFFER, glfw.FALSE)
+            glfw.window_hint(glfw.COCOA_RETINA_FRAMEBUFFER, glfw.TRUE)
             # Request OpenGL 3.2 Core Profile for macOS (required for GLSL 1.50+)
             glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
             glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 2)
@@ -84,6 +84,9 @@ class Frame(BaseFrame):
         glfw.set_char_callback(window, self._input_char)
         glfw.set_key_callback(window, self._input_key)
 
+        # HiDPI scale factor (updated in _update_surface_and_painter)
+        self._hidpi_scale = 1.0
+
         self._update_surface_and_painter()
 
         # Initialize macOS IME support
@@ -100,7 +103,14 @@ class Frame(BaseFrame):
         """Create/recreate the Skia surface for the current window size."""
         from castella import rust_skia_painter as painter
 
+        # Get actual framebuffer size in pixels (HiDPI aware)
         (fb_width, fb_height) = glfw.get_framebuffer_size(self.window)
+
+        # Get logical window size
+        (win_width, win_height) = glfw.get_window_size(self.window)
+
+        # Calculate HiDPI scale factor
+        self._hidpi_scale = fb_width / win_width if win_width > 0 else 1.0
 
         if hasattr(self, "surface") and self.surface is not None:
             # Resize existing surface (faster, no flicker)
@@ -207,7 +217,18 @@ class Frame(BaseFrame):
         """Handle window resize."""
         self._size = Size(width=w, height=h)
         self._update_surface_and_painter()
+        # Apply HiDPI scale before redraw
+        self.painter.save()
+        self.painter.scale(self._hidpi_scale, self._hidpi_scale)
         self._callback_on_redraw(self.painter, True)
+        self.painter.restore()
+
+    def _post_update(self, ev) -> None:
+        """Override to apply HiDPI scale before drawing."""
+        self.painter.save()
+        self.painter.scale(self._hidpi_scale, self._hidpi_scale)
+        super()._post_update(ev)
+        self.painter.restore()
 
     # ========== Abstract Method Implementations ==========
 
