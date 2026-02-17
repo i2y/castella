@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>hello_world</title>
+    <link rel="stylesheet" href="https://pyscript.net/releases/2025.11.2/core.css">
+    <script type="text/javascript" src="https://unpkg.com/canvaskit-wasm@0.39.1/bin/canvaskit.js"></script>
+    <script type="text/javascript">
+        const loadFont = fetch('https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxP.ttf')
+            .then((response) => response.arrayBuffer());
+
+        const ckLoaded = CanvasKitInit();
+        Promise.all([ckLoaded, loadFont]).then(([CanvasKit, robotoData]) => {
+            window.CK = CanvasKit;
+            window.fontMgr = CanvasKit.FontMgr.FromData([robotoData]);
+            window.typeface = CanvasKit.Typeface.MakeFreeTypeFaceFromData(robotoData);
+            // Load PyScript after CanvasKit is ready
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.src = 'https://pyscript.net/releases/2025.11.2/core.js';
+            document.head.appendChild(script);
+        });
+    </script>
+</head>
+
+<body>
+    <script type="py" src="hello_world.py" config="pyscript.toml"></script>
+</body>
+
+</html>
