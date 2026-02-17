@@ -182,6 +182,19 @@ widget.fit_content_height()   # Height only
 widget.fit_parent()
 ```
 
+### Scrollable Auto-Downgrade
+
+Scrollable `Column`/`Row` automatically downgrade `EXPANDING` children to `CONTENT`:
+
+```python
+# Just works! No need to set size policies manually.
+Column(Text("hello"), scrollable=True)
+
+# Fluent API also works:
+col = Column(Text("hello"))
+col.scrollable()  # Existing children are downgraded too
+```
+
 ### Important Constraint
 
 A Layout with `CONTENT` height_policy cannot have `EXPANDING` height children:
@@ -352,7 +365,7 @@ Input("").semantic_id("email-input")
 ## Best Practices
 
 1. **Attach states**: Use `state.attach(self)` for each observable state
-2. **Fixed heights in scrollable containers**: Use `.fixed_height()` for list items
+2. **Scrollable containers**: EXPANDING children are auto-downgraded; use `.fixed_height()` for precise control
 3. **Preserve scroll**: Use `ScrollState` to maintain scroll position
 4. **Atomic list updates**: Use `ListState.set(items)` for single rebuild
 5. **Don't attach Input states**: Avoid attaching states managed by Input widgets

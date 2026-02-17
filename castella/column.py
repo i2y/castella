@@ -69,15 +69,15 @@ class Column(LinearLayout, Layout):
             width_policy=SizePolicy.EXPANDING,
             height_policy=SizePolicy.EXPANDING,
         )
-        self._init_linear_layout(scrollable, scroll_state, pin_to_bottom, on_user_scroll)
+        self._init_linear_layout(
+            scrollable, scroll_state, pin_to_bottom, on_user_scroll
+        )
         for c in children:
             self.add(c)
 
     def add(self, w: Widget) -> None:
         if self._scrollable and w.get_height_policy() is SizePolicy.EXPANDING:
-            raise RuntimeError(
-                "Scrollable Column cannot have a height-expandable child widget"
-            )
+            w._height_policy = SizePolicy.CONTENT
         super().add(w)
 
     def get_children(self) -> Generator[Widget, None, None]:

@@ -250,6 +250,18 @@ class LinearLayout:
         """Check if this layout is scrollable."""
         return self._scrollable
 
+    def scrollable(self: "Layout") -> Self:
+        """Enable scrolling and downgrade EXPANDING children to CONTENT."""
+        self._scrollable = True
+        for c in self._children:
+            if self._is_horizontal:
+                if c.get_width_policy() is SizePolicy.EXPANDING:
+                    c._width_policy = SizePolicy.CONTENT
+            else:
+                if c.get_height_policy() is SizePolicy.EXPANDING:
+                    c._height_policy = SizePolicy.CONTENT
+        return self
+
     def set_pin_to_bottom(self, value: bool) -> Self:
         """Set pin_to_bottom state programmatically.
 

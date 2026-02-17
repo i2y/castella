@@ -160,6 +160,19 @@ Benefits:
 - Single method call instead of two
 - Code is more readable and self-documenting
 
+## Scrollable Container Auto-Downgrade
+
+Scrollable `Column` and `Row` automatically downgrade `EXPANDING` children to `CONTENT` policy. You don't need to set size policies manually:
+
+```python
+# Just works! Text's EXPANDING height is auto-downgraded to CONTENT.
+Column(Text("hello"), scrollable=True)
+
+# Also works with the fluent API:
+col = Column(Text("hello"))
+col.scrollable()  # Existing children are downgraded too
+```
+
 ## CONTENT Policy Constraint
 
 When using `CONTENT` height policy on a layout container, all children must also have `CONTENT` or `FIXED` height policy:

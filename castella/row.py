@@ -65,9 +65,7 @@ class Row(LinearLayout, Layout):
 
     def add(self, w: Widget) -> None:
         if self._scrollable and w.get_width_policy() is SizePolicy.EXPANDING:
-            raise RuntimeError(
-                "Scrollable Row cannot have a width-expandable child widget"
-            )
+            w._width_policy = SizePolicy.CONTENT
         super().add(w)
 
     def get_children(self) -> Generator[Widget, None, None]:

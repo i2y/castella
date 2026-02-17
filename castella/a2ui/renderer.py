@@ -425,16 +425,6 @@ class A2UIRenderer:
                 scoped_data,
             )
 
-            # For List items, ensure they have CONTENT or FIXED height
-            # (scrollable containers can't have EXPANDING children)
-            from castella.core import SizePolicy
-
-            if hasattr(widget, "_height_policy"):
-                current_policy = widget._height_policy
-                if current_policy == SizePolicy.EXPANDING:
-                    # Set fixed height for list items (default item height)
-                    widget = widget.fixed_height(100)
-
             # Add to parent
             self._add_child_to_parent(parent_widget, widget)
 
