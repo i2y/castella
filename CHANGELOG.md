@@ -2,6 +2,13 @@
 
 All notable changes to Castella will be documented in this file.
 
+## [0.15.5] - 2026-02-18
+
+### Changed
+- **Scrollable Containers** - EXPANDING children are now automatically downgraded to CONTENT instead of raising RuntimeError
+- **LinearLayout** - Added `scrollable()` fluent method to enable scrolling after construction
+- **A2UI Renderer** - Removed manual EXPANDING downgrade (now handled by framework)
+
 ## [0.15.2] - 2026-01-25
 
 ### Performance
