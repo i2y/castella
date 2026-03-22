@@ -17,6 +17,7 @@ classifiers = [
 readme = "README.md"
 
 requires-python = ">= 3.11"
+dependencies = ["pydantic>=2.7.4"]
 
 [project.optional-dependencies]
 glfw = [
@@ -24,7 +25,6 @@ glfw = [
     "glfw>=2.7.0",
     "PyOpenGL>=3.1.7",
     "darkdetect>=0.8",
-    "pydantic>=2.7.4",
     "markdown-it-py>=3.0.0",
     "mdit-py-plugins>=0.4.0",
     "pygments>=2.17.0",
@@ -37,7 +37,6 @@ sdl = [
     "PySDL2>=0.9.16",
     "PyOpenGL>=3.1.7",
     "darkdetect>=0.8",
-    "pydantic>=2.7.4",
     "markdown-it-py>=3.0.0",
     "mdit-py-plugins>=0.4.0",
     "pygments>=2.17.0",
@@ -48,7 +47,6 @@ sdl3 = [
     "PySDL3>=0.9.10b0",
     "PyOpenGL>=3.1.7",
     "darkdetect>=0.8",
-    "pydantic>=2.7.4",
     "markdown-it-py>=3.0.0",
     "mdit-py-plugins>=0.4.0",
     "pygments>=2.17.0",
@@ -58,7 +56,6 @@ tui = [
     "windows-curses>=2.3.3; sys_platform == 'win32'",
     "prompt-toolkit>=3.0.48",
     "darkdetect>=0.8",
-    "pydantic>=2.7.4",
     "pyperclip>=1.9.0",
     "markdown-it-py>=3.0.0",
     "mdit-py-plugins>=0.4.0",
@@ -73,7 +70,6 @@ mcp = [
 audio = [
     "pysdl2-dll>=2.30.2",
     "PySDL2>=0.9.16",
-    "pydantic>=2.7.4",
 ]
 langgraph_studio = [
     "langgraph>=0.2.0",
@@ -91,7 +87,6 @@ edda_workflow_manager = [
 ]
 ios = [
     "rubicon-objc>=0.4.9",
-    "pydantic>=2.7.4",
 ]
 
 [project.urls]
